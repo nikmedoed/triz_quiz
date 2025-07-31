@@ -4,9 +4,12 @@ Run:  python bot.py
 Env:  BOT_TOKEN, PROJECTOR_URL (e.g. http://localhost:5000/update)
 """
 import os, asyncio, aiohttp, json, logging
+from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
+
+load_dotenv()
 
 BOT_TOKEN      = os.getenv('BOT_TOKEN')
 PROJECTOR_URL  = os.getenv('PROJECTOR_URL', 'http://localhost:5000/update')
