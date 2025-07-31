@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>TRIZ-Quiz Projector</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 1rem; }
+    #title { font-size: 2rem; margin-bottom: 1rem; }
+    #content { font-size: 1.3rem; white-space: pre-wrap; }
+    .highlight { background: #ffd; padding: 0.2rem 0.4rem; border-radius: 4px; }
+    #results { margin-top: 2rem; }
+  </style>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+  <div id="title">Ожидание начала…</div>
+  <div id="content"></div>
+  <div id="results"></div>
+
+<script>
+const socket = io();
+
+socket.on('step', step => {
+  document.getElementById('title').textContent = step.title;
+  if (step.type === 'quiz') {
+    document.getElementById('content').textContent = step.options.join("\n");
+  } else if (step.type === 'open' || step.type === 'vote') {
+    document.getElementById('content').textContent = step.description || '';
+  } else if (step.type === 'slide') {
+    document.getElementById('content').textContent = step.content || '';
+  }
+  document.getElementById('results').innerHTML = '';
+});
+
+socket.on('votes_result', tally => {
+  const div = document.getElementById('results');
+  div.innerHTML = '<h2>Результаты голосования</h2>';
+  for (const [name, cnt] of Object.entries(tally)) {
+    div.innerHTML += `<div>${name}: <span class="highlight">${cnt}</span></div>`;
+  }
+});
+
+socket.on('quiz_result', data => {
+  document.getElementById('results').innerHTML =
+    `<h2>Верный ответ: <span class="highlight">${data.correct}</span></h2>`;
+});
+
+socket.on('rating', rating => {
+  const div = document.getElementById('results');
+  div.innerHTML = '<h2>Итоговый рейтинг</h2>';
+  rating.forEach(p => {
+    div.innerHTML += `<div>${p.name}: <span class="highlight">${p.score}</span></div>`;
+  });
+});
+</script>
+</body>
+</html>
