@@ -18,17 +18,19 @@ bot  = Bot(BOT_TOKEN, parse_mode='HTML')
 dp   = Dispatcher(bot, storage=MemoryStorage())          # in-memory FSM
 
 # ---------- простой статичный сценарий -------------
+# ---------- простой статичный сценарий -------------
 with open('scenario.json', encoding='utf-8') as f:
     SCENARIO = json.load(f)
 
-step_idx          = 0               # глобальный «шаг»
+step_idx          = -1              # глобальный «шаг» (до начала)
 participants      = {}              # telegram_id -> {'name', 'score'}
 answers_current   = {}              # telegram_id -> answer text / quiz option
 votes_current     = {}              # telegram_id -> voted_for(telegram_id)
 ADMIN_ID          = int(os.getenv('ADMIN_ID', 0))   # ведущий
 
+
 def current_step():
-    return SCENARIO[step_idx] if step_idx < len(SCENARIO) else None
+    return SCENARIO[step_idx] if 0 <= step_idx < len(SCENARIO) else None
 
 async def push(event: str, payload: dict):
     """Отправка данных на проектор."""

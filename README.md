@@ -15,3 +15,14 @@ SERVER_PORT=5000
 ```
 
 `BOT_TOKEN` and `ADMIN_ID` are required for the bot to operate.
+
+## Running
+
+Install the dependencies (e.g. `pip install -r requirements` using the `pyproject.toml`
+file) and start both the bot and the projector with one command:
+
+```
+python run.py
+```
+
+Stop the services with `Ctrl+C`.
