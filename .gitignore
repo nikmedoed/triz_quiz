@@ -182,3 +182,4 @@ dist-ssr
 *.sw?
 frontend/index.html 
 /uploads
+uv.lock
