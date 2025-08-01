@@ -1,15 +1,16 @@
 """Telegram-bot for TRIZ-quiz."""
 
 import asyncio, aiohttp, json, logging, os
-from aiogram import Bot, Dispatcher, types
-from aiogram.utils import executor
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram import Bot, Dispatcher
+from aiogram.filters import Command
+from aiogram.types import Message
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import settings
 from db import Database
 
 bot = Bot(settings.bot_token, parse_mode="HTML")
-dp = Dispatcher(bot, storage=MemoryStorage())  # in-memory FSM
+dp = Dispatcher(storage=MemoryStorage())  # in-memory FSM
 PROJECTOR_URL = settings.projector_url
 STATE_FILE = settings.state_file
 db = Database(settings.db_file)
@@ -73,8 +74,8 @@ async def push(event: str, payload: dict):
         await session.post(PROJECTOR_URL, json={'event': event, 'payload': payload})
 
 # ---------- регистрация ----------------------------
-@dp.message_handler(commands=['start'])
-async def start(msg: types.Message):
+@dp.message(Command('start'))
+async def start(msg: Message):
     user = msg.from_user
     participants[user.id] = {'name': user.full_name, 'score': 0}
     save_state()
@@ -83,8 +84,8 @@ async def start(msg: types.Message):
     await push('participants', {'who': list(p['name'] for p in participants.values())})
 
 # ---------- ответы открытого вопроса ---------------
-@dp.message_handler(lambda m: current_step() and current_step()['type']=='open')
-async def open_answer(msg: types.Message):
+@dp.message(lambda m: current_step() and current_step()['type']=='open')
+async def open_answer(msg: Message):
     answers_current[msg.from_user.id] = msg.text.strip()[:200]
     save_state()
     db.record_response(msg.from_user.id, step_idx, 'open', answers_current[msg.from_user.id])
@@ -92,8 +93,8 @@ async def open_answer(msg: types.Message):
     await push('answer_in', {'name': msg.from_user.full_name})
 
 # ---------- голосование ----------------------------
-@dp.message_handler(lambda m: current_step() and current_step()['type']=='vote')
-async def vote(msg: types.Message):
+@dp.message(lambda m: current_step() and current_step()['type']=='vote')
+async def vote(msg: Message):
     target = msg.text.strip()
     if target == msg.from_user.full_name:
         await msg.answer("За себя голосовать нельзя!")
@@ -105,8 +106,8 @@ async def vote(msg: types.Message):
         await push('vote_in', {'voter': msg.from_user.full_name})
 
 # ---------- вариант-квиз ---------------------------
-@dp.message_handler(lambda m: current_step() and current_step()['type']=='quiz')
-async def quiz_answer(msg: types.Message):
+@dp.message(lambda m: current_step() and current_step()['type']=='quiz')
+async def quiz_answer(msg: Message):
     answers_current[msg.from_user.id] = msg.text.strip().upper()
     save_state()
     db.record_response(msg.from_user.id, step_idx, 'quiz', answers_current[msg.from_user.id])
@@ -114,8 +115,8 @@ async def quiz_answer(msg: types.Message):
     await push('answer_in', {'name': msg.from_user.full_name})
 
 # ---------- команды ведущего -----------------------
-@dp.message_handler(lambda m: m.from_user.id == ADMIN_ID, commands=['next'])
-async def cmd_next(msg: types.Message):
+@dp.message(Command('next'), lambda m: m.from_user.id == ADMIN_ID)
+async def cmd_next(msg: Message):
     """Перейти к следующему шагу сценария."""
     global step_idx, answers_current, votes_current
     answers_current.clear(); votes_current.clear()
@@ -129,8 +130,8 @@ async def cmd_next(msg: types.Message):
     await push('step', step)
     await msg.answer(f"Шаг {step_idx+1}: {step['title']} отправлен на экран.")
 
-@dp.message_handler(lambda m: m.from_user.id == ADMIN_ID, commands=['show_votes'])
-async def cmd_show_votes(msg: types.Message):
+@dp.message(Command('show_votes'), lambda m: m.from_user.id == ADMIN_ID)
+async def cmd_show_votes(msg: Message):
     """Подвести итог голосования и начислить баллы."""
     tally = {}
     for voter, target in votes_current.items():
@@ -145,8 +146,8 @@ async def cmd_show_votes(msg: types.Message):
     await push('votes_result', tally)
     await msg.answer("Результаты голосования выведены.")
 
-@dp.message_handler(lambda m: m.from_user.id == ADMIN_ID, commands=['show_quiz'])
-async def cmd_show_quiz(msg: types.Message):
+@dp.message(Command('show_quiz'), lambda m: m.from_user.id == ADMIN_ID)
+async def cmd_show_quiz(msg: Message):
     """Проверить правильные ответы, начислить баллы."""
     step = current_step()
     correct = step['correct']
@@ -158,8 +159,8 @@ async def cmd_show_quiz(msg: types.Message):
     await push('quiz_result', {'correct': correct})
     await msg.answer("Итоги квиза выведены.")
 
-@dp.message_handler(lambda m: m.from_user.id == ADMIN_ID, commands=['rating'])
-async def cmd_rating(msg: types.Message):
+@dp.message(Command('rating'), lambda m: m.from_user.id == ADMIN_ID)
+async def cmd_rating(msg: Message):
     """Показать общий рейтинг."""
     rows = db.get_rating()
     txt = "\n".join(f"{name}: {score}" for name, score in rows)
@@ -167,8 +168,8 @@ async def cmd_rating(msg: types.Message):
     await push('rating', [{'name': name, 'score': score} for name, score in rows])
 
 
-@dp.message_handler(lambda m: m.from_user.id == ADMIN_ID, commands=['reset'])
-async def cmd_reset(msg: types.Message):
+@dp.message(Command('reset'), lambda m: m.from_user.id == ADMIN_ID)
+async def cmd_reset(msg: Message):
     """Сбросить состояние викторины."""
     reset_state()
     db.reset()
@@ -179,7 +180,7 @@ async def cmd_reset(msg: types.Message):
 def run_bot():
     """Запуск Telegram-бота."""
     logging.basicConfig(level=logging.INFO)
-    executor.start_polling(dp)
+    asyncio.run(dp.start_polling(bot))
 
 
 if __name__ == '__main__':
