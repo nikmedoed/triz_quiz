@@ -13,6 +13,7 @@ class Settings:
     server_host: str = os.getenv("SERVER_HOST", "0.0.0.0")
     server_port: int = int(os.getenv("SERVER_PORT", 5000))
     state_file: str = os.getenv("STATE_FILE", "state.json")
+    db_file: str = os.getenv("DB_FILE", "quiz.db")
 
 settings = Settings()
 

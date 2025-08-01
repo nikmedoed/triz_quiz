@@ -54,6 +54,7 @@ local_settings.py
 
 # Databases
 db.sqlite3*
+*.db
 
 # Flask
 instance/

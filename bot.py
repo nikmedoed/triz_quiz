@@ -6,11 +6,13 @@ from aiogram.utils import executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 from config import settings
+from db import Database
 
 bot = Bot(settings.bot_token, parse_mode="HTML")
 dp = Dispatcher(bot, storage=MemoryStorage())  # in-memory FSM
 PROJECTOR_URL = settings.projector_url
 STATE_FILE = settings.state_file
+db = Database(settings.db_file)
 
 # ---------- простой статичный сценарий -------------
 with open('scenario.json', encoding='utf-8') as f:
@@ -59,6 +61,8 @@ def reset_state():
 
 
 load_state()
+for pid, p in participants.items():
+    db.add_participant(pid, p['name'], p['score'])
 
 def current_step():
     return SCENARIO[step_idx] if step_idx < len(SCENARIO) else None
@@ -74,6 +78,7 @@ async def start(msg: types.Message):
     user = msg.from_user
     participants[user.id] = {'name': user.full_name, 'score': 0}
     save_state()
+    db.add_participant(user.id, user.full_name)
     await msg.answer("Вы зарегистрированы! Ожидайте вопросов.")
     await push('participants', {'who': list(p['name'] for p in participants.values())})
 
@@ -82,6 +87,7 @@ async def start(msg: types.Message):
 async def open_answer(msg: types.Message):
     answers_current[msg.from_user.id] = msg.text.strip()[:200]
     save_state()
+    db.record_response(msg.from_user.id, step_idx, 'open', answers_current[msg.from_user.id])
     await msg.answer("Ответ принят!")
     await push('answer_in', {'name': msg.from_user.full_name})
 
@@ -94,6 +100,7 @@ async def vote(msg: types.Message):
     else:
         votes_current[msg.from_user.id] = target
         save_state()
+        db.record_response(msg.from_user.id, step_idx, 'vote', target)
         await msg.answer("Голос учтён.")
         await push('vote_in', {'voter': msg.from_user.full_name})
 
@@ -102,6 +109,7 @@ async def vote(msg: types.Message):
 async def quiz_answer(msg: types.Message):
     answers_current[msg.from_user.id] = msg.text.strip().upper()
     save_state()
+    db.record_response(msg.from_user.id, step_idx, 'quiz', answers_current[msg.from_user.id])
     await msg.answer("Ответ записан.")
     await push('answer_in', {'name': msg.from_user.full_name})
 
@@ -132,6 +140,7 @@ async def cmd_show_votes(msg: types.Message):
         if target_name in [p['name'] for p in participants.values()]:
             pid = next(k for k,v in participants.items() if v['name']==target_name)
             participants[pid]['score'] += 1
+            db.update_score(pid, 1)
     save_state()
     await push('votes_result', tally)
     await msg.answer("Результаты голосования выведены.")
@@ -144,6 +153,7 @@ async def cmd_show_quiz(msg: types.Message):
     for uid, ans in answers_current.items():
         if ans.upper() == correct.upper():
             participants[uid]['score'] += step.get('points', 1)
+            db.update_score(uid, step.get('points', 1))
     save_state()
     await push('quiz_result', {'correct': correct})
     await msg.answer("Итоги квиза выведены.")
@@ -151,16 +161,17 @@ async def cmd_show_quiz(msg: types.Message):
 @dp.message_handler(lambda m: m.from_user.id == ADMIN_ID, commands=['rating'])
 async def cmd_rating(msg: types.Message):
     """Показать общий рейтинг."""
-    rating = sorted(participants.values(), key=lambda p: p['score'], reverse=True)
-    txt = "\n".join(f"{p['name']}: {p['score']}" for p in rating)
+    rows = db.get_rating()
+    txt = "\n".join(f"{name}: {score}" for name, score in rows)
     await msg.answer(txt)
-    await push('rating', rating)
+    await push('rating', [{'name': name, 'score': score} for name, score in rows])
 
 
 @dp.message_handler(lambda m: m.from_user.id == ADMIN_ID, commands=['reset'])
 async def cmd_reset(msg: types.Message):
     """Сбросить состояние викторины."""
     reset_state()
+    db.reset()
     await msg.answer("Состояние сброшено.")
     await push('participants', {'who': []})
     await push('reset', {})
