@@ -28,5 +28,11 @@ def update():
     socketio.emit(data['event'], data['payload'])
     return '', 204
 
+
+def run_server():
+    """Запуск веб-сервера для отображения."""
+    socketio.run(app, host=HOST, port=PORT, use_reloader=False)
+
+
 if __name__ == '__main__':
-    socketio.run(app, host=HOST, port=PORT)
+    run_server()

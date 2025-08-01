@@ -22,3 +22,14 @@ DB_FILE=quiz.db
 
 `STATE_FILE` stores quiz progress so it can be restored after a restart. Admins can reset it with `/reset`.
 `DB_FILE` points to a SQLite database where participant info and their responses are persisted.
+
+## Running
+
+Start the quiz bot and projector server together with:
+
+```
+python main.py
+```
+
+The command launches the Flask web interface in the background and begins polling
+Telegram for bot updates.

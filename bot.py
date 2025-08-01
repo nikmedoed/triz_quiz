@@ -176,6 +176,11 @@ async def cmd_reset(msg: types.Message):
     await push('participants', {'who': []})
     await push('reset', {})
 
-if __name__ == '__main__':
+def run_bot():
+    """Запуск Telegram-бота."""
     logging.basicConfig(level=logging.INFO)
     executor.start_polling(dp)
+
+
+if __name__ == '__main__':
+    run_bot()
