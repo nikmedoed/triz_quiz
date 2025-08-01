@@ -8,4 +8,5 @@ dependencies = [
     "aiohttp>=3.12.15",
     "flask>=3.1.1",
     "flask-socketio>=5.5.1",
+    "python-dotenv>=1.0.1",
 ]

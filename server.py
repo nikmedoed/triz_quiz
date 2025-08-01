@@ -4,8 +4,14 @@ Real-time projector for TRIZ-quiz.
 Run:  python server.py
 """
 import os
+from dotenv import load_dotenv
 from flask import Flask, render_template, request, abort
 from flask_socketio import SocketIO, emit
+
+load_dotenv()
+
+HOST = os.getenv('SERVER_HOST', '0.0.0.0')
+PORT = int(os.getenv('SERVER_PORT', 5000))
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")       # simple CORS for local network
@@ -27,4 +33,4 @@ def update():
     return '', 204
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000)
+    socketio.run(app, host=HOST, port=PORT)
