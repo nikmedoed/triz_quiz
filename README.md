@@ -3,8 +3,10 @@ A telegram quiz for a presentation about inventive situations.
 
 ## Configuration
 
-Settings are read from environment variables.  Copy `.env.example` to `.env`
-and fill in your values before running:
+Settings are read from environment variables. Copy `.env.example` to `.env`
+and fill in your values before running. The application loads these settings via
+`config.py`, so both the bot and the projector server share the same
+configuration:
 
 ```
 BOT_TOKEN=123456:ABCDEF

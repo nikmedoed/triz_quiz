@@ -1,31 +1,25 @@
-"""
-Telegram-bot for TRIZ-quiz.
-Run:  python bot.py
-Env:  BOT_TOKEN, PROJECTOR_URL (e.g. http://localhost:5000/update)
-"""
-import os, asyncio, aiohttp, json, logging
-from dotenv import load_dotenv
+"""Telegram-bot for TRIZ-quiz."""
+
+import asyncio, aiohttp, json, logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
-load_dotenv()
+from config import settings
 
-BOT_TOKEN      = os.getenv('BOT_TOKEN')
-PROJECTOR_URL  = os.getenv('PROJECTOR_URL', 'http://localhost:5000/update')
-
-bot  = Bot(BOT_TOKEN, parse_mode='HTML')
-dp   = Dispatcher(bot, storage=MemoryStorage())          # in-memory FSM
+bot = Bot(settings.bot_token, parse_mode="HTML")
+dp = Dispatcher(bot, storage=MemoryStorage())  # in-memory FSM
+PROJECTOR_URL = settings.projector_url
 
 # ---------- простой статичный сценарий -------------
 with open('scenario.json', encoding='utf-8') as f:
     SCENARIO = json.load(f)
 
-step_idx          = 0               # глобальный «шаг»
-participants      = {}              # telegram_id -> {'name', 'score'}
-answers_current   = {}              # telegram_id -> answer text / quiz option
-votes_current     = {}              # telegram_id -> voted_for(telegram_id)
-ADMIN_ID          = int(os.getenv('ADMIN_ID', 0))   # ведущий
+step_idx        = 0               # глобальный «шаг»
+participants    = {}              # telegram_id -> {'name', 'score'}
+answers_current = {}              # telegram_id -> answer text / quiz option
+votes_current   = {}              # telegram_id -> voted_for(telegram_id)
+ADMIN_ID        = settings.admin_id  # ведущий
 
 def current_step():
     return SCENARIO[step_idx] if step_idx < len(SCENARIO) else None
