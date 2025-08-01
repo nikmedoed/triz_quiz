@@ -183,3 +183,4 @@ dist-ssr
 frontend/index.html 
 /uploads
 uv.lock
+state.json

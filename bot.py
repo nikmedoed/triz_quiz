@@ -1,6 +1,6 @@
 """Telegram-bot for TRIZ-quiz."""
 
-import asyncio, aiohttp, json, logging
+import asyncio, aiohttp, json, logging, os
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -10,6 +10,7 @@ from config import settings
 bot = Bot(settings.bot_token, parse_mode="HTML")
 dp = Dispatcher(bot, storage=MemoryStorage())  # in-memory FSM
 PROJECTOR_URL = settings.projector_url
+STATE_FILE = settings.state_file
 
 # ---------- простой статичный сценарий -------------
 with open('scenario.json', encoding='utf-8') as f:
@@ -20,6 +21,44 @@ participants    = {}              # telegram_id -> {'name', 'score'}
 answers_current = {}              # telegram_id -> answer text / quiz option
 votes_current   = {}              # telegram_id -> voted_for(telegram_id)
 ADMIN_ID        = settings.admin_id  # ведущий
+
+
+def load_state():
+    """Загрузить состояние викторины из файла."""
+    global step_idx, participants, answers_current, votes_current
+    if os.path.exists(STATE_FILE):
+        with open(STATE_FILE, encoding='utf-8') as f:
+            data = json.load(f)
+        step_idx = data.get('step_idx', 0)
+        participants = {int(k): v for k, v in data.get('participants', {}).items()}
+        answers_current = {int(k): v for k, v in data.get('answers_current', {}).items()}
+        votes_current = {int(k): v for k, v in data.get('votes_current', {}).items()}
+
+
+def save_state():
+    """Сохранить текущее состояние викторины в файл."""
+    data = {
+        'step_idx': step_idx,
+        'participants': {str(k): v for k, v in participants.items()},
+        'answers_current': {str(k): v for k, v in answers_current.items()},
+        'votes_current': {str(k): v for k, v in votes_current.items()},
+    }
+    with open(STATE_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False)
+
+
+def reset_state():
+    """Очистить состояние и удалить файл хранения."""
+    global step_idx, participants, answers_current, votes_current
+    step_idx = 0
+    participants.clear()
+    answers_current.clear()
+    votes_current.clear()
+    if os.path.exists(STATE_FILE):
+        os.remove(STATE_FILE)
+
+
+load_state()
 
 def current_step():
     return SCENARIO[step_idx] if step_idx < len(SCENARIO) else None
@@ -34,6 +73,7 @@ async def push(event: str, payload: dict):
 async def start(msg: types.Message):
     user = msg.from_user
     participants[user.id] = {'name': user.full_name, 'score': 0}
+    save_state()
     await msg.answer("Вы зарегистрированы! Ожидайте вопросов.")
     await push('participants', {'who': list(p['name'] for p in participants.values())})
 
@@ -41,6 +81,7 @@ async def start(msg: types.Message):
 @dp.message_handler(lambda m: current_step() and current_step()['type']=='open')
 async def open_answer(msg: types.Message):
     answers_current[msg.from_user.id] = msg.text.strip()[:200]
+    save_state()
     await msg.answer("Ответ принят!")
     await push('answer_in', {'name': msg.from_user.full_name})
 
@@ -52,6 +93,7 @@ async def vote(msg: types.Message):
         await msg.answer("За себя голосовать нельзя!")
     else:
         votes_current[msg.from_user.id] = target
+        save_state()
         await msg.answer("Голос учтён.")
         await push('vote_in', {'voter': msg.from_user.full_name})
 
@@ -59,6 +101,7 @@ async def vote(msg: types.Message):
 @dp.message_handler(lambda m: current_step() and current_step()['type']=='quiz')
 async def quiz_answer(msg: types.Message):
     answers_current[msg.from_user.id] = msg.text.strip().upper()
+    save_state()
     await msg.answer("Ответ записан.")
     await push('answer_in', {'name': msg.from_user.full_name})
 
@@ -70,6 +113,7 @@ async def cmd_next(msg: types.Message):
     answers_current.clear(); votes_current.clear()
     step_idx += 1
     step = current_step()
+    save_state()
     if not step:
         await push('end', {})
         await msg.answer("Конец сценария.")
@@ -88,6 +132,7 @@ async def cmd_show_votes(msg: types.Message):
         if target_name in [p['name'] for p in participants.values()]:
             pid = next(k for k,v in participants.items() if v['name']==target_name)
             participants[pid]['score'] += 1
+    save_state()
     await push('votes_result', tally)
     await msg.answer("Результаты голосования выведены.")
 
@@ -99,6 +144,7 @@ async def cmd_show_quiz(msg: types.Message):
     for uid, ans in answers_current.items():
         if ans.upper() == correct.upper():
             participants[uid]['score'] += step.get('points', 1)
+    save_state()
     await push('quiz_result', {'correct': correct})
     await msg.answer("Итоги квиза выведены.")
 
@@ -109,6 +155,15 @@ async def cmd_rating(msg: types.Message):
     txt = "\n".join(f"{p['name']}: {p['score']}" for p in rating)
     await msg.answer(txt)
     await push('rating', rating)
+
+
+@dp.message_handler(lambda m: m.from_user.id == ADMIN_ID, commands=['reset'])
+async def cmd_reset(msg: types.Message):
+    """Сбросить состояние викторины."""
+    reset_state()
+    await msg.answer("Состояние сброшено.")
+    await push('participants', {'who': []})
+    await push('reset', {})
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

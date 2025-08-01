@@ -12,6 +12,7 @@ class Settings:
     projector_url: str = os.getenv("PROJECTOR_URL", "http://localhost:5000/update")
     server_host: str = os.getenv("SERVER_HOST", "0.0.0.0")
     server_port: int = int(os.getenv("SERVER_PORT", 5000))
+    state_file: str = os.getenv("STATE_FILE", "state.json")
 
 settings = Settings()
 
