@@ -60,8 +60,7 @@ async def name_received(msg: Message):
         await core.send_progress()
     else:
         rows = core.db.get_leaderboard()
-        table = "\n".join(f"{r['place']}. {r['name']}: {r['score']}" for r in rows)
-        await msg.answer("Викторина завершена.\n" + table)
+        await msg.answer("Викторина завершена.\n" + core.format_leaderboard(rows))
 
 
 @router.message(step_filter('open'))
@@ -124,20 +123,8 @@ async def cmd_next(msg: Message):
 @router.message(Command('rating'), lambda m: m.from_user.id == core.ADMIN_ID)
 async def cmd_rating(msg: Message):
     rows = core.db.get_leaderboard()
-    table = "\n".join(f"{r['place']}. {r['name']}: {r['score']}" for r in rows)
-    await msg.answer("Текущий рейтинг:\n" + table)
-    await core.push(
-        'rating',
-        [
-            {
-                'id': r['id'],
-                'name': r['name'],
-                'score': r['score'],
-                'place': r['place'],
-            }
-            for r in rows
-        ],
-    )
+    await msg.answer("Текущий рейтинг:\n" + core.format_leaderboard(rows))
+    await core.broadcast_rating(rows)
 
 
 @router.message(Command('reset'), lambda m: m.from_user.id == core.ADMIN_ID)

@@ -4,7 +4,7 @@ import asyncio
 import html
 import json
 import time
-from typing import Any, List, Dict
+from typing import Any
 
 import aiohttp
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -164,7 +164,7 @@ def record_answer(uid: int, kind: str, text: str) -> None:
     last_answer_ts = time.time()
 
 
-Payload = Dict[str, Any] | List[Dict[str, Any]]
+Payload = dict[str, Any] | list[dict[str, Any]]
 
 
 async def push(event: str, payload: Payload):
@@ -262,21 +262,28 @@ async def notify_vote_results(bot) -> None:
         )
 
 
+def format_leaderboard(rows: list[dict]) -> str:
+    """Return leaderboard as multiline string."""
+    return "\n".join(f"{r['place']}. {r['name']}: {r['score']}" for r in rows)
+
+
+def build_rating(rows: list[dict]) -> list[dict]:
+    """Convert leaderboard rows to rating payload."""
+    return [
+        {'id': r['id'], 'name': r['name'], 'score': r['score'], 'place': r['place']}
+        for r in rows
+    ]
+
+
+async def broadcast_rating(rows: list[dict]) -> None:
+    """Push rating update to projector."""
+    await push('rating', build_rating(rows))
+
+
 async def finish_quiz(bot) -> None:
     """Send final rating and statistics to participants."""
     board = db.get_leaderboard()
-    await push(
-        'rating',
-        [
-            {
-                'id': r['id'],
-                'name': r['name'],
-                'score': r['score'],
-                'place': r['place'],
-            }
-            for r in board
-        ],
-    )
+    await broadcast_rating(board)
     stats = db.get_times_by_user()
     for row in board:
         uid = row['id']
