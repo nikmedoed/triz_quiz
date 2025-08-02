@@ -57,6 +57,7 @@
 <div id="lastAnswer" style="margin-top:0.5rem; display:none"></div>
 <div id="participants"></div>
 <button id="startBtn">Начать</button>
+<button id="resetBtn">Сбросить</button>
 <button id="nextBtn" style="display:none">Далее</button>
 <div id="results"></div>
 
@@ -215,22 +216,31 @@
         await fetch('/next', {method: 'POST'});
     });
 
+    document.getElementById('resetBtn').addEventListener('click', async () => {
+        await fetch('/reset', {method: 'POST'});
+    });
+
     socket.on('started', () => {
         document.getElementById('startBtn').style.display = 'none';
         document.getElementById('nextBtn').style.display = 'inline-block';
         document.getElementById('participants').style.display = 'none';
+        document.getElementById('resetBtn').style.display = 'none';
         hideProgress();
     });
 
     socket.on('end', () => {
         document.getElementById('nextBtn').style.display = 'none';
+        document.getElementById('resetBtn').style.display = 'inline-block';
         hideProgress();
     });
 
     socket.on('reset', () => {
         document.getElementById('startBtn').style.display = 'inline-block';
         document.getElementById('nextBtn').style.display = 'none';
-        document.getElementById('participants').style.display = 'grid';
+        document.getElementById('resetBtn').style.display = 'inline-block';
+        const part = document.getElementById('participants');
+        part.style.display = 'grid';
+        part.innerHTML = '';
         document.getElementById('title').textContent = 'Ожидание начала…';
         document.getElementById('content').textContent = '';
         document.getElementById('results').innerHTML = '';

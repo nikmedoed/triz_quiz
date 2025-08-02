@@ -95,6 +95,17 @@ def next_route():
     return '', 204
 
 
+@app.route('/reset', methods=['POST'])
+def reset_route():
+    global progress_state, rating_state
+    db.reset()
+    progress_state = None
+    rating_state = None
+    socketio.emit('participants', {'who': []})
+    socketio.emit('reset', {})
+    return '', 204
+
+
 @app.route('/avatar/<int:user_id>')
 def avatar(user_id: int):
     data = db.get_avatar(user_id)
