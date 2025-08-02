@@ -54,12 +54,6 @@ async def push(event: str, payload: dict):
 # ---------- регистрация ----------------------------
 @dp.message(Command('start'))
 async def start(msg: Message):
-    if db.get_stage() != 1:
-        await msg.answer("Регистрация завершена.")
-        return
-    if msg.from_user.id in participants or msg.from_user.id in pending_names:
-        await msg.answer("Вы уже зарегистрированы.")
-        return
     pending_names.add(msg.from_user.id)
     await msg.answer("Введите ваше имя:")
 
@@ -72,10 +66,10 @@ async def name_received(msg: Message):
     if photos.total_count:
         file = await bot.get_file(photos.photos[0][-1].file_id)
         avatar = await bot.download_file(file.file_path)
-    participants[user.id] = {"name": name, "score": 0}
+    score = participants.get(user.id, {}).get("score", 0)
+    participants[user.id] = {"name": name, "score": score}
     db.add_participant(user.id, name, avatar)
     pending_names.remove(user.id)
-    await msg.answer("Вы зарегистрированы! Ожидайте вопросов.")
     await push(
         "participants",
         {
@@ -84,6 +78,26 @@ async def name_received(msg: Message):
             ]
         },
     )
+    stage = db.get_stage()
+    if stage == 1:
+        await msg.answer("Вы зарегистрированы! Ожидайте начала.")
+    elif stage == 2:
+        step = current_step()
+        if step:
+            text = f"Сейчас идёт шаг: {step['title']}"
+            if step.get('description'):
+                text += f"\n{step['description']}"
+            if step.get('options'):
+                text += "\n" + "\n".join(
+                    f"{i+1}. {opt}" for i, opt in enumerate(step['options'])
+                )
+            await msg.answer(text)
+        else:
+            await msg.answer("Викторина уже началась, ожидайте вопросов.")
+    else:
+        rating = db.get_rating()
+        table = "\n".join(f"{n}: {s}" for n, s in rating)
+        await msg.answer("Викторина завершена.\n" + table)
 
 # ---------- ответы открытого вопроса ---------------
 @dp.message(lambda m: db.get_stage() == 2 and current_step() and current_step()['type']=='open')

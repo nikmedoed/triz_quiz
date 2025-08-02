@@ -38,5 +38,7 @@ Telegram for bot updates.
 
 Participants join by messaging `/start` to the bot. It asks each user for a
 display name, caches their avatar, and stores everything in the SQLite
-database. The projector page lists registered players in a shrinking grid and
-features a **Начать** button to move from registration to the quiz.
+database. Sending `/start` again later lets a participant change their name or
+avatar and the bot replies with the current quiz step. The projector page lists
+registered players in a shrinking grid and features a **Начать** button to move
+from registration to the quiz.

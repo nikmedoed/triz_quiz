@@ -43,12 +43,18 @@ class Database:
         self.conn.commit()
 
     def add_participant(
-        self, user_id: int, name: str, avatar: bytes | None = None, score: int = 0
+        self, user_id: int, name: str, avatar: bytes | None = None
     ) -> None:
+        """Insert or update a participant without resetting their score."""
         cur = self.conn.cursor()
         cur.execute(
-            "INSERT OR REPLACE INTO participants (id, name, score, avatar) VALUES (?, ?, ?, ?)",
-            (user_id, name, score, avatar),
+            (
+                "INSERT INTO participants (id, name, avatar) VALUES (?, ?, ?) "
+                "ON CONFLICT(id) DO UPDATE SET "
+                "name=excluded.name, "
+                "avatar=COALESCE(excluded.avatar, participants.avatar)"
+            ),
+            (user_id, name, avatar),
         )
         self.conn.commit()
 
