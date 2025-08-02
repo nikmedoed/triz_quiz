@@ -25,6 +25,7 @@ participants: dict[int, dict] = {}
 answers_current: dict[int, str] = {}
 votes_current: dict[int, str] = {}
 ADMIN_ID = settings.admin_id  # ведущий
+pending_names: set[int] = set()
 
 
 def load_state() -> None:
@@ -53,14 +54,27 @@ async def push(event: str, payload: dict):
 # ---------- регистрация ----------------------------
 @dp.message(Command('start'))
 async def start(msg: Message):
+    if db.get_stage() != 1:
+        await msg.answer("Регистрация завершена.")
+        return
+    if msg.from_user.id in participants or msg.from_user.id in pending_names:
+        await msg.answer("Вы уже зарегистрированы.")
+        return
+    pending_names.add(msg.from_user.id)
+    await msg.answer("Введите ваше имя:")
+
+@dp.message(lambda m: m.from_user.id in pending_names)
+async def name_received(msg: Message):
     user = msg.from_user
+    name = msg.text.strip()
     avatar = None
     photos = await bot.get_user_profile_photos(user.id, limit=1)
     if photos.total_count:
         file = await bot.get_file(photos.photos[0][-1].file_id)
         avatar = await bot.download_file(file.file_path)
-    participants[user.id] = {"name": user.full_name, "score": 0}
-    db.add_participant(user.id, user.full_name, avatar)
+    participants[user.id] = {"name": name, "score": 0}
+    db.add_participant(user.id, name, avatar)
+    pending_names.remove(user.id)
     await msg.answer("Вы зарегистрированы! Ожидайте вопросов.")
     await push(
         "participants",
@@ -72,7 +86,7 @@ async def start(msg: Message):
     )
 
 # ---------- ответы открытого вопроса ---------------
-@dp.message(lambda m: current_step() and current_step()['type']=='open')
+@dp.message(lambda m: db.get_stage() == 2 and current_step() and current_step()['type']=='open')
 async def open_answer(msg: Message):
     answers_current[msg.from_user.id] = msg.text.strip()[:200]
     db.record_response(msg.from_user.id, step_idx, 'open', answers_current[msg.from_user.id])
@@ -80,7 +94,7 @@ async def open_answer(msg: Message):
     await push('answer_in', {'name': msg.from_user.full_name})
 
 # ---------- голосование ----------------------------
-@dp.message(lambda m: current_step() and current_step()['type']=='vote')
+@dp.message(lambda m: db.get_stage() == 2 and current_step() and current_step()['type']=='vote')
 async def vote(msg: Message):
     target = msg.text.strip()
     if target == msg.from_user.full_name:
@@ -92,7 +106,7 @@ async def vote(msg: Message):
         await push('vote_in', {'voter': msg.from_user.full_name})
 
 # ---------- вариант-квиз ---------------------------
-@dp.message(lambda m: current_step() and current_step()['type']=='quiz')
+@dp.message(lambda m: db.get_stage() == 2 and current_step() and current_step()['type']=='quiz')
 async def quiz_answer(msg: Message):
     answers_current[msg.from_user.id] = msg.text.strip().upper()
     db.record_response(msg.from_user.id, step_idx, 'quiz', answers_current[msg.from_user.id])

@@ -32,6 +32,13 @@ def update():
     return '', 204
 
 
+@app.route('/start', methods=['POST'])
+def start_quiz():
+    db.set_stage(2)
+    socketio.emit('started', {})
+    return '', 204
+
+
 @app.route('/avatar/<int:user_id>')
 def avatar(user_id: int):
     data = db.get_avatar(user_id)

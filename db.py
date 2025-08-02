@@ -105,9 +105,24 @@ class Database:
         )
         self.conn.commit()
 
+    def get_stage(self) -> int:
+        cur = self.conn.cursor()
+        cur.execute("SELECT value FROM state WHERE key = 'stage'")
+        row = cur.fetchone()
+        return int(row["value"]) if row else 1
+
+    def set_stage(self, stage: int) -> None:
+        cur = self.conn.cursor()
+        cur.execute(
+            "REPLACE INTO state (key, value) VALUES ('stage', ?)", (str(stage),)
+        )
+        self.conn.commit()
+
     def reset(self) -> None:
         cur = self.conn.cursor()
         cur.execute("DELETE FROM participants")
         cur.execute("DELETE FROM responses")
         cur.execute("DELETE FROM state")
         self.conn.commit()
+        self.set_stage(1)
+        self.set_step(0)

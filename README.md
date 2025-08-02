@@ -33,3 +33,10 @@ python main.py
 
 The command launches the Flask web interface in the background and begins polling
 Telegram for bot updates.
+
+## Registration
+
+Participants join by messaging `/start` to the bot. It asks each user for a
+display name, caches their avatar, and stores everything in the SQLite
+database. The projector page lists registered players in a shrinking grid and
+features a **Начать** button to move from registration to the quiz.

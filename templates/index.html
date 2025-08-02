@@ -9,6 +9,9 @@
     #content { font-size: 1.3rem; white-space: pre-wrap; }
     .highlight { background: #ffd; padding: 0.2rem 0.4rem; border-radius: 4px; }
     #results { margin-top: 2rem; }
+    #participants { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.5rem; }
+    .participant { text-align: center; font-size: 0.9rem; }
+    .participant img { width: 80px; height: 80px; object-fit: cover; }
   </style>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
@@ -16,6 +19,7 @@
   <div id="title">Ожидание начала…</div>
   <div id="content"></div>
   <div id="participants"></div>
+  <button id="startBtn">Начать</button>
   <div id="results"></div>
 
 <script>
@@ -58,8 +62,16 @@ socket.on('participants', data => {
   const div = document.getElementById('participants');
   div.innerHTML = '';
   data.who.forEach(p => {
-    div.innerHTML += `<div><img src="/avatar/${p.id}" width="50" height="50"/> ${p.name}</div>`;
+    div.innerHTML += `<div class="participant"><img src="/avatar/${p.id}"/><div>${p.name}</div></div>`;
   });
+});
+
+document.getElementById('startBtn').addEventListener('click', async () => {
+  await fetch('/start', {method: 'POST'});
+});
+
+socket.on('started', () => {
+  document.getElementById('startBtn').style.display = 'none';
 });
 </script>
 </body>
