@@ -1,24 +1,39 @@
 import sqlite3
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 class Database:
     """Lightweight SQLite wrapper for storing quiz data."""
 
     def __init__(self, path: str):
-        self.conn = sqlite3.connect(path)
+        self.conn = sqlite3.connect(path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
-        self._init_db()
+        self._apply_migrations()
 
-    def _init_db(self) -> None:
+    def _apply_migrations(self) -> None:
+        """Apply pending schema migrations in order."""
         cur = self.conn.cursor()
-        cur.execute("""
+        migrations = [self._migration_initial, self._migration_add_avatar]
+        cur.execute("PRAGMA user_version")
+        version = cur.fetchone()[0]
+        for idx in range(version, len(migrations)):
+            migrations[idx](cur)
+            cur.execute(f"PRAGMA user_version = {idx + 1}")
+            self.conn.commit()
+
+    def _migration_initial(self, cur: sqlite3.Cursor) -> None:
+        """Create base tables if they do not exist."""
+        cur.execute(
+            """
             CREATE TABLE IF NOT EXISTS participants (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                score INTEGER NOT NULL DEFAULT 0
+                score INTEGER NOT NULL DEFAULT 0,
+                avatar BLOB
             )
-        """)
-        cur.execute("""
+            """
+        )
+        cur.execute(
+            """
             CREATE TABLE IF NOT EXISTS responses (
                 user_id INTEGER,
                 step INTEGER,
@@ -26,14 +41,37 @@ class Database:
                 value TEXT,
                 PRIMARY KEY(user_id, step, kind)
             )
-        """)
-        self.conn.commit()
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS state (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+            """
+        )
 
-    def add_participant(self, user_id: int, name: str, score: int = 0) -> None:
+    def _migration_add_avatar(self, cur: sqlite3.Cursor) -> None:
+        """Ensure the avatar column exists for participants."""
+        cur.execute("PRAGMA table_info(participants)")
+        columns = [row[1] for row in cur.fetchall()]
+        if "avatar" not in columns:
+            cur.execute("ALTER TABLE participants ADD COLUMN avatar BLOB")
+
+    def add_participant(
+        self, user_id: int, name: str, avatar: bytes | None = None
+    ) -> None:
+        """Insert or update a participant without resetting their score."""
         cur = self.conn.cursor()
         cur.execute(
-            "INSERT OR REPLACE INTO participants (id, name, score) VALUES (?, ?, ?)",
-            (user_id, name, score),
+            (
+                "INSERT INTO participants (id, name, avatar) VALUES (?, ?, ?) "
+                "ON CONFLICT(id) DO UPDATE SET "
+                "name=excluded.name, "
+                "avatar=COALESCE(excluded.avatar, participants.avatar)"
+            ),
+            (user_id, name, avatar),
         )
         self.conn.commit()
 
@@ -58,8 +96,56 @@ class Database:
         cur.execute("SELECT name, score FROM participants ORDER BY score DESC")
         return [(row["name"], row["score"]) for row in cur.fetchall()]
 
+    def get_participants(self) -> List[sqlite3.Row]:
+        cur = self.conn.cursor()
+        cur.execute("SELECT * FROM participants")
+        return cur.fetchall()
+
+    def get_avatar(self, user_id: int) -> bytes | None:
+        cur = self.conn.cursor()
+        cur.execute("SELECT avatar FROM participants WHERE id = ?", (user_id,))
+        row = cur.fetchone()
+        return row["avatar"] if row and row["avatar"] is not None else None
+
+    def get_responses(self, step: int, kind: str) -> Dict[int, str]:
+        cur = self.conn.cursor()
+        cur.execute(
+            "SELECT user_id, value FROM responses WHERE step = ? AND kind = ?",
+            (step, kind),
+        )
+        return {row["user_id"]: row["value"] for row in cur.fetchall()}
+
+    def get_step(self) -> int:
+        cur = self.conn.cursor()
+        cur.execute("SELECT value FROM state WHERE key = 'step'")
+        row = cur.fetchone()
+        return int(row["value"]) if row else 0
+
+    def set_step(self, step: int) -> None:
+        cur = self.conn.cursor()
+        cur.execute(
+            "REPLACE INTO state (key, value) VALUES ('step', ?)", (str(step),)
+        )
+        self.conn.commit()
+
+    def get_stage(self) -> int:
+        cur = self.conn.cursor()
+        cur.execute("SELECT value FROM state WHERE key = 'stage'")
+        row = cur.fetchone()
+        return int(row["value"]) if row else 1
+
+    def set_stage(self, stage: int) -> None:
+        cur = self.conn.cursor()
+        cur.execute(
+            "REPLACE INTO state (key, value) VALUES ('stage', ?)", (str(stage),)
+        )
+        self.conn.commit()
+
     def reset(self) -> None:
         cur = self.conn.cursor()
         cur.execute("DELETE FROM participants")
         cur.execute("DELETE FROM responses")
+        cur.execute("DELETE FROM state")
         self.conn.commit()
+        self.set_stage(1)
+        self.set_step(0)
