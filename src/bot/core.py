@@ -4,6 +4,7 @@ import asyncio
 import html
 import json
 import time
+from typing import Any, List, Dict
 
 import aiohttp
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -149,7 +150,19 @@ def format_step(step: dict) -> str:
     return text
 
 
-async def push(event: str, payload: dict):
+def record_answer(uid: int, kind: str, text: str) -> None:
+    """Store answer in memory and database."""
+    global last_answer_ts
+    delta = time.time() - step_start_ts
+    answers_current[uid] = {'text': text, 'time': delta}
+    db.record_response(uid, step_idx, kind, json.dumps({'text': text, 'time': delta}))
+    last_answer_ts = time.time()
+
+
+Payload = Dict[str, Any] | List[Dict[str, Any]]
+
+
+async def push(event: str, payload: Payload):
     """Отправка данных на проектор."""
     async with aiohttp.ClientSession() as session:
         await session.post(PROJECTOR_URL, json={'event': event, 'payload': payload})
