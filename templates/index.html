@@ -116,7 +116,8 @@ socket.on('vote_result', data => {
   let html = '';
   data.ideas.forEach(idea => {
     html += `<div style="margin-bottom:1rem"><strong>${idea.id}. ${idea.text}</strong> ` +
-      `<span class="highlight">${idea.votes.length}</span><br/>` +
+      `<span class="highlight">${idea.votes.length}</span> ` +
+      `<span style="color:#666">(${formatTime(Math.floor(idea.time))})</span><br/>` +
       `<img src="/avatar/${idea.author.id}" width="40" height="40"/> ${idea.author.name}`;
     if (idea.votes.length) {
       html += '<div>';
