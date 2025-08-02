@@ -174,12 +174,46 @@ async def send_progress():
     await push('progress', {'answered': answered, 'total': len(participants), 'ts': ts})
 
 
+async def show_rating() -> None:
+    board = db.get_leaderboard()
+    await push(
+        'rating',
+        [
+            {
+                'id': r['id'],
+                'name': r['name'],
+                'score': r['score'],
+                'place': r['place'],
+            }
+            for r in board
+        ],
+    )
+    stats = db.get_times_by_user()
+    for row in board:
+        uid = row['id']
+        o = stats.get(uid, {}).get('open', [])
+        q = stats.get(uid, {}).get('quiz', [])
+        avg_open = sum(o) / len(o) if o else 0
+        avg_quiz = sum(q) / len(q) if q else 0
+        text = (
+            "Викторина завершена.\n\n"
+            f"Вам набрано баллов: {row['score']}.\n"
+            f"Ваше место: {row['place']}.\n\n"
+            "Среднее время ответа:\n"
+            f"{avg_open:.1f} c - открытый вопрос\n"
+            f"{avg_quiz:.1f} c - выбор варианта"
+        )
+        await bot.send_message(uid, text)
+
+
 async def watch_steps():
     global step_idx, answers_current, votes_current, last_answer_ts, step_start_ts, ideas, vote_gains
     last = step_idx
+    last_stage = db.get_stage()
     while True:
         await asyncio.sleep(1)
         cur = db.get_step()
+        stage = db.get_stage()
         if cur != last:
             old_step = current_step()
             last = cur
@@ -268,40 +302,11 @@ async def watch_steps():
                             await bot.send_message(uid, text, reply_markup=kb)
                         else:
                             await bot.send_message(uid, text)
-            else:
-                if db.get_stage() == 3:
-                    board = db.get_leaderboard()
-                    await push(
-                        'rating',
-                        [
-                            {
-                                'id': r['id'],
-                                'name': r['name'],
-                                'score': r['score'],
-                                'place': r['place'],
-                            }
-                            for r in board
-                        ],
-                    )
-                    stats = db.get_times_by_user()
-                    for row in board:
-                        uid = row['id']
-                        o = stats.get(uid, {}).get('open', [])
-                        q = stats.get(uid, {}).get('quiz', [])
-                        avg_open = sum(o) / len(o) if o else 0
-                        avg_quiz = sum(q) / len(q) if q else 0
-                        text = (
-                            "Викторина завершена.\n\n"
-                            f"Вам набрано баллов: {row['score']}.\n"
-                            f"Ваше место: {row['place']}.\n\n"
-                            "Среднее время ответа:\n"
-                            f"{avg_open:.1f} c - открытый вопрос\n"
-                            f"{avg_quiz:.1f} c - выбор варианта"
-                        )
-                        await bot.send_message(uid, text)
-                    return
-                else:
-                    pass
+        if stage != last_stage:
+            last_stage = stage
+            if stage == 3:
+                await show_rating()
+                return
 
 # ---------- регистрация ----------------------------
 @dp.message(Command('start'))
@@ -431,18 +436,9 @@ async def cmd_rating(msg: Message):
     rows = db.get_leaderboard()
     txt = "\n".join(f"{r['place']}. {r['name']}: {r['score']}" for r in rows)
     await msg.answer(txt)
-    await push(
-        'rating',
-        [
-            {
-                'id': r['id'],
-                'name': r['name'],
-                'score': r['score'],
-                'place': r['place'],
-            }
-            for r in rows
-        ],
-    )
+    base = PROJECTOR_URL.rsplit('/', 1)[0]
+    async with aiohttp.ClientSession() as session:
+        await session.post(f"{base}/rating")
 
 
 @dp.message(Command('reset'), lambda m: m.from_user.id == ADMIN_ID)

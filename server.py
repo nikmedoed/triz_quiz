@@ -70,7 +70,6 @@ def next_step() -> None:
     if step < len(SCENARIO):
         broadcast_step(step)
     else:
-        db.set_stage(3)
         progress_state = None
         socketio.emit('end', {})
 
@@ -89,6 +88,14 @@ def start_quiz():
 @app.route('/next', methods=['POST'])
 def next_route():
     next_step()
+    return '', 204
+
+
+@app.route('/rating', methods=['POST'])
+def rating_route():
+    db.set_stage(3)
+    global rating_state
+    rating_state = None
     return '', 204
 
 

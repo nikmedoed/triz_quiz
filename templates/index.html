@@ -24,6 +24,7 @@
   <div id="participants"></div>
   <button id="startBtn">Начать</button>
   <button id="nextBtn" style="display:none">Далее</button>
+  <button id="ratingBtn" style="display:none">Итоговый рейтинг</button>
   <div id="results"></div>
 
 <script>
@@ -163,6 +164,7 @@ socket.on('rating', rating => {
       `</div>`;
   });
   div.innerHTML = html;
+  document.getElementById('ratingBtn').style.display = 'none';
 });
 
 socket.on('participants', data => {
@@ -181,21 +183,29 @@ document.getElementById('nextBtn').addEventListener('click', async () => {
   await fetch('/next', {method: 'POST'});
 });
 
+document.getElementById('ratingBtn').addEventListener('click', async () => {
+  document.getElementById('ratingBtn').style.display = 'none';
+  await fetch('/rating', {method: 'POST'});
+});
+
 socket.on('started', () => {
   document.getElementById('startBtn').style.display = 'none';
   document.getElementById('nextBtn').style.display = 'inline-block';
   document.getElementById('participants').style.display = 'none';
+  document.getElementById('ratingBtn').style.display = 'none';
   hideProgress();
 });
 
 socket.on('end', () => {
   document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('ratingBtn').style.display = 'inline-block';
   hideProgress();
 });
 
 socket.on('reset', () => {
   document.getElementById('startBtn').style.display = 'inline-block';
   document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('ratingBtn').style.display = 'none';
   document.getElementById('participants').style.display = 'grid';
   document.getElementById('title').textContent = 'Ожидание начала…';
   document.getElementById('content').textContent = '';
