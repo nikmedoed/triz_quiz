@@ -5,9 +5,9 @@ from io import BytesIO
 from flask import Flask, render_template, request, abort, send_file
 from flask_socketio import SocketIO, emit
 
-from config import settings
-from db import Database
-from resources import load_scenario
+from .config import settings
+from .db import Database
+from .resources import load_scenario
 
 HOST = settings.server_host
 PORT = settings.server_port
@@ -53,11 +53,9 @@ def broadcast_step(idx: int) -> None:
     if 0 <= idx < len(SCENARIO):
         step = dict(SCENARIO[idx])
         if step.get('type') == 'vote':
-            answers = db.get_open_answers(idx - 1)
-            answers.sort(key=lambda a: a['time'])
             step['ideas'] = [
-                {"id": i + 1, "text": a["text"], "time": a["time"], "user": a["user_id"]}
-                for i, a in enumerate(answers)
+                {"id": idea["id"], "text": idea["text"], "time": idea["time"], "user": idea["user_id"]}
+                for idea in db.get_ideas(idx - 1)
             ]
         socketio.emit('step', step)
     # Do not emit anything if scenario index is out of range.
