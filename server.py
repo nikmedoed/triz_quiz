@@ -15,6 +15,7 @@ PORT = settings.server_port
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")       # simple CORS for local network
 db = Database(settings.db_file)
+progress_state = None
 
 with open('scenario.json', encoding='utf-8') as f:
     SCENARIO = json.load(f)
@@ -31,8 +32,15 @@ def update():
     """
     if not request.is_json:
         abort(415)
+    global progress_state
     data = request.get_json()
-    socketio.emit(data['event'], data['payload'])
+    event = data['event']
+    payload = data['payload']
+    socketio.emit(event, payload)
+    if event == 'progress':
+        progress_state = None if payload.get('inactive') else payload
+    elif event == 'reset':
+        progress_state = None
     return '', 204
 
 
@@ -51,7 +59,9 @@ def next_step() -> None:
 
 @app.route('/start', methods=['POST'])
 def start_quiz():
+    global progress_state
     db.set_stage(2)
+    progress_state = None
     socketio.emit('started', {})
     next_step()
     return '', 204
@@ -82,6 +92,8 @@ def handle_connect():
     else:
         emit("started", {})
         broadcast_step(db.get_step())
+        if progress_state:
+            emit('progress', progress_state)
 
 
 def run_server():

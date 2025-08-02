@@ -18,6 +18,9 @@
 <body>
   <div id="title">Ожидание начала…</div>
   <div id="content"></div>
+  <div id="timer" style="margin-top:1rem; font-size:1.2rem; display:none"></div>
+  <div id="answerStats" style="margin-top:0.5rem; display:none"></div>
+  <div id="lastAnswer" style="margin-top:0.5rem; display:none"></div>
   <div id="participants"></div>
   <button id="startBtn">Начать</button>
   <button id="nextBtn" style="display:none">Далее</button>
@@ -25,6 +28,46 @@
 
 <script>
 const socket = io();
+
+function formatTime(sec) {
+  const m = String(Math.floor(sec/60)).padStart(2,'0');
+  const s = String(sec%60).padStart(2,'0');
+  return `${m}:${s}`;
+}
+
+let timerId, sinceId, lastTs = Date.now();
+
+function hideProgress() {
+  ['timer','answerStats','lastAnswer'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  clearInterval(timerId);
+  clearInterval(sinceId);
+}
+
+function startTimer() {
+  clearInterval(timerId);
+  let remaining = 300;
+  const div = document.getElementById('timer');
+  div.style.display = 'block';
+  div.textContent = formatTime(remaining);
+  timerId = setInterval(() => {
+    remaining--;
+    if (remaining < 0) { clearInterval(timerId); return; }
+    div.textContent = formatTime(remaining);
+  }, 1000);
+}
+
+function updateSince(ts) {
+  lastTs = ts * 1000;
+  clearInterval(sinceId);
+  const div = document.getElementById('lastAnswer');
+  div.style.display = 'block';
+  sinceId = setInterval(() => {
+    const diff = Math.floor((Date.now() - lastTs) / 1000);
+    div.textContent = `Последний ответ: ${formatTime(diff)} назад`;
+  }, 1000);
+}
 
 socket.on('step', step => {
   document.getElementById('title').textContent = step.title;
@@ -36,6 +79,21 @@ socket.on('step', step => {
     document.getElementById('content').textContent = step.content || '';
   }
   document.getElementById('results').innerHTML = '';
+  if (['quiz','open','vote'].includes(step.type)) {
+    startTimer();
+  } else {
+    hideProgress();
+  }
+});
+
+socket.on('progress', data => {
+  if (data.inactive) {
+    hideProgress();
+    return;
+  }
+  document.getElementById('answerStats').style.display = 'block';
+  document.getElementById('answerStats').textContent = `Ответов: ${data.answered}/${data.total}`;
+  updateSince(data.ts);
 });
 
 socket.on('votes_result', tally => {
@@ -79,10 +137,12 @@ socket.on('started', () => {
   document.getElementById('startBtn').style.display = 'none';
   document.getElementById('nextBtn').style.display = 'inline-block';
   document.getElementById('participants').style.display = 'none';
+  hideProgress();
 });
 
 socket.on('end', () => {
   document.getElementById('nextBtn').style.display = 'none';
+  hideProgress();
 });
 
 socket.on('reset', () => {
@@ -92,6 +152,7 @@ socket.on('reset', () => {
   document.getElementById('title').textContent = 'Ожидание начала…';
   document.getElementById('content').textContent = '';
   document.getElementById('results').innerHTML = '';
+  hideProgress();
 });
 </script>
 </body>

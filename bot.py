@@ -1,6 +1,6 @@
 """Telegram-bot for TRIZ-quiz."""
 
-import asyncio, aiohttp, json, logging, html
+import asyncio, aiohttp, json, logging, html, time
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -26,6 +26,7 @@ answers_current: dict[int, str] = {}
 votes_current: dict[int, str] = {}
 ADMIN_ID = settings.admin_id  # ведущий
 pending_names: set[int] = set()
+last_answer_ts = time.time()
 
 
 def load_state() -> None:
@@ -52,13 +53,13 @@ def format_step(step: dict) -> str:
     t = step.get("type")
     if t == "open":
         header = (
-            "<b>Предложите идею решения проблемной ситуации (открытый ответ)</b>\n\n"
+            "<b>Предложите идею решения проблемной ситуации (открытый ответ)</b>\n\n\n"
         )
         body = html.escape(step.get("title", ""))
         if step.get("description"):
-            body += f"\n{html.escape(step['description'])}"
+            body += f"\n\n{html.escape(step['description'])}"
         tail = (
-            "\n\n<i>Пришлите ваш ответ в этот чат.\n"
+            "\n\n\n<i>Пришлите ваш ответ в этот чат.\n"
             "- Учитывается один последний ответ\n"
             "- В свободной форме\n"
             "- Лаконично, важна скорость\n"
@@ -66,15 +67,15 @@ def format_step(step: dict) -> str:
         )
         return header + body + tail
     if t == "quiz":
-        header = "<b>Выберите один вариант ответа</b>\n\n"
+        header = "<b>Выберите один вариант ответа</b>\n\n\n"
         body = html.escape(step.get("title", ""))
         options = step.get("options", [])
         if options:
-            body += "\n" + "\n".join(
+            body += "\n\n" + "\n".join(
                 f"{i+1}. {html.escape(opt)}" for i, opt in enumerate(options)
             )
         tail = (
-            "\n\n<i>Выберите\n"
+            "\n\n\n<i>Выберите\n"
             "- Наиболее подходящий вариант\n"
             "- Быстро, пока есть время\n"
             "- Можно изменить выбор</i>"
@@ -91,8 +92,20 @@ async def push(event: str, payload: dict):
         await session.post(PROJECTOR_URL, json={'event': event, 'payload': payload})
 
 
+async def send_progress():
+    step = current_step()
+    if not step or step.get("type") not in ("open", "quiz", "vote"):
+        await push('progress', {'inactive': True})
+        return
+    if step['type'] == 'vote':
+        answered = len(votes_current)
+    else:
+        answered = len(answers_current)
+    await push('progress', {'answered': answered, 'total': len(participants), 'ts': last_answer_ts})
+
+
 async def watch_steps():
-    global step_idx, answers_current, votes_current
+    global step_idx, answers_current, votes_current, last_answer_ts
     last = step_idx
     while True:
         await asyncio.sleep(1)
@@ -102,6 +115,11 @@ async def watch_steps():
             step_idx = cur
             answers_current.clear(); votes_current.clear()
             step = current_step()
+            if step and step.get("type") in ("open", "quiz", "vote"):
+                last_answer_ts = time.time()
+                await send_progress()
+            else:
+                await push('progress', {'inactive': True})
             if step:
                 text = format_step(step)
                 for uid in participants:
@@ -148,6 +166,7 @@ async def name_received(msg: Message):
             await msg.answer(format_step(step))
         else:
             await msg.answer("Викторина уже началась, ожидайте вопросов.")
+        await send_progress()
     else:
         rating = db.get_rating()
         table = "\n".join(f"{n}: {s}" for n, s in rating)
@@ -156,9 +175,15 @@ async def name_received(msg: Message):
 # ---------- ответы открытого вопроса ---------------
 @dp.message(lambda m: db.get_stage() == 2 and current_step() and current_step()['type']=='open')
 async def open_answer(msg: Message):
+    global last_answer_ts
     answers_current[msg.from_user.id] = msg.text.strip()[:200]
     db.record_response(msg.from_user.id, step_idx, 'open', answers_current[msg.from_user.id])
-    await msg.answer("Ответ принят!")
+    last_answer_ts = time.time()
+    await msg.answer(
+        "Идея принята!\n\n<i>Вы можете изменить ответ, отправив новое сообщение. "
+        "Редактирование сообщений не поддерживается, скопируйте, измените и пришлите новое</i>"
+    )
+    await send_progress()
     await push('answer_in', {'name': msg.from_user.full_name})
 
 # ---------- голосование ----------------------------
@@ -168,17 +193,23 @@ async def vote(msg: Message):
     if target == msg.from_user.full_name:
         await msg.answer("За себя голосовать нельзя!")
     else:
+        global last_answer_ts
         votes_current[msg.from_user.id] = target
         db.record_response(msg.from_user.id, step_idx, 'vote', target)
+        last_answer_ts = time.time()
         await msg.answer("Голос учтён.")
+        await send_progress()
         await push('vote_in', {'voter': msg.from_user.full_name})
 
 # ---------- вариант-квиз ---------------------------
 @dp.message(lambda m: db.get_stage() == 2 and current_step() and current_step()['type']=='quiz')
 async def quiz_answer(msg: Message):
+    global last_answer_ts
     answers_current[msg.from_user.id] = msg.text.strip().upper()
     db.record_response(msg.from_user.id, step_idx, 'quiz', answers_current[msg.from_user.id])
+    last_answer_ts = time.time()
     await msg.answer("Ответ записан.")
+    await send_progress()
     await push('answer_in', {'name': msg.from_user.full_name})
 
 # ---------- команды ведущего -----------------------
