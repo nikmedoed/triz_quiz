@@ -13,6 +13,14 @@ from . import core
 router = Router()
 
 
+def step_filter(step_type: str):
+    def check(_):
+        step = core.current_step()
+        return core.db.get_stage() == 2 and step and step.get('type') == step_type
+
+    return check
+
+
 @router.message(Command("start"))
 async def start(msg: Message):
     core.pending_names.add(msg.from_user.id)
@@ -52,23 +60,13 @@ async def name_received(msg: Message):
         await core.send_progress()
     else:
         rows = core.db.get_leaderboard()
-        table = "\n".join(f"{r['place']}. {r['name']}: {r['score']}" for r in rows)
-        await msg.answer("Викторина завершена.\n" + table)
+        await msg.answer("Викторина завершена.\n" + core.format_leaderboard(rows))
 
 
-@router.message(
-    lambda m: core.db.get_stage() == 2
-              and core.current_step()
-              and core.current_step()['type'] == 'open'
-)
+@router.message(step_filter('open'))
 async def open_answer(msg: Message):
     text = msg.text.strip()[:200]
-    delta = time.time() - core.step_start_ts
-    core.answers_current[msg.from_user.id] = {'text': text, 'time': delta}
-    core.db.record_response(
-        msg.from_user.id, core.step_idx, 'open', json.dumps({'text': text, 'time': delta})
-    )
-    core.last_answer_ts = time.time()
+    core.record_answer(msg.from_user.id, 'open', text)
     await msg.answer(
         "Идея принята!\n\n<i>Вы можете изменить ответ, отправив новое сообщение. "
         "Редактирование сообщений не поддерживается, скопируйте, измените и пришлите новое</i>"
@@ -77,12 +75,7 @@ async def open_answer(msg: Message):
     await core.push('answer_in', {'name': msg.from_user.full_name})
 
 
-@router.callback_query(
-    lambda c: core.db.get_stage() == 2
-              and core.current_step()
-              and core.current_step()['type'] == 'vote'
-              and c.data.startswith('vote:')
-)
+@router.callback_query(step_filter('vote'), lambda c: c.data.startswith('vote:'))
 async def vote(cb: CallbackQuery):
     idea_id = int(cb.data.split(':')[1])
     idea = next((i for i in core.ideas if i['id'] == idea_id), None)
@@ -103,24 +96,14 @@ async def vote(cb: CallbackQuery):
     await core.push('vote_in', {'voter': cb.from_user.full_name})
 
 
-@router.callback_query(
-    lambda c: core.db.get_stage() == 2
-              and core.current_step()
-              and core.current_step()['type'] == 'quiz'
-              and c.data.startswith('quiz:')
-)
+@router.callback_query(step_filter('quiz'), lambda c: c.data.startswith('quiz:'))
 async def quiz_answer(cb: CallbackQuery):
     ans = cb.data.split(':')[1]
     prev = core.answers_current.get(cb.from_user.id, {}).get('text')
     if prev == ans:
         await cb.answer("Этот вариант уже выбран.")
         return
-    delta = time.time() - core.step_start_ts
-    core.answers_current[cb.from_user.id] = {'text': ans, 'time': delta}
-    core.db.record_response(
-        cb.from_user.id, core.step_idx, 'quiz', json.dumps({'text': ans, 'time': delta})
-    )
-    core.last_answer_ts = time.time()
+    core.record_answer(cb.from_user.id, 'quiz', ans)
     step = core.current_step()
     kb = core.quiz_keyboard_for(step, cb.from_user.id)
     await cb.message.edit_reply_markup(reply_markup=kb)
@@ -140,20 +123,8 @@ async def cmd_next(msg: Message):
 @router.message(Command('rating'), lambda m: m.from_user.id == core.ADMIN_ID)
 async def cmd_rating(msg: Message):
     rows = core.db.get_leaderboard()
-    table = "\n".join(f"{r['place']}. {r['name']}: {r['score']}" for r in rows)
-    await msg.answer("Текущий рейтинг:\n" + table)
-    await core.push(
-        'rating',
-        [
-            {
-                'id': r['id'],
-                'name': r['name'],
-                'score': r['score'],
-                'place': r['place'],
-            }
-            for r in rows
-        ],
-    )
+    await msg.answer("Текущий рейтинг:\n" + core.format_leaderboard(rows))
+    await core.broadcast_rating(rows)
 
 
 @router.message(Command('reset'), lambda m: m.from_user.id == core.ADMIN_ID)
