@@ -1,23 +1,15 @@
-"""Telegram-bot for TRIZ-quiz."""
+"""Quiz state and helper routines."""
 
-import asyncio, aiohttp, json, logging, html, time
-from aiogram import Bot, Dispatcher
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
-from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.fsm.storage.memory import MemoryStorage
+import asyncio, aiohttp, json, html, time
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from .config import settings
-from .db import Database
-from .resources import load_scenario
+from config import settings
+from db import Database
+from resources import load_scenario
 
-bot = Bot(settings.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-dp = Dispatcher(storage=MemoryStorage())  # in-memory FSM
 PROJECTOR_URL = settings.projector_url
-db = Database(settings.db_file)
 
-# ---------- простой статичный сценарий -------------
+db = Database(settings.db_file)
 SCENARIO = load_scenario()
 
 step_idx = -1  # текущий шаг сценария
@@ -31,13 +23,14 @@ pending_names: set[int] = set()
 last_answer_ts = time.time()
 step_start_ts = time.time()
 
+
 def current_step():
     return SCENARIO[step_idx] if 0 <= step_idx < len(SCENARIO) else None
 
 
 def load_state() -> None:
     """Load quiz state from the database."""
-    global step_idx, participants, answers_current, votes_current
+    global step_idx, participants, answers_current, votes_current, ideas
     step_idx = db.get_step()
     participants = {
         row["id"]: {"name": row["name"], "score": row["score"]}
@@ -63,7 +56,6 @@ def load_state() -> None:
     if current_step() and current_step().get('type') == 'vote':
         prev = db.get_open_answers(step_idx - 1)
         prev.sort(key=lambda a: a['time'])
-        global ideas
         ideas = [
             {
                 'id': i + 1,
@@ -73,9 +65,6 @@ def load_state() -> None:
             }
             for i, a in enumerate(prev)
         ]
-
-
-load_state()
 
 
 def vote_keyboard_for(uid: int) -> InlineKeyboardMarkup:
@@ -155,6 +144,7 @@ def format_step(step: dict) -> str:
         text += f"\n{step['description']}"
     return text
 
+
 async def push(event: str, payload: dict):
     """Отправка данных на проектор."""
     async with aiohttp.ClientSession() as session:
@@ -174,7 +164,7 @@ async def send_progress():
     await push('progress', {'answered': answered, 'total': len(participants), 'ts': ts})
 
 
-async def watch_steps():
+async def watch_steps(bot):
     global step_idx, answers_current, votes_current, last_answer_ts, step_start_ts, ideas, vote_gains
     last = step_idx
     while True:
@@ -303,173 +293,3 @@ async def watch_steps():
                     return
                 else:
                     pass
-
-# ---------- регистрация ----------------------------
-@dp.message(Command('start'))
-async def start(msg: Message):
-    pending_names.add(msg.from_user.id)
-    await msg.answer("Введите ваше имя:")
-
-@dp.message(lambda m: m.from_user.id in pending_names)
-async def name_received(msg: Message):
-    user = msg.from_user
-    name = msg.text.strip()
-    avatar = None
-    photos = await bot.get_user_profile_photos(user.id, limit=1)
-    if photos.total_count:
-        file = await bot.get_file(photos.photos[0][-1].file_id)
-        avatar = (await bot.download_file(file.file_path)).getvalue()
-    score = participants.get(user.id, {}).get("score", 0)
-    participants[user.id] = {"name": name, "score": score}
-    db.add_participant(user.id, name, avatar)
-    pending_names.remove(user.id)
-    stage = db.get_stage()
-    if stage == 1:
-        await push(
-            "participants",
-            {
-                "who": [
-                    {"id": uid, "name": p["name"]} for uid, p in participants.items()
-                ]
-            },
-        )
-        await msg.answer("Вы зарегистрированы! Ожидайте начала.")
-    elif stage == 2:
-        step = current_step()
-        if step:
-            await msg.answer(format_step(step))
-        else:
-            await msg.answer("Викторина уже началась, ожидайте вопросов.")
-        await send_progress()
-    else:
-        rows = db.get_leaderboard()
-        table = "\n".join(f"{r['place']}. {r['name']}: {r['score']}" for r in rows)
-        await msg.answer("Викторина завершена.\n" + table)
-
-# ---------- ответы открытого вопроса ---------------
-@dp.message(lambda m: db.get_stage() == 2 and current_step() and current_step()['type']=='open')
-async def open_answer(msg: Message):
-    global last_answer_ts
-    text = msg.text.strip()[:200]
-    delta = time.time() - step_start_ts
-    answers_current[msg.from_user.id] = {'text': text, 'time': delta}
-    db.record_response(msg.from_user.id, step_idx, 'open', json.dumps({'text': text, 'time': delta}))
-    last_answer_ts = time.time()
-    await msg.answer(
-        "Идея принята!\n\n<i>Вы можете изменить ответ, отправив новое сообщение. "
-        "Редактирование сообщений не поддерживается, скопируйте, измените и пришлите новое</i>"
-    )
-    await send_progress()
-    await push('answer_in', {'name': msg.from_user.full_name})
-
-# ---------- голосование ----------------------------
-@dp.callback_query(
-    lambda c: db.get_stage() == 2
-    and current_step()
-    and current_step()['type'] == 'vote'
-    and c.data.startswith('vote:')
-)
-async def vote(cb: CallbackQuery):
-    idea_id = int(cb.data.split(':')[1])
-    idea = next((i for i in ideas if i['id'] == idea_id), None)
-    if not idea or idea['user_id'] == cb.from_user.id:
-        await cb.answer("За себя голосовать нельзя!", show_alert=True)
-        return
-    global last_answer_ts
-    votes = votes_current.setdefault(cb.from_user.id, set())
-    if idea_id in votes:
-        votes.remove(idea_id)
-    else:
-        votes.add(idea_id)
-    db.record_response(cb.from_user.id, step_idx, 'vote', json.dumps(list(votes)))
-    last_answer_ts = time.time()
-    kb = vote_keyboard_for(cb.from_user.id)
-    await cb.message.edit_reply_markup(reply_markup=kb)
-    await cb.answer("Голос учтён.")
-    await send_progress()
-    await push('vote_in', {'voter': cb.from_user.full_name})
-
-# ---------- вариант-квиз ---------------------------
-@dp.callback_query(
-    lambda c: db.get_stage() == 2
-    and current_step()
-    and current_step()['type'] == 'quiz'
-    and c.data.startswith('quiz:')
-)
-async def quiz_answer(cb: CallbackQuery):
-    global last_answer_ts
-    ans = cb.data.split(':')[1]
-    prev = answers_current.get(cb.from_user.id, {}).get('text')
-    if prev == ans:
-        await cb.answer("Этот вариант уже выбран.")
-        return
-    delta = time.time() - step_start_ts
-    answers_current[cb.from_user.id] = {'text': ans, 'time': delta}
-    db.record_response(
-        cb.from_user.id, step_idx, 'quiz', json.dumps({'text': ans, 'time': delta})
-    )
-    last_answer_ts = time.time()
-    step = current_step()
-    kb = quiz_keyboard_for(step, cb.from_user.id)
-    await cb.message.edit_reply_markup(reply_markup=kb)
-    await cb.answer("Ответ записан.")
-    await send_progress()
-    await push('answer_in', {'name': cb.from_user.full_name})
-
-# ---------- команды ведущего -----------------------
-@dp.message(Command('next'), lambda m: m.from_user.id == ADMIN_ID)
-async def cmd_next(msg: Message):
-    """Перейти к следующему шагу сценария."""
-    base = PROJECTOR_URL.rsplit('/', 1)[0]
-    async with aiohttp.ClientSession() as session:
-        await session.post(f"{base}/next")
-    await msg.answer("Переключение шага.")
-
-
-@dp.message(Command('rating'), lambda m: m.from_user.id == ADMIN_ID)
-async def cmd_rating(msg: Message):
-    """Показать общий рейтинг."""
-    rows = db.get_leaderboard()
-    txt = "\n".join(f"{r['place']}. {r['name']}: {r['score']}" for r in rows)
-    await msg.answer(txt)
-    await push(
-        'rating',
-        [
-            {
-                'id': r['id'],
-                'name': r['name'],
-                'score': r['score'],
-                'place': r['place'],
-            }
-            for r in rows
-        ],
-    )
-
-
-@dp.message(Command('reset'), lambda m: m.from_user.id == ADMIN_ID)
-async def cmd_reset(msg: Message):
-    """Сбросить состояние викторины."""
-    global step_idx, participants, answers_current, votes_current, ideas, vote_gains
-    step_idx = -1
-    participants.clear()
-    answers_current.clear()
-    votes_current.clear()
-    ideas = []
-    vote_gains = {}
-    db.reset()
-    await msg.answer("Состояние сброшено.")
-    await push('participants', {'who': []})
-    await push('reset', {})
-
-def run_bot():
-    """Запуск Telegram-бота."""
-    logging.basicConfig(level=logging.INFO)
-    async def main_loop():
-        asyncio.create_task(watch_steps())
-        await dp.start_polling(bot)
-
-    asyncio.run(main_loop())
-
-
-if __name__ == '__main__':
-    run_bot()

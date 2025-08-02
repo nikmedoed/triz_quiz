@@ -6,9 +6,9 @@ from flask_socketio import SocketIO, emit
 from io import BytesIO
 import json
 
-from .config import settings
-from .db import Database
-from .resources import load_scenario
+from config import settings
+from db import Database
+from resources import load_scenario
 
 HOST = settings.server_host
 PORT = settings.server_port
