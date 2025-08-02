@@ -16,8 +16,8 @@ PORT = settings.server_port
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")  # simple CORS for local network
 db = Database(settings.db_file)
-progress_state = None
-rating_state = None
+progress_state = db.get_state_json("progress")
+rating_state = db.get_state_json("rating")
 
 SCENARIO = load_scenario()
 
@@ -41,12 +41,20 @@ def update():
     payload = data['payload']
     socketio.emit(event, payload)
     if event == 'progress':
-        progress_state = None if payload.get('inactive') else payload
+        if payload.get('inactive'):
+            progress_state = None
+            db.set_state_json('progress', None)
+        else:
+            progress_state = payload
+            db.set_state_json('progress', payload)
     elif event == 'reset':
         progress_state = None
         rating_state = None
+        db.set_state_json('progress', None)
+        db.set_state_json('rating', None)
     elif event == 'rating':
         rating_state = payload
+        db.set_state_json('rating', payload)
     return '', 204
 
 
@@ -85,6 +93,8 @@ def start_quiz():
     db.set_stage(2)
     progress_state = None
     rating_state = None
+    db.set_state_json('progress', None)
+    db.set_state_json('rating', None)
     socketio.emit('started', {})
     next_step()
     return '', 204
@@ -103,6 +113,8 @@ def reset_route():
         db.reset()
         progress_state = None
         rating_state = None
+        db.set_state_json('progress', None)
+        db.set_state_json('rating', None)
         socketio.emit('participants', {'who': []})
         socketio.emit('reset', {})
         return redirect('/')

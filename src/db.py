@@ -228,6 +228,28 @@ class Database:
         )
         self.conn.commit()
 
+    def get_state_json(self, key: str):
+        cur = self.conn.cursor()
+        cur.execute("SELECT value FROM state WHERE key = ?", (key,))
+        row = cur.fetchone()
+        if row:
+            try:
+                return json.loads(row["value"])
+            except Exception:
+                return None
+        return None
+
+    def set_state_json(self, key: str, value) -> None:
+        cur = self.conn.cursor()
+        if value is None:
+            cur.execute("DELETE FROM state WHERE key = ?", (key,))
+        else:
+            cur.execute(
+                "REPLACE INTO state (key, value) VALUES (?, ?)",
+                (key, json.dumps(value)),
+            )
+        self.conn.commit()
+
     def get_step(self) -> int:
         return self._get_state("step", -1)
 
