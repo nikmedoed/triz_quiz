@@ -54,6 +54,7 @@ local_settings.py
 
 # Databases
 db.sqlite3*
+*.db
 
 # Flask
 instance/
@@ -183,3 +184,4 @@ dist-ssr
 frontend/index.html 
 /uploads
 uv.lock
+state.json

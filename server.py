@@ -1,17 +1,13 @@
 
-"""
-Real-time projector for TRIZ-quiz.
-Run:  python server.py
-"""
-import os
-from dotenv import load_dotenv
+"""Real-time projector for TRIZ-quiz."""
+
 from flask import Flask, render_template, request, abort
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 
-load_dotenv()
+from config import settings
 
-HOST = os.getenv('SERVER_HOST', '0.0.0.0')
-PORT = int(os.getenv('SERVER_PORT', 5000))
+HOST = settings.server_host
+PORT = settings.server_port
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")       # simple CORS for local network
@@ -32,5 +28,20 @@ def update():
     socketio.emit(data['event'], data['payload'])
     return '', 204
 
+
+def run_server():
+    """Запуск веб-сервера для отображения."""
+    # Flask-SocketIO 6.x forbids the development server unless explicitly allowed.
+    # We only use this simple Werkzeug server for local demos, so it is safe to
+    # enable the "unsafe" mode here.
+    socketio.run(
+        app,
+        host=HOST,
+        port=PORT,
+        use_reloader=False,
+        allow_unsafe_werkzeug=True,
+    )
+
+
 if __name__ == '__main__':
-    socketio.run(app, host=HOST, port=PORT)
+    run_server()
