@@ -146,6 +146,20 @@ class Database:
             )
         return rows
 
+    def get_ideas(self, step: int) -> List[dict]:
+        """Return open answers of a step formatted for voting."""
+        answers = self.get_open_answers(step)
+        answers.sort(key=lambda a: a["time"])
+        return [
+            {
+                "id": i + 1,
+                "user_id": a["user_id"],
+                "text": a["text"],
+                "time": a["time"],
+            }
+            for i, a in enumerate(answers)
+        ]
+
     def get_votes(self, step: int) -> Dict[int, List[int]]:
         cur = self.conn.cursor()
         cur.execute(
@@ -201,31 +215,30 @@ class Database:
             row["place"] = i
         return board
 
-    def get_step(self) -> int:
+    def _get_state(self, key: str, default: int) -> int:
         cur = self.conn.cursor()
-        cur.execute("SELECT value FROM state WHERE key = 'step'")
+        cur.execute("SELECT value FROM state WHERE key = ?", (key,))
         row = cur.fetchone()
-        return int(row["value"]) if row else -1
+        return int(row["value"]) if row else default
+
+    def _set_state(self, key: str, value: int) -> None:
+        cur = self.conn.cursor()
+        cur.execute(
+            "REPLACE INTO state (key, value) VALUES (?, ?)", (key, str(value))
+        )
+        self.conn.commit()
+
+    def get_step(self) -> int:
+        return self._get_state("step", -1)
 
     def set_step(self, step: int) -> None:
-        cur = self.conn.cursor()
-        cur.execute(
-            "REPLACE INTO state (key, value) VALUES ('step', ?)", (str(step),)
-        )
-        self.conn.commit()
+        self._set_state("step", step)
 
     def get_stage(self) -> int:
-        cur = self.conn.cursor()
-        cur.execute("SELECT value FROM state WHERE key = 'stage'")
-        row = cur.fetchone()
-        return int(row["value"]) if row else 1
+        return self._get_state("stage", 1)
 
     def set_stage(self, stage: int) -> None:
-        cur = self.conn.cursor()
-        cur.execute(
-            "REPLACE INTO state (key, value) VALUES ('stage', ?)", (str(stage),)
-        )
-        self.conn.commit()
+        self._set_state("stage", stage)
 
     def reset(self) -> None:
         cur = self.conn.cursor()

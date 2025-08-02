@@ -8,9 +8,9 @@ from typing import Any
 
 import aiohttp
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from config import settings
-from db import Database
-from resources import load_scenario
+from ..config import settings
+from ..db import Database
+from ..resources import load_scenario
 
 PROJECTOR_URL = settings.projector_url
 
@@ -59,22 +59,7 @@ def load_state() -> None:
         for uid, v in votes_raw.items()
     }
     if current_step() and current_step().get('type') == 'vote':
-        ideas = build_ideas(step_idx - 1)
-
-
-def build_ideas(step_index: int) -> list[dict]:
-    """Fetch open answers of previous step and build idea list."""
-    rows = db.get_open_answers(step_index)
-    rows.sort(key=lambda a: a['time'])
-    return [
-        {
-            'id': i + 1,
-            'user_id': a['user_id'],
-            'text': a['text'],
-            'time': a['time'],
-        }
-        for i, a in enumerate(rows)
-    ]
+        ideas = db.get_ideas(step_idx - 1)
 
 
 def vote_keyboard_for(uid: int) -> InlineKeyboardMarkup:
@@ -332,7 +317,7 @@ async def watch_steps(bot):
                 await notify_vote_results(bot)
             else:
                 if step['type'] == 'vote':
-                    ideas = build_ideas(step_idx - 1)
+                    ideas = db.get_ideas(step_idx - 1)
                 await announce_step(bot, step)
         else:
             if db.get_stage() == 3:
