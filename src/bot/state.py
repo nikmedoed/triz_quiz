@@ -54,6 +54,21 @@ def load_state() -> None:
         ideas = db.get_ideas(step_idx - 1)
 
 
+def reset_state() -> None:
+    """Clear in-memory state without touching the database."""
+    global step_idx, participants, answers_current, votes_current, ideas
+    global vote_gains, pending_names, last_answer_ts, step_start_ts
+    step_idx = -1
+    participants.clear()
+    answers_current.clear()
+    votes_current.clear()
+    ideas = []
+    vote_gains = {}
+    pending_names.clear()
+    last_answer_ts = time.time()
+    step_start_ts = time.time()
+
+
 def record_answer(uid: int, kind: str, text: str) -> None:
     """Store answer in memory and database."""
     global last_answer_ts
