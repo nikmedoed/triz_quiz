@@ -8,26 +8,26 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 
-from . import core
+from . import core, formatting, state
 
 router = Router()
 
 
 def step_filter(step_type: str):
     def check(_):
-        step = core.current_step()
-        return core.db.get_stage() == 2 and step and step.get('type') == step_type
+        step = state.current_step()
+        return state.db.get_stage() == 2 and step and step.get('type') == step_type
 
     return check
 
 
 @router.message(Command("start"))
 async def start(msg: Message):
-    core.pending_names.add(msg.from_user.id)
+    state.pending_names.add(msg.from_user.id)
     await msg.answer("Введите ваше имя:")
 
 
-@router.message(lambda m: m.from_user.id in core.pending_names)
+@router.message(lambda m: m.from_user.id in state.pending_names)
 async def name_received(msg: Message):
     user = msg.from_user
     name = msg.text.strip()
@@ -36,37 +36,37 @@ async def name_received(msg: Message):
     if photos.total_count:
         file = await msg.bot.get_file(photos.photos[0][-1].file_id)
         avatar = (await msg.bot.download_file(file.file_path)).getvalue()
-    score = core.participants.get(user.id, {}).get("score", 0)
-    core.participants[user.id] = {"name": name, "score": score}
-    core.db.add_participant(user.id, name, avatar)
-    core.pending_names.remove(user.id)
-    stage = core.db.get_stage()
+    score = state.participants.get(user.id, {}).get("score", 0)
+    state.participants[user.id] = {"name": name, "score": score}
+    state.db.add_participant(user.id, name, avatar)
+    state.pending_names.remove(user.id)
+    stage = state.db.get_stage()
     if stage == 1:
         await core.push(
             "participants",
             {
                 "who": [
-                    {"id": uid, "name": p["name"]} for uid, p in core.participants.items()
+                    {"id": uid, "name": p["name"]} for uid, p in state.participants.items()
                 ]
             },
         )
         await msg.answer("Вы зарегистрированы! Ожидайте начала.")
     elif stage == 2:
-        step = core.current_step()
+        step = state.current_step()
         if step:
-            await msg.answer(core.format_step(step))
+            await msg.answer(formatting.format_step(step))
         else:
             await msg.answer("Викторина уже началась, ожидайте вопросов.")
         await core.send_progress()
     else:
-        rows = core.db.get_leaderboard()
-        await msg.answer("Викторина завершена.\n" + core.format_leaderboard(rows))
+        rows = state.db.get_leaderboard()
+        await msg.answer("Викторина завершена.\n" + formatting.format_leaderboard(rows))
 
 
 @router.message(step_filter('open'))
 async def open_answer(msg: Message):
     text = msg.text.strip()[:200]
-    core.record_answer(msg.from_user.id, 'open', text)
+    state.record_answer(msg.from_user.id, 'open', text)
     await msg.answer(
         "Идея принята!\n\n<i>Вы можете изменить ответ, отправив новое сообщение. "
         "Редактирование сообщений не поддерживается, скопируйте, измените и пришлите новое</i>"
@@ -78,18 +78,18 @@ async def open_answer(msg: Message):
 @router.callback_query(step_filter('vote'), lambda c: c.data.startswith('vote:'))
 async def vote(cb: CallbackQuery):
     idea_id = int(cb.data.split(':')[1])
-    idea = next((i for i in core.ideas if i['id'] == idea_id), None)
+    idea = next((i for i in state.ideas if i['id'] == idea_id), None)
     if not idea or idea['user_id'] == cb.from_user.id:
         await cb.answer("За себя голосовать нельзя!", show_alert=True)
         return
-    votes = core.votes_current.setdefault(cb.from_user.id, set())
+    votes = state.votes_current.setdefault(cb.from_user.id, set())
     if idea_id in votes:
         votes.remove(idea_id)
     else:
         votes.add(idea_id)
-    core.db.record_response(cb.from_user.id, core.step_idx, 'vote', json.dumps(list(votes)))
-    core.last_answer_ts = time.time()
-    kb = core.vote_keyboard_for(cb.from_user.id)
+    state.db.record_response(cb.from_user.id, state.step_idx, 'vote', json.dumps(list(votes)))
+    state.last_answer_ts = time.time()
+    kb = formatting.vote_keyboard_for(cb.from_user.id)
     await cb.message.edit_reply_markup(reply_markup=kb)
     await cb.answer("Голос учтён.")
     await core.send_progress()
@@ -99,43 +99,43 @@ async def vote(cb: CallbackQuery):
 @router.callback_query(step_filter('quiz'), lambda c: c.data.startswith('quiz:'))
 async def quiz_answer(cb: CallbackQuery):
     ans = cb.data.split(':')[1]
-    prev = core.answers_current.get(cb.from_user.id, {}).get('text')
+    prev = state.answers_current.get(cb.from_user.id, {}).get('text')
     if prev == ans:
         await cb.answer("Этот вариант уже выбран.")
         return
-    core.record_answer(cb.from_user.id, 'quiz', ans)
-    step = core.current_step()
-    kb = core.quiz_keyboard_for(step, cb.from_user.id)
+    state.record_answer(cb.from_user.id, 'quiz', ans)
+    step = state.current_step()
+    kb = formatting.quiz_keyboard_for(step, cb.from_user.id)
     await cb.message.edit_reply_markup(reply_markup=kb)
     await cb.answer("Ответ записан.")
     await core.send_progress()
     await core.push('answer_in', {'name': cb.from_user.full_name})
 
 
-@router.message(Command('next'), lambda m: m.from_user.id == core.ADMIN_ID)
+@router.message(Command('next'), lambda m: m.from_user.id == state.ADMIN_ID)
 async def cmd_next(msg: Message):
-    base = core.PROJECTOR_URL.rsplit('/', 1)[0]
+    base = state.PROJECTOR_URL.rsplit('/', 1)[0]
     async with aiohttp.ClientSession() as session:
         await session.post(f"{base}/next")
     await msg.answer("Переключение шага.")
 
 
-@router.message(Command('rating'), lambda m: m.from_user.id == core.ADMIN_ID)
+@router.message(Command('rating'), lambda m: m.from_user.id == state.ADMIN_ID)
 async def cmd_rating(msg: Message):
-    rows = core.db.get_leaderboard()
-    await msg.answer("Текущий рейтинг:\n" + core.format_leaderboard(rows))
+    rows = state.db.get_leaderboard()
+    await msg.answer("Текущий рейтинг:\n" + formatting.format_leaderboard(rows))
     await core.broadcast_rating(rows)
 
 
-@router.message(Command('reset'), lambda m: m.from_user.id == core.ADMIN_ID)
+@router.message(Command('reset'), lambda m: m.from_user.id == state.ADMIN_ID)
 async def cmd_reset(msg: Message):
-    core.step_idx = -1
-    core.participants.clear()
-    core.answers_current.clear()
-    core.votes_current.clear()
-    core.ideas = []
-    core.vote_gains = {}
-    core.db.reset()
+    state.step_idx = -1
+    state.participants.clear()
+    state.answers_current.clear()
+    state.votes_current.clear()
+    state.ideas = []
+    state.vote_gains = {}
+    state.db.reset()
     await msg.answer("Состояние сброшено.")
     await core.push('participants', {'who': []})
     await core.push('reset', {})

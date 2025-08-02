@@ -1,154 +1,12 @@
-"""Quiz state and helper routines."""
+"""Quiz runtime routines."""
 
 import asyncio
-import html
-import json
 import time
 from typing import Any
 
 import aiohttp
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from ..config import settings
-from ..db import Database
-from ..resources import load_scenario
-
-PROJECTOR_URL = settings.projector_url
-
-db = Database(settings.db_file)
-SCENARIO = load_scenario()
-
-step_idx = -1  # текущий шаг сценария
-participants: dict[int, dict] = {}
-answers_current: dict[int, dict] = {}
-votes_current: dict[int, set[int]] = {}
-ideas: list[dict] = []  # текущие идеи для голосования
-vote_gains: dict[int, int] = {}  # очки, полученные на последнем голосовании
-ADMIN_ID = settings.admin_id  # ведущий
-pending_names: set[int] = set()
-last_answer_ts = time.time()
-step_start_ts = time.time()
-
-
-def current_step():
-    return SCENARIO[step_idx] if 0 <= step_idx < len(SCENARIO) else None
-
-
-def load_state() -> None:
-    """Load quiz state from the database."""
-    global step_idx, participants, answers_current, votes_current, ideas
-    step_idx = db.get_step()
-    participants = {
-        row["id"]: {"name": row["name"], "score": row["score"]}
-        for row in db.get_participants()
-    }
-    answers_raw = db.get_responses(step_idx, "open")
-    answers_current = {
-        uid: json.loads(val) if val.startswith('{') else {'text': val, 'time': 0}
-        for uid, val in answers_raw.items()
-    }
-    quiz_raw = db.get_responses(step_idx, "quiz")
-    answers_current.update(
-        {
-            uid: json.loads(val) if val.startswith('{') else {'text': val, 'time': 0}
-            for uid, val in quiz_raw.items()
-        }
-    )
-    votes_raw = db.get_responses(step_idx, "vote")
-    votes_current = {
-        uid: set(json.loads(v)) if v.startswith('[') else set()
-        for uid, v in votes_raw.items()
-    }
-    if current_step() and current_step().get('type') == 'vote':
-        ideas = db.get_ideas(step_idx - 1)
-
-
-def vote_keyboard_for(uid: int) -> InlineKeyboardMarkup:
-    """Build inline keyboard with checkmarks for selected ideas."""
-    selected = votes_current.get(uid, set())
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text=f"{'✅ ' if idea['id'] in selected else ''}{idea['id']}. {idea['text'][:30]}",
-                    callback_data=f"vote:{idea['id']}",
-                )
-            ]
-            for idea in ideas
-            if idea['user_id'] != uid
-        ]
-    )
-
-
-def quiz_keyboard_for(step: dict, uid: int) -> InlineKeyboardMarkup:
-    """Build quiz keyboard with a checkmark on the selected option."""
-    chosen = answers_current.get(uid, {}).get('text')
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text=f"{'✅ ' if str(i + 1) == str(chosen) else ''}{i + 1}. {opt[:30]}",
-                    callback_data=f"quiz:{i + 1}",
-                )
-            ]
-            for i, opt in enumerate(step.get('options', []))
-        ]
-    )
-
-
-def format_step(step: dict) -> str:
-    """Render message for current step according to its type."""
-    t = step.get("type")
-    if t == "open":
-        header = (
-            "<b>Предложите идею решения проблемной ситуации (открытый ответ)</b>\n\n\n"
-        )
-        body = html.escape(step.get("title", ""))
-        if step.get("description"):
-            body += f"\n\n{html.escape(step['description'])}"
-        tail = (
-            "\n\n\n<i>Пришлите ваш ответ в этот чат.\n"
-            "- Учитывается один последний ответ\n"
-            "- В свободной форме\n"
-            "- Лаконично, важна скорость\n"
-            "- Укажите логику решения, использованные приёмы, методы, обоснуйте</i>"
-        )
-        return header + body + tail
-    if t == "quiz":
-        header = "<b>Выберите один вариант ответа</b>\n\n\n"
-        body = html.escape(step.get("title", ""))
-        if step.get("description"):
-            body += f"\n{html.escape(step['description'])}"
-        tail = (
-            "\n\n\n<i>Выберите\n"
-            "- Наиболее подходящий вариант\n"
-            "- Быстро, пока есть время\n"
-            "- Можно изменить выбор</i>"
-        )
-        return header + body + tail
-    if t == "vote":
-        return (
-            "Ответы более не принимаются.\n\n"
-            "<b>Начато голосование за идеи.</b>\n\n"
-            "Выберите номера, которые считаете достойным и методологически "
-            "обоснованным решением описанной проблемы."
-        )
-    if t == "vote_results":
-        return "Голосование завершено. Результаты на экране."
-    text = f"Сейчас идёт шаг: {step['title']}"
-    if step.get('description'):
-        text += f"\n{step['description']}"
-    return text
-
-
-def record_answer(uid: int, kind: str, text: str) -> None:
-    """Store answer in memory and database."""
-    global last_answer_ts
-    delta = time.time() - step_start_ts
-    answers_current[uid] = {'text': text, 'time': delta}
-    db.record_response(uid, step_idx, kind, json.dumps({'text': text, 'time': delta}))
-    last_answer_ts = time.time()
-
+from . import formatting, state
 
 Payload = dict[str, Any] | list[dict[str, Any]]
 
@@ -156,46 +14,45 @@ Payload = dict[str, Any] | list[dict[str, Any]]
 async def push(event: str, payload: Payload):
     """Отправка данных на проектор."""
     async with aiohttp.ClientSession() as session:
-        await session.post(PROJECTOR_URL, json={'event': event, 'payload': payload})
+        await session.post(state.PROJECTOR_URL, json={'event': event, 'payload': payload})
 
 
 async def send_progress():
-    step = current_step()
+    step = state.current_step()
     if not step or step.get("type") not in ("open", "quiz", "vote"):
         await push('progress', {'inactive': True})
         return
     if step['type'] == 'vote':
-        answered = sum(1 for v in votes_current.values() if v)
+        answered = sum(1 for v in state.votes_current.values() if v)
     else:
-        answered = len(answers_current)
-    ts = last_answer_ts if answered else None
-    await push('progress', {'answered': answered, 'total': len(participants), 'ts': ts})
+        answered = len(state.answers_current)
+    ts = state.last_answer_ts if answered else None
+    await push('progress', {'answered': answered, 'total': len(state.participants), 'ts': ts})
 
 
 async def finalize_vote() -> None:
     """Process vote results and update scores."""
-    global vote_gains
-    vote_gains = {uid: 0 for uid in participants}
+    state.vote_gains = {uid: 0 for uid in state.participants}
     results = []
-    for idea in ideas:
-        voters = [uid for uid, vs in votes_current.items() if idea['id'] in vs]
+    for idea in state.ideas:
+        voters = [uid for uid, vs in state.votes_current.items() if idea['id'] in vs]
         results.append(
             {
                 'id': idea['id'],
                 'text': idea['text'],
                 'author': {
                     'id': idea['user_id'],
-                    'name': participants[idea['user_id']]['name'],
+                    'name': state.participants[idea['user_id']]['name'],
                 },
                 'votes': voters,
                 'time': idea['time'],
             }
         )
         pts = len(voters)
-        vote_gains[idea['user_id']] = pts
+        state.vote_gains[idea['user_id']] = pts
         if pts:
-            participants[idea['user_id']]['score'] += pts
-            db.update_score(idea['user_id'], pts)
+            state.participants[idea['user_id']]['score'] += pts
+            state.db.update_score(idea['user_id'], pts)
     await push('vote_result', {'ideas': results})
 
 
@@ -206,15 +63,15 @@ async def finalize_quiz(bot, stepq: dict) -> None:
     options = stepq.get('options', [])
     summary = []
     for i, opt in enumerate(options, start=1):
-        voters = [uid for uid, ans in answers_current.items() if ans.get('text') == str(i)]
+        voters = [uid for uid, ans in state.answers_current.items() if ans.get('text') == str(i)]
         summary.append({'id': i, 'text': opt, 'voters': voters})
         if str(i) == correct:
             for uid in voters:
-                participants[uid]['score'] += pts
-                db.update_score(uid, pts)
+                state.participants[uid]['score'] += pts
+                state.db.update_score(uid, pts)
     await push('quiz_result', {'options': summary, 'correct': correct})
-    for uid in participants:
-        ans = answers_current.get(uid, {}).get('text')
+    for uid in state.participants:
+        ans = state.answers_current.get(uid, {}).get('text')
         if ans == correct:
             msg = f'Верно! Вы получили {pts} балл(ов).'
         elif ans:
@@ -227,12 +84,12 @@ async def finalize_quiz(bot, stepq: dict) -> None:
 
 async def announce_step(bot, step: dict) -> None:
     """Send step description to all participants with optional keyboard."""
-    text = format_step(step)
-    for uid in participants:
+    text = formatting.format_step(step)
+    for uid in state.participants:
         if step['type'] == 'quiz':
-            kb = quiz_keyboard_for(step, uid)
+            kb = formatting.quiz_keyboard_for(step, uid)
         elif step['type'] == 'vote':
-            kb = vote_keyboard_for(uid)
+            kb = formatting.vote_keyboard_for(uid)
         else:
             kb = None
         await bot.send_message(uid, text, reply_markup=kb)
@@ -240,37 +97,24 @@ async def announce_step(bot, step: dict) -> None:
 
 async def notify_vote_results(bot) -> None:
     """Notify participants about vote results."""
-    for uid in participants:
-        pts = vote_gains.get(uid, 0)
+    for uid in state.participants:
+        pts = state.vote_gains.get(uid, 0)
         await bot.send_message(
             uid,
             f"Голосование завершено.\nРезультаты на экране.\nВы набрали {pts} балл(ов).",
         )
 
 
-def format_leaderboard(rows: list[dict]) -> str:
-    """Return leaderboard as multiline string."""
-    return "\n".join(f"{r['place']}. {r['name']}: {r['score']}" for r in rows)
-
-
-def build_rating(rows: list[dict]) -> list[dict]:
-    """Convert leaderboard rows to rating payload."""
-    return [
-        {'id': r['id'], 'name': r['name'], 'score': r['score'], 'place': r['place']}
-        for r in rows
-    ]
-
-
 async def broadcast_rating(rows: list[dict]) -> None:
     """Push rating update to projector."""
-    await push('rating', build_rating(rows))
+    await push('rating', formatting.build_rating(rows))
 
 
 async def finish_quiz(bot) -> None:
     """Send final rating and statistics to participants."""
-    board = db.get_leaderboard()
+    board = state.db.get_leaderboard()
     await broadcast_rating(board)
-    stats = db.get_times_by_user()
+    stats = state.db.get_times_by_user()
     for row in board:
         uid = row['id']
         o = stats.get(uid, {}).get('open', [])
@@ -289,27 +133,26 @@ async def finish_quiz(bot) -> None:
 
 
 async def watch_steps(bot):
-    global step_idx, answers_current, votes_current, last_answer_ts, step_start_ts, ideas
-    last = step_idx
+    last = state.step_idx
     while True:
         await asyncio.sleep(1)
-        cur = db.get_step()
+        cur = state.db.get_step()
         if cur == last:
             continue
-        old_step = current_step()
+        old_step = state.current_step()
         last = cur
-        step_idx = cur
+        state.step_idx = cur
         if old_step:
             if old_step.get('type') == 'vote':
                 await finalize_vote()
             elif old_step.get('type') == 'quiz':
                 await finalize_quiz(bot, old_step)
-        answers_current.clear()
-        votes_current.clear()
-        ideas = []
-        step = current_step()
+        state.answers_current.clear()
+        state.votes_current.clear()
+        state.ideas = []
+        step = state.current_step()
         if step and step.get('type') in ('open', 'quiz', 'vote'):
-            step_start_ts = last_answer_ts = time.time()
+            state.step_start_ts = state.last_answer_ts = time.time()
             await send_progress()
         else:
             await push('progress', {'inactive': True})
@@ -318,9 +161,9 @@ async def watch_steps(bot):
                 await notify_vote_results(bot)
             else:
                 if step['type'] == 'vote':
-                    ideas = db.get_ideas(step_idx - 1)
+                    state.ideas = state.db.get_ideas(state.step_idx - 1)
                 await announce_step(bot, step)
         else:
-            if db.get_stage() == 3:
+            if state.db.get_stage() == 3:
                 await finish_quiz(bot)
                 return

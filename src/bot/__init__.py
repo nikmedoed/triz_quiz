@@ -8,7 +8,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from . import core
+from . import core, state
 from .handlers import router
 from ..config import settings
 
@@ -20,7 +20,7 @@ dp.include_router(router)
 def run_bot() -> None:
     """Запуск Telegram-бота."""
     logging.basicConfig(level=logging.INFO)
-    core.load_state()
+    state.load_state()
 
     async def main_loop():
         asyncio.create_task(core.watch_steps(bot))
