@@ -59,17 +59,22 @@ def load_state() -> None:
         for uid, v in votes_raw.items()
     }
     if current_step() and current_step().get('type') == 'vote':
-        prev = db.get_open_answers(step_idx - 1)
-        prev.sort(key=lambda a: a['time'])
-        ideas = [
-            {
-                'id': i + 1,
-                'user_id': a['user_id'],
-                'text': a['text'],
-                'time': a['time'],
-            }
-            for i, a in enumerate(prev)
-        ]
+        ideas = build_ideas(step_idx - 1)
+
+
+def build_ideas(step_index: int) -> list[dict]:
+    """Fetch open answers of previous step and build idea list."""
+    rows = db.get_open_answers(step_index)
+    rows.sort(key=lambda a: a['time'])
+    return [
+        {
+            'id': i + 1,
+            'user_id': a['user_id'],
+            'text': a['text'],
+            'time': a['time'],
+        }
+        for i, a in enumerate(rows)
+    ]
 
 
 def vote_keyboard_for(uid: int) -> InlineKeyboardMarkup:
@@ -181,134 +186,148 @@ async def send_progress():
     await push('progress', {'answered': answered, 'total': len(participants), 'ts': ts})
 
 
+async def finalize_vote() -> None:
+    """Process vote results and update scores."""
+    global vote_gains
+    vote_gains = {uid: 0 for uid in participants}
+    results = []
+    for idea in ideas:
+        voters = [uid for uid, vs in votes_current.items() if idea['id'] in vs]
+        results.append(
+            {
+                'id': idea['id'],
+                'text': idea['text'],
+                'author': {
+                    'id': idea['user_id'],
+                    'name': participants[idea['user_id']]['name'],
+                },
+                'votes': voters,
+                'time': idea['time'],
+            }
+        )
+        pts = len(voters)
+        vote_gains[idea['user_id']] = pts
+        if pts:
+            participants[idea['user_id']]['score'] += pts
+            db.update_score(idea['user_id'], pts)
+    await push('vote_result', {'ideas': results})
+
+
+async def finalize_quiz(bot, stepq: dict) -> None:
+    """Process quiz answers, push results and notify users."""
+    correct = str(stepq.get('correct'))
+    pts = stepq.get('points', 1)
+    options = stepq.get('options', [])
+    summary = []
+    for i, opt in enumerate(options, start=1):
+        voters = [uid for uid, ans in answers_current.items() if ans.get('text') == str(i)]
+        summary.append({'id': i, 'text': opt, 'voters': voters})
+        if str(i) == correct:
+            for uid in voters:
+                participants[uid]['score'] += pts
+                db.update_score(uid, pts)
+    await push('quiz_result', {'options': summary, 'correct': correct})
+    for uid in participants:
+        ans = answers_current.get(uid, {}).get('text')
+        if ans == correct:
+            msg = f'Верно! Вы получили {pts} балл(ов).'
+        elif ans:
+            msg = 'Вы ответили неверно.'
+        else:
+            msg = 'Вы не ответили.'
+        msg += '\n\nОтветы более не принимаются, вернитесь в общий зал.'
+        await bot.send_message(uid, msg)
+
+
+async def announce_step(bot, step: dict) -> None:
+    """Send step description to all participants with optional keyboard."""
+    text = format_step(step)
+    for uid in participants:
+        if step['type'] == 'quiz':
+            kb = quiz_keyboard_for(step, uid)
+        elif step['type'] == 'vote':
+            kb = vote_keyboard_for(uid)
+        else:
+            kb = None
+        await bot.send_message(uid, text, reply_markup=kb)
+
+
+async def notify_vote_results(bot) -> None:
+    """Notify participants about vote results."""
+    for uid in participants:
+        pts = vote_gains.get(uid, 0)
+        await bot.send_message(
+            uid,
+            f"Голосование завершено.\nРезультаты на экране.\nВы набрали {pts} балл(ов).",
+        )
+
+
+async def finish_quiz(bot) -> None:
+    """Send final rating and statistics to participants."""
+    board = db.get_leaderboard()
+    await push(
+        'rating',
+        [
+            {
+                'id': r['id'],
+                'name': r['name'],
+                'score': r['score'],
+                'place': r['place'],
+            }
+            for r in board
+        ],
+    )
+    stats = db.get_times_by_user()
+    for row in board:
+        uid = row['id']
+        o = stats.get(uid, {}).get('open', [])
+        q = stats.get(uid, {}).get('quiz', [])
+        avg_open = sum(o) / len(o) if o else 0
+        avg_quiz = sum(q) / len(q) if q else 0
+        text = (
+            "Викторина завершена.\n\n"
+            f"Вам набрано баллов: {row['score']}.\n"
+            f"Ваше место: {row['place']}.\n\n"
+            "Среднее время ответа:\n"
+            f"{avg_open:.1f} c - открытый вопрос\n"
+            f"{avg_quiz:.1f} c - выбор варианта"
+        )
+        await bot.send_message(uid, text)
+
+
 async def watch_steps(bot):
-    global step_idx, answers_current, votes_current, last_answer_ts, step_start_ts, ideas, vote_gains
+    global step_idx, answers_current, votes_current, last_answer_ts, step_start_ts, ideas
     last = step_idx
     while True:
         await asyncio.sleep(1)
         cur = db.get_step()
-        if cur != last:
-            old_step = current_step()
-            last = cur
-            step_idx = cur
-            # обработать завершение предыдущего шага
-            if old_step:
-                if old_step.get('type') == 'vote':
-                    vote_gains = {uid: 0 for uid in participants}
-                    results = []
-                    for idea in ideas:
-                        voters = [uid for uid, vs in votes_current.items() if idea['id'] in vs]
-                        results.append(
-                            {
-                                'id': idea['id'],
-                                'text': idea['text'],
-                                'author': {'id': idea['user_id'], 'name': participants[idea['user_id']]['name']},
-                                'votes': voters,
-                                'time': idea['time'],
-                            }
-                        )
-                        pts = len(voters)
-                        vote_gains[idea['user_id']] = pts
-                        if pts:
-                            participants[idea['user_id']]['score'] += pts
-                            db.update_score(idea['user_id'], pts)
-                    await push('vote_result', {'ideas': results})
-                elif old_step.get('type') == 'quiz':
-                    # подсчитать результаты и сообщить участникам
-                    stepq = old_step
-                    correct = str(stepq.get('correct'))
-                    pts = stepq.get('points', 1)
-                    options = stepq.get('options', [])
-                    summary = []
-                    for i, opt in enumerate(options, start=1):
-                        voters = [uid for uid, ans in answers_current.items() if ans.get('text') == str(i)]
-                        summary.append({'id': i, 'text': opt, 'voters': voters})
-                        if str(i) == correct:
-                            for uid in voters:
-                                participants[uid]['score'] += pts
-                                db.update_score(uid, pts)
-                    await push('quiz_result', {'options': summary, 'correct': correct})
-                    for uid in participants:
-                        ans = answers_current.get(uid, {}).get('text')
-                        if ans == correct:
-                            msg = f'Верно! Вы получили {pts} балл(ов).'
-                        elif ans:
-                            msg = 'Вы ответили неверно.'
-                        else:
-                            msg = 'Вы не ответили.'
-                        msg += '\n\nОтветы более не принимаются, вернитесь в общий зал.'
-                        await bot.send_message(uid, msg)
-            answers_current.clear();
-            votes_current.clear();
-            ideas = []
-            step = current_step()
-            if step and step.get("type") in ("open", "quiz", "vote"):
-                step_start_ts = last_answer_ts = time.time()
-                await send_progress()
+        if cur == last:
+            continue
+        old_step = current_step()
+        last = cur
+        step_idx = cur
+        if old_step:
+            if old_step.get('type') == 'vote':
+                await finalize_vote()
+            elif old_step.get('type') == 'quiz':
+                await finalize_quiz(bot, old_step)
+        answers_current.clear()
+        votes_current.clear()
+        ideas = []
+        step = current_step()
+        if step and step.get('type') in ('open', 'quiz', 'vote'):
+            step_start_ts = last_answer_ts = time.time()
+            await send_progress()
+        else:
+            await push('progress', {'inactive': True})
+        if step:
+            if step['type'] == 'vote_results':
+                await notify_vote_results(bot)
             else:
-                await push('progress', {'inactive': True})
-            if step:
-                if step['type'] == 'vote_results':
-                    for uid in participants:
-                        pts = vote_gains.get(uid, 0)
-                        await bot.send_message(
-                            uid,
-                            f"Голосование завершено.\nРезультаты на экране.\nВы набрали {pts} балл(ов).",
-                        )
-                else:
-                    text = format_step(step)
-                    if step['type'] == 'vote':
-                        prev = db.get_open_answers(step_idx - 1)
-                        prev.sort(key=lambda a: a['time'])
-                        ideas = [
-                            {
-                                'id': i + 1,
-                                'user_id': a['user_id'],
-                                'text': a['text'],
-                                'time': a['time'],
-                            }
-                            for i, a in enumerate(prev)
-                        ]
-                    for uid in participants:
-                        if step['type'] == 'quiz':
-                            kb = quiz_keyboard_for(step, uid)
-                            await bot.send_message(uid, text, reply_markup=kb)
-                        elif step['type'] == 'vote':
-                            kb = vote_keyboard_for(uid)
-                            await bot.send_message(uid, text, reply_markup=kb)
-                        else:
-                            await bot.send_message(uid, text)
-            else:
-                if db.get_stage() == 3:
-                    board = db.get_leaderboard()
-                    await push(
-                        'rating',
-                        [
-                            {
-                                'id': r['id'],
-                                'name': r['name'],
-                                'score': r['score'],
-                                'place': r['place'],
-                            }
-                            for r in board
-                        ],
-                    )
-                    stats = db.get_times_by_user()
-                    for row in board:
-                        uid = row['id']
-                        o = stats.get(uid, {}).get('open', [])
-                        q = stats.get(uid, {}).get('quiz', [])
-                        avg_open = sum(o) / len(o) if o else 0
-                        avg_quiz = sum(q) / len(q) if q else 0
-                        text = (
-                            "Викторина завершена.\n\n"
-                            f"Вам набрано баллов: {row['score']}.\n"
-                            f"Ваше место: {row['place']}.\n\n"
-                            "Среднее время ответа:\n"
-                            f"{avg_open:.1f} c - открытый вопрос\n"
-                            f"{avg_quiz:.1f} c - выбор варианта"
-                        )
-                        await bot.send_message(uid, text)
-                    return
-                else:
-                    pass
+                if step['type'] == 'vote':
+                    ideas = build_ideas(step_idx - 1)
+                await announce_step(bot, step)
+        else:
+            if db.get_stage() == 3:
+                await finish_quiz(bot)
+                return
