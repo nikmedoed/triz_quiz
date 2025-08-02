@@ -159,6 +159,47 @@ class Database:
                 votes[row["user_id"]] = []
         return votes
 
+    def get_times_by_user(self) -> Dict[int, Dict[str, List[float]]]:
+        """Collect response times for each user grouped by question kind."""
+        cur = self.conn.cursor()
+        cur.execute(
+            "SELECT user_id, kind, value FROM responses WHERE kind IN ('open','quiz')"
+        )
+        stats: Dict[int, Dict[str, List[float]]] = {}
+        for row in cur.fetchall():
+            try:
+                data = json.loads(row["value"])
+                t = data.get("time", 0)
+            except Exception:
+                t = 0
+            stats.setdefault(row["user_id"], {}).setdefault(row["kind"], []).append(t)
+        return stats
+
+    def get_leaderboard(self) -> List[dict]:
+        """Return participants ordered by score and response speed."""
+        cur = self.conn.cursor()
+        cur.execute("SELECT id, name, score FROM participants")
+        people = {
+            row["id"]: {"name": row["name"], "score": row["score"]}
+            for row in cur.fetchall()
+        }
+        times = self.get_times_by_user()
+        board = []
+        for uid, p in people.items():
+            total = sum(times.get(uid, {}).get("open", [])) + sum(
+                times.get(uid, {}).get("quiz", [])
+            )
+            board.append({
+                "id": uid,
+                "name": p["name"],
+                "score": p["score"],
+                "time": total,
+            })
+        board.sort(key=lambda r: (-r["score"], r["time"]))
+        for i, row in enumerate(board, start=1):
+            row["place"] = i
+        return board
+
     def get_step(self) -> int:
         cur = self.conn.cursor()
         cur.execute("SELECT value FROM state WHERE key = 'step'")
