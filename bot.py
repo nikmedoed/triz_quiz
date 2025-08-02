@@ -30,6 +30,9 @@ pending_names: set[int] = set()
 last_answer_ts = time.time()
 step_start_ts = time.time()
 
+def current_step():
+    return SCENARIO[step_idx] if 0 <= step_idx < len(SCENARIO) else None
+
 
 def load_state() -> None:
     """Load quiz state from the database."""
@@ -67,9 +70,6 @@ def load_state() -> None:
 
 
 load_state()
-
-def current_step():
-    return SCENARIO[step_idx] if 0 <= step_idx < len(SCENARIO) else None
 
 
 def format_step(step: dict) -> str:
