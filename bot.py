@@ -224,11 +224,12 @@ async def watch_steps():
                     for uid in participants:
                         ans = answers_current.get(uid, {}).get('text')
                         if ans == correct:
-                            msg = f'Ответы более не принимаются, вернитесь в общий зал.\n\nВерно! Вы получили {pts} балл(ов).'
+                            msg = f'Верно! Вы получили {pts} балл(ов).'
                         elif ans:
-                            msg = 'Ответы более не принимаются, вернитесь в общий зал.\n\nНеверно.'
+                            msg = 'Вы ответили неверно.'
                         else:
-                            msg = 'Ответы более не принимаются, вернитесь в общий зал.\n\nВы не ответили.'
+                            msg = 'Вы не ответили.'
+                        msg += '\n\nОтветы более не принимаются, вернитесь в общий зал.'
                         await bot.send_message(uid, msg)
             answers_current.clear(); votes_current.clear(); ideas = []
             step = current_step()

@@ -59,8 +59,7 @@ def broadcast_step(idx: int) -> None:
                 for i, a in enumerate(answers)
             ]
         socketio.emit('step', step)
-    else:
-        socketio.emit('end', {})
+    # Do not emit anything if scenario index is out of range.
 
 
 def next_step() -> None:
@@ -69,7 +68,12 @@ def next_step() -> None:
     db.set_step(step)
     if step < len(SCENARIO):
         broadcast_step(step)
+    elif step == len(SCENARIO):
+        # Last step finished; keep stage 2 so results remain visible.
+        # No "end" signal yet to allow manual transition to rating.
+        progress_state = None
     else:
+        # Explicit transition to final rating after moderator presses Next again.
         db.set_stage(3)
         progress_state = None
         socketio.emit('end', {})
@@ -110,11 +114,15 @@ def handle_connect():
         emit("participants", {"who": people})
     else:
         emit("started", {})
-        broadcast_step(db.get_step())
+        step = db.get_step()
+        if step < len(SCENARIO):
+            broadcast_step(step)
         if progress_state:
             emit('progress', progress_state)
-        if stage == 3 and rating_state:
-            emit('rating', rating_state)
+        if stage == 3:
+            emit('end', {})
+            if rating_state:
+                emit('rating', rating_state)
 
 
 def run_server():
