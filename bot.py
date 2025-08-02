@@ -1,6 +1,6 @@
 """Telegram-bot for TRIZ-quiz."""
 
-import asyncio, aiohttp, json, logging
+import asyncio, aiohttp, json, logging, html
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -48,13 +48,41 @@ def current_step():
 
 
 def format_step(step: dict) -> str:
+    """Render message for current step according to its type."""
+    t = step.get("type")
+    if t == "open":
+        header = (
+            "<b>Предложите идею решения проблемной ситуации (открытый ответ)</b>\n\n"
+        )
+        body = html.escape(step.get("title", ""))
+        if step.get("description"):
+            body += f"\n{html.escape(step['description'])}"
+        tail = (
+            "\n\n<i>Пришлите ваш ответ в этот чат.\n"
+            "- Учитывается один последний ответ\n"
+            "- В свободной форме\n"
+            "- Лаконично, важна скорость\n"
+            "- Укажите логику решения, использованные приёмы, методы, обоснуйте</i>"
+        )
+        return header + body + tail
+    if t == "quiz":
+        header = "<b>Выберите один вариант ответа</b>\n\n"
+        body = html.escape(step.get("title", ""))
+        options = step.get("options", [])
+        if options:
+            body += "\n" + "\n".join(
+                f"{i+1}. {html.escape(opt)}" for i, opt in enumerate(options)
+            )
+        tail = (
+            "\n\n<i>Выберите\n"
+            "- Наиболее подходящий вариант\n"
+            "- Быстро, пока есть время\n"
+            "- Можно изменить выбор</i>"
+        )
+        return header + body + tail
     text = f"Сейчас идёт шаг: {step['title']}"
     if step.get('description'):
         text += f"\n{step['description']}"
-    if step.get('options'):
-        text += "\n" + "\n".join(
-            f"{i+1}. {opt}" for i, opt in enumerate(step['options'])
-        )
     return text
 
 async def push(event: str, payload: dict):
