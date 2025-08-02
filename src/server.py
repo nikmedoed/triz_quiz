@@ -14,7 +14,7 @@ PORT = settings.server_port
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")  # simple CORS for local network
-db = Database(settings.db_file)
+db = Database(settings.db_file, settings.avatar_dir)
 progress_state = None
 rating_state = None
 

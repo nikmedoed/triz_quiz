@@ -1,20 +1,23 @@
 import json
 import sqlite3
+from pathlib import Path
 from typing import Dict, List, Tuple
 
 
 class Database:
     """Lightweight SQLite wrapper for storing quiz data."""
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, avatar_dir: str):
         self.conn = sqlite3.connect(path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
+        self.avatar_dir = Path(avatar_dir)
+        self.avatar_dir.mkdir(parents=True, exist_ok=True)
         self._apply_migrations()
 
     def _apply_migrations(self) -> None:
         """Apply pending schema migrations in order."""
         cur = self.conn.cursor()
-        migrations = [self._migration_initial, self._migration_add_avatar]
+        migrations = [self._migration_initial]
         cur.execute("PRAGMA user_version")
         version = cur.fetchone()[0]
         for idx in range(version, len(migrations)):
@@ -29,8 +32,7 @@ class Database:
             CREATE TABLE IF NOT EXISTS participants (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                score INTEGER NOT NULL DEFAULT 0,
-                avatar BLOB
+                score INTEGER NOT NULL DEFAULT 0
             )
             """
         )
@@ -54,13 +56,6 @@ class Database:
             """
         )
 
-    def _migration_add_avatar(self, cur: sqlite3.Cursor) -> None:
-        """Ensure the avatar column exists for participants."""
-        cur.execute("PRAGMA table_info(participants)")
-        columns = [row[1] for row in cur.fetchall()]
-        if "avatar" not in columns:
-            cur.execute("ALTER TABLE participants ADD COLUMN avatar BLOB")
-
     def add_participant(
             self, user_id: int, name: str, avatar: bytes | None = None
     ) -> None:
@@ -68,14 +63,15 @@ class Database:
         cur = self.conn.cursor()
         cur.execute(
             (
-                "INSERT INTO participants (id, name, avatar) VALUES (?, ?, ?) "
+                "INSERT INTO participants (id, name) VALUES (?, ?) "
                 "ON CONFLICT(id) DO UPDATE SET "
-                "name=excluded.name, "
-                "avatar=COALESCE(excluded.avatar, participants.avatar)"
+                "name=excluded.name"
             ),
-            (user_id, name, avatar),
+            (user_id, name),
         )
         self.conn.commit()
+        if avatar:
+            (self.avatar_dir / f"{user_id}.jpg").write_bytes(avatar)
 
     def update_score(self, user_id: int, delta: int) -> None:
         cur = self.conn.cursor()
@@ -104,10 +100,8 @@ class Database:
         return cur.fetchall()
 
     def get_avatar(self, user_id: int) -> bytes | None:
-        cur = self.conn.cursor()
-        cur.execute("SELECT avatar FROM participants WHERE id = ?", (user_id,))
-        row = cur.fetchone()
-        return row["avatar"] if row and row["avatar"] is not None else None
+        path = self.avatar_dir / f"{user_id}.jpg"
+        return path.read_bytes() if path.exists() else None
 
     def get_responses(self, step: int, kind: str) -> Dict[int, str]:
         cur = self.conn.cursor()
@@ -246,5 +240,10 @@ class Database:
         cur.execute("DELETE FROM responses")
         cur.execute("DELETE FROM state")
         self.conn.commit()
+        for file in self.avatar_dir.glob("*"):
+            try:
+                file.unlink()
+            except FileNotFoundError:
+                pass
         self.set_stage(1)
         self.set_step(-1)
