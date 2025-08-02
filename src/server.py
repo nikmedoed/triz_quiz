@@ -2,7 +2,7 @@
 
 from io import BytesIO
 
-from flask import Flask, render_template, request, abort, send_file
+from flask import Flask, render_template, request, abort, send_file, redirect
 from flask_socketio import SocketIO, emit
 
 from .config import settings
@@ -95,15 +95,17 @@ def next_route():
     return '', 204
 
 
-@app.route('/reset', methods=['POST'])
+@app.route('/reset', methods=['GET', 'POST'])
 def reset_route():
     global progress_state, rating_state
-    db.reset()
-    progress_state = None
-    rating_state = None
-    socketio.emit('participants', {'who': []})
-    socketio.emit('reset', {})
-    return '', 204
+    if request.method == 'POST':
+        db.reset()
+        progress_state = None
+        rating_state = None
+        socketio.emit('participants', {'who': []})
+        socketio.emit('reset', {})
+        return redirect('/')
+    return render_template('reset.html')
 
 
 @app.route('/avatar/<int:user_id>')
@@ -137,6 +139,8 @@ def handle_connect():
 
 def run_server():
     """Запуск веб-сервера для отображения."""
+    url = f"http://{HOST}:{PORT}/reset"
+    print(f"Reset quiz data: {url}")
     # Flask-SocketIO 6.x forbids the development server unless explicitly allowed.
     # We only use this simple Werkzeug server for local demos, so it is safe to
     # enable the "unsafe" mode here.
