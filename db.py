@@ -119,7 +119,7 @@ class Database:
         cur = self.conn.cursor()
         cur.execute("SELECT value FROM state WHERE key = 'step'")
         row = cur.fetchone()
-        return int(row["value"]) if row else 0
+        return int(row["value"]) if row else -1
 
     def set_step(self, step: int) -> None:
         cur = self.conn.cursor()
@@ -148,4 +148,4 @@ class Database:
         cur.execute("DELETE FROM state")
         self.conn.commit()
         self.set_stage(1)
-        self.set_step(0)
+        self.set_step(-1)

@@ -20,6 +20,7 @@
   <div id="content"></div>
   <div id="participants"></div>
   <button id="startBtn">Начать</button>
+  <button id="nextBtn" style="display:none">Далее</button>
   <div id="results"></div>
 
 <script>
@@ -70,8 +71,17 @@ document.getElementById('startBtn').addEventListener('click', async () => {
   await fetch('/start', {method: 'POST'});
 });
 
+document.getElementById('nextBtn').addEventListener('click', async () => {
+  await fetch('/next', {method: 'POST'});
+});
+
 socket.on('started', () => {
   document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'inline-block';
+});
+
+socket.on('end', () => {
+  document.getElementById('nextBtn').style.display = 'none';
 });
 </script>
 </body>

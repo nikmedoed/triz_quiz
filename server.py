@@ -4,6 +4,7 @@
 from flask import Flask, render_template, request, abort, send_file
 from flask_socketio import SocketIO, emit
 from io import BytesIO
+import json
 
 from config import settings
 from db import Database
@@ -14,6 +15,9 @@ PORT = settings.server_port
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")       # simple CORS for local network
 db = Database(settings.db_file)
+
+with open('scenario.json', encoding='utf-8') as f:
+    SCENARIO = json.load(f)
 
 @app.route('/')
 def index():
@@ -32,10 +36,30 @@ def update():
     return '', 204
 
 
+def broadcast_step(idx: int) -> None:
+    if 0 <= idx < len(SCENARIO):
+        socketio.emit('step', SCENARIO[idx])
+    else:
+        socketio.emit('end', {})
+
+
+def next_step() -> None:
+    step = db.get_step() + 1
+    db.set_step(step)
+    broadcast_step(step)
+
+
 @app.route('/start', methods=['POST'])
 def start_quiz():
     db.set_stage(2)
     socketio.emit('started', {})
+    next_step()
+    return '', 204
+
+
+@app.route('/next', methods=['POST'])
+def next_route():
+    next_step()
     return '', 204
 
 
@@ -55,6 +79,7 @@ def handle_connect():
     emit("participants", {"who": people})
     if db.get_stage() != 1:
         emit("started", {})
+        broadcast_step(db.get_step())
 
 
 def run_server():

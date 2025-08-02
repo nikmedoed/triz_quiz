@@ -20,7 +20,7 @@ db = Database(settings.db_file)
 with open('scenario.json', encoding='utf-8') as f:
     SCENARIO = json.load(f)
 
-step_idx = 0  # глобальный «шаг»
+step_idx = -1  # текущий шаг сценария
 participants: dict[int, dict] = {}
 answers_current: dict[int, str] = {}
 votes_current: dict[int, str] = {}
@@ -44,12 +44,45 @@ def load_state() -> None:
 load_state()
 
 def current_step():
-    return SCENARIO[step_idx] if step_idx < len(SCENARIO) else None
+    return SCENARIO[step_idx] if 0 <= step_idx < len(SCENARIO) else None
+
+
+def format_step(step: dict) -> str:
+    text = f"Сейчас идёт шаг: {step['title']}"
+    if step.get('description'):
+        text += f"\n{step['description']}"
+    if step.get('options'):
+        text += "\n" + "\n".join(
+            f"{i+1}. {opt}" for i, opt in enumerate(step['options'])
+        )
+    return text
 
 async def push(event: str, payload: dict):
     """Отправка данных на проектор."""
     async with aiohttp.ClientSession() as session:
         await session.post(PROJECTOR_URL, json={'event': event, 'payload': payload})
+
+
+async def watch_steps():
+    global step_idx, answers_current, votes_current
+    last = step_idx
+    while True:
+        await asyncio.sleep(1)
+        cur = db.get_step()
+        if cur != last:
+            last = cur
+            step_idx = cur
+            answers_current.clear(); votes_current.clear()
+            step = current_step()
+            if step:
+                text = format_step(step)
+                for uid in participants:
+                    await bot.send_message(uid, text)
+            else:
+                rating = db.get_rating()
+                table = "\n".join(f"{n}: {s}" for n, s in rating)
+                for uid in participants:
+                    await bot.send_message(uid, "Викторина завершена.\n" + table)
 
 # ---------- регистрация ----------------------------
 @dp.message(Command('start'))
@@ -84,14 +117,7 @@ async def name_received(msg: Message):
     elif stage == 2:
         step = current_step()
         if step:
-            text = f"Сейчас идёт шаг: {step['title']}"
-            if step.get('description'):
-                text += f"\n{step['description']}"
-            if step.get('options'):
-                text += "\n" + "\n".join(
-                    f"{i+1}. {opt}" for i, opt in enumerate(step['options'])
-                )
-            await msg.answer(text)
+            await msg.answer(format_step(step))
         else:
             await msg.answer("Викторина уже началась, ожидайте вопросов.")
     else:
@@ -131,17 +157,10 @@ async def quiz_answer(msg: Message):
 @dp.message(Command('next'), lambda m: m.from_user.id == ADMIN_ID)
 async def cmd_next(msg: Message):
     """Перейти к следующему шагу сценария."""
-    global step_idx, answers_current, votes_current
-    answers_current.clear(); votes_current.clear()
-    step_idx += 1
-    db.set_step(step_idx)
-    step = current_step()
-    if not step:
-        await push('end', {})
-        await msg.answer("Конец сценария.")
-        return
-    await push('step', step)
-    await msg.answer(f"Шаг {step_idx+1}: {step['title']} отправлен на экран.")
+    base = PROJECTOR_URL.rsplit('/', 1)[0]
+    async with aiohttp.ClientSession() as session:
+        await session.post(f"{base}/next")
+    await msg.answer("Переключение шага.")
 
 @dp.message(Command('show_votes'), lambda m: m.from_user.id == ADMIN_ID)
 async def cmd_show_votes(msg: Message):
@@ -183,7 +202,7 @@ async def cmd_rating(msg: Message):
 async def cmd_reset(msg: Message):
     """Сбросить состояние викторины."""
     global step_idx, participants, answers_current, votes_current
-    step_idx = 0
+    step_idx = -1
     participants.clear()
     answers_current.clear()
     votes_current.clear()
@@ -195,7 +214,11 @@ async def cmd_reset(msg: Message):
 def run_bot():
     """Запуск Telegram-бота."""
     logging.basicConfig(level=logging.INFO)
-    asyncio.run(dp.start_polling(bot))
+    async def main_loop():
+        asyncio.create_task(watch_steps())
+        await dp.start_polling(bot)
+
+    asyncio.run(main_loop())
 
 
 if __name__ == '__main__':
