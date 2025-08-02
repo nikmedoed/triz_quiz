@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-_SCENARIO_PATH = Path(__file__).with_name("scenario.json")
+_SCENARIO_PATH = Path(__file__).resolve().parent.parent / "scenario.json"
 
 
 def load_scenario() -> list[dict[str, Any]]:
