@@ -1,29 +1,30 @@
-
 """Real-time projector for TRIZ-quiz."""
+
+from io import BytesIO
 
 from flask import Flask, render_template, request, abort, send_file
 from flask_socketio import SocketIO, emit
-from io import BytesIO
-import json
 
 from config import settings
 from db import Database
+from resources import load_scenario
 
 HOST = settings.server_host
 PORT = settings.server_port
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")       # simple CORS for local network
+socketio = SocketIO(app, cors_allowed_origins="*")  # simple CORS for local network
 db = Database(settings.db_file)
 progress_state = None
 rating_state = None
 
-with open('scenario.json', encoding='utf-8') as f:
-    SCENARIO = json.load(f)
+SCENARIO = load_scenario()
+
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/update', methods=['POST'])
 def update():
