@@ -65,7 +65,7 @@ async def name_received(msg: Message):
     photos = await bot.get_user_profile_photos(user.id, limit=1)
     if photos.total_count:
         file = await bot.get_file(photos.photos[0][-1].file_id)
-        avatar = await bot.download_file(file.file_path)
+        avatar = (await bot.download_file(file.file_path)).getvalue()
     score = participants.get(user.id, {}).get("score", 0)
     participants[user.id] = {"name": name, "score": score}
     db.add_participant(user.id, name, avatar)
