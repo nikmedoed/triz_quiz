@@ -72,6 +72,23 @@ def load_state() -> None:
 load_state()
 
 
+def vote_keyboard_for(uid: int) -> InlineKeyboardMarkup:
+    """Build inline keyboard with checkmarks for selected ideas."""
+    selected = votes_current.get(uid, set())
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=f"{'✔ ' if idea['id'] in selected else ''}{idea['id']}. {idea['text'][:30]}",
+                    callback_data=f"vote:{idea['id']}",
+                )
+            ]
+            for idea in ideas
+            if idea['user_id'] != uid
+        ]
+    )
+
+
 def format_step(step: dict) -> str:
     """Render message for current step according to its type."""
     t = step.get("type")
@@ -133,7 +150,8 @@ async def send_progress():
         answered = sum(1 for v in votes_current.values() if v)
     else:
         answered = len(answers_current)
-    await push('progress', {'answered': answered, 'total': len(participants), 'ts': last_answer_ts})
+    ts = last_answer_ts if answered else None
+    await push('progress', {'answered': answered, 'total': len(participants), 'ts': ts})
 
 
 async def watch_steps():
@@ -200,18 +218,7 @@ async def watch_steps():
                         )
                         await bot.send_message(uid, text, reply_markup=kb)
                     elif step['type'] == 'vote':
-                        kb = InlineKeyboardMarkup(
-                            inline_keyboard=[
-                                [
-                                    InlineKeyboardButton(
-                                        text=f"{idea['id']}. {idea['text'][:30]}",
-                                        callback_data=f"vote:{idea['id']}",
-                                    )
-                                ]
-                                for idea in ideas
-                                if idea['user_id'] != uid
-                            ]
-                        )
+                        kb = vote_keyboard_for(uid)
                         await bot.send_message(uid, text, reply_markup=kb)
                     else:
                         await bot.send_message(uid, text)
@@ -300,6 +307,8 @@ async def vote(cb: CallbackQuery):
         votes.add(idea_id)
     db.record_response(cb.from_user.id, step_idx, 'vote', json.dumps(list(votes)))
     last_answer_ts = time.time()
+    kb = vote_keyboard_for(cb.from_user.id)
+    await cb.message.edit_reply_markup(reply_markup=kb)
     await cb.answer("Голос учтён.")
     await send_progress()
     await push('vote_in', {'voter': cb.from_user.full_name})

@@ -45,17 +45,18 @@ function hideProgress() {
   clearInterval(sinceId);
 }
 
-function startTimer() {
+function startTimer(seconds) {
   clearInterval(timerId);
-  let remaining = 300;
+  let remaining = seconds;
   const div = document.getElementById('timer');
   div.style.display = 'block';
-  div.textContent = formatTime(remaining);
-  timerId = setInterval(() => {
-    remaining--;
-    if (remaining < 0) { clearInterval(timerId); return; }
+  const tick = () => {
     div.textContent = formatTime(remaining);
-  }, 1000);
+    remaining--;
+    if (remaining < 0) clearInterval(timerId);
+  };
+  tick();
+  timerId = setInterval(tick, 1000);
 }
 
 function updateSince(ts) {
@@ -63,10 +64,12 @@ function updateSince(ts) {
   clearInterval(sinceId);
   const div = document.getElementById('lastAnswer');
   div.style.display = 'block';
-  sinceId = setInterval(() => {
+  const tick = () => {
     const diff = Math.floor((Date.now() - lastTs) / 1000);
     div.textContent = `Последний ответ: ${formatTime(diff)} назад`;
-  }, 1000);
+  };
+  tick();
+  sinceId = setInterval(tick, 1000);
 }
 
 socket.on('step', step => {
@@ -84,7 +87,7 @@ socket.on('step', step => {
   }
   document.getElementById('results').innerHTML = '';
   if (['quiz','open','vote'].includes(step.type)) {
-    startTimer();
+    startTimer(step.type === 'vote' ? 60 : 300);
   } else {
     hideProgress();
   }
@@ -97,7 +100,14 @@ socket.on('progress', data => {
   }
   document.getElementById('answerStats').style.display = 'block';
   document.getElementById('answerStats').textContent = `Ответов: ${data.answered}/${data.total}`;
-  updateSince(data.ts);
+  if (data.ts) {
+    updateSince(data.ts);
+  } else {
+    clearInterval(sinceId);
+    const div = document.getElementById('lastAnswer');
+    div.style.display = 'block';
+    div.textContent = 'Последний ответ: —';
+  }
 });
 
 socket.on('vote_result', data => {
