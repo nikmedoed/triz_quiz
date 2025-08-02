@@ -57,7 +57,7 @@
 <div id="lastAnswer" style="margin-top:0.5rem; display:none"></div>
 <div id="participants"></div>
 <button id="startBtn">Начать</button>
-<button id="resetBtn" style="display:none">Сбросить</button>
+<button id="resetBtn">Сбросить</button>
 <button id="nextBtn" style="display:none">Далее</button>
 <div id="results"></div>
 
@@ -237,7 +237,7 @@
     socket.on('reset', () => {
         document.getElementById('startBtn').style.display = 'inline-block';
         document.getElementById('nextBtn').style.display = 'none';
-        document.getElementById('resetBtn').style.display = 'none';
+        document.getElementById('resetBtn').style.display = 'inline-block';
         const part = document.getElementById('participants');
         part.style.display = 'grid';
         part.innerHTML = '';

@@ -1,7 +1,6 @@
 """Real-time projector for TRIZ-quiz."""
 
 from io import BytesIO
-import webbrowser
 
 from flask import Flask, render_template, request, abort, send_file, redirect
 from flask_socketio import SocketIO, emit
@@ -155,10 +154,6 @@ def run_server():
     display_host = "127.0.0.1" if HOST in ("0.0.0.0", "::") else HOST
     url = f"http://{display_host}:{PORT}/reset"
     print(f"Reset quiz data: {url}")
-    try:
-        webbrowser.open(url)
-    except Exception:
-        pass
     # Flask-SocketIO 6.x forbids the development server unless explicitly allowed.
     # We only use this simple Werkzeug server for local demos, so it is safe to
     # enable the "unsafe" mode here.
