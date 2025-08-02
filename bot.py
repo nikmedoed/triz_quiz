@@ -2,6 +2,8 @@
 
 import asyncio, aiohttp, json, logging, os
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -9,7 +11,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from config import settings
 from db import Database
 
-bot = Bot(settings.bot_token, parse_mode="HTML")
+bot = Bot(settings.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())  # in-memory FSM
 PROJECTOR_URL = settings.projector_url
 STATE_FILE = settings.state_file
