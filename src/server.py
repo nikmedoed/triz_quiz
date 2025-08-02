@@ -8,7 +8,7 @@ from flask_socketio import SocketIO, emit
 from .config import settings
 from .db import Database
 from .resources import load_scenario
-from .bot import state as bot_state
+from .bot.state import state as bot_state
 
 HOST = settings.server_host
 PORT = settings.server_port
@@ -110,7 +110,7 @@ def next_route():
 def reset_route():
     global progress_state, rating_state
     if request.method == 'POST':
-        bot_state.reset_state()
+        bot_state.reset()
         db.reset()
         progress_state = None
         rating_state = None

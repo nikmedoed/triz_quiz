@@ -4,7 +4,7 @@ import html
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from . import state
+from .state import state
 
 
 def vote_keyboard_for(uid: int) -> InlineKeyboardMarkup:

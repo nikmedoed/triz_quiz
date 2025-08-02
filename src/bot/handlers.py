@@ -8,7 +8,8 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 
-from . import core, formatting, state
+from . import core, formatting
+from .state import state
 
 router = Router()
 
@@ -112,24 +113,24 @@ async def quiz_answer(cb: CallbackQuery):
     await core.push('answer_in', {'name': cb.from_user.full_name})
 
 
-@router.message(Command('next'), lambda m: m.from_user.id == state.ADMIN_ID)
+@router.message(Command('next'), lambda m: m.from_user.id == state.admin_id)
 async def cmd_next(msg: Message):
-    base = state.PROJECTOR_URL.rsplit('/', 1)[0]
+    base = state.projector_url.rsplit('/', 1)[0]
     async with aiohttp.ClientSession() as session:
         await session.post(f"{base}/next")
     await msg.answer("Переключение шага.")
 
 
-@router.message(Command('rating'), lambda m: m.from_user.id == state.ADMIN_ID)
+@router.message(Command('rating'), lambda m: m.from_user.id == state.admin_id)
 async def cmd_rating(msg: Message):
     rows = state.db.get_leaderboard()
     await msg.answer("Текущий рейтинг:\n" + formatting.format_leaderboard(rows))
     await core.broadcast_rating(rows)
 
 
-@router.message(Command('reset'), lambda m: m.from_user.id == state.ADMIN_ID)
+@router.message(Command('reset'), lambda m: m.from_user.id == state.admin_id)
 async def cmd_reset(msg: Message):
-    state.reset_state()
+    state.reset()
     state.db.reset()
     await msg.answer("Состояние сброшено.")
     await core.push('participants', {'who': []})

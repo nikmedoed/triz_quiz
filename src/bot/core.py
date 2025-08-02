@@ -6,7 +6,8 @@ from typing import Any
 
 import aiohttp
 
-from . import formatting, state
+from . import formatting
+from .state import state
 
 Payload = dict[str, Any] | list[dict[str, Any]]
 
@@ -14,7 +15,7 @@ Payload = dict[str, Any] | list[dict[str, Any]]
 async def push(event: str, payload: Payload):
     """Отправка данных на проектор."""
     async with aiohttp.ClientSession() as session:
-        await session.post(state.PROJECTOR_URL, json={'event': event, 'payload': payload})
+        await session.post(state.projector_url, json={'event': event, 'payload': payload})
 
 
 async def send_progress():
