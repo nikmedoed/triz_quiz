@@ -31,7 +31,16 @@ def update():
 
 def run_server():
     """Запуск веб-сервера для отображения."""
-    socketio.run(app, host=HOST, port=PORT, use_reloader=False)
+    # Flask-SocketIO 6.x forbids the development server unless explicitly allowed.
+    # We only use this simple Werkzeug server for local demos, so it is safe to
+    # enable the "unsafe" mode here.
+    socketio.run(
+        app,
+        host=HOST,
+        port=PORT,
+        use_reloader=False,
+        allow_unsafe_werkzeug=True,
+    )
 
 
 if __name__ == '__main__':
