@@ -1,8 +1,12 @@
 """Quiz state and helper routines."""
 
-import asyncio, aiohttp, json, html, time
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+import asyncio
+import html
+import json
+import time
 
+import aiohttp
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from config import settings
 from db import Database
 from resources import load_scenario
@@ -91,8 +95,8 @@ def quiz_keyboard_for(step: dict, uid: int) -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=f"{'✅ ' if str(i+1) == str(chosen) else ''}{i+1}. {opt[:30]}",
-                    callback_data=f"quiz:{i+1}",
+                    text=f"{'✅ ' if str(i + 1) == str(chosen) else ''}{i + 1}. {opt[:30]}",
+                    callback_data=f"quiz:{i + 1}",
                 )
             ]
             for i, opt in enumerate(step.get('options', []))
@@ -221,7 +225,9 @@ async def watch_steps(bot):
                             msg = 'Вы не ответили.'
                         msg += '\n\nОтветы более не принимаются, вернитесь в общий зал.'
                         await bot.send_message(uid, msg)
-            answers_current.clear(); votes_current.clear(); ideas = []
+            answers_current.clear();
+            votes_current.clear();
+            ideas = []
             step = current_step()
             if step and step.get("type") in ("open", "quiz", "vote"):
                 step_start_ts = last_answer_ts = time.time()

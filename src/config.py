@@ -1,8 +1,10 @@
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
+
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 @dataclass
 class Settings:
@@ -13,6 +15,7 @@ class Settings:
     server_host: str = os.getenv("SERVER_HOST", "0.0.0.0")
     server_port: int = int(os.getenv("SERVER_PORT", 5000))
     db_file: str = os.getenv("DB_FILE", "quiz.db")
+
 
 settings = Settings()
 

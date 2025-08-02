@@ -1,6 +1,7 @@
-import sqlite3
 import json
+import sqlite3
 from typing import Dict, List, Tuple
+
 
 class Database:
     """Lightweight SQLite wrapper for storing quiz data."""
@@ -61,7 +62,7 @@ class Database:
             cur.execute("ALTER TABLE participants ADD COLUMN avatar BLOB")
 
     def add_participant(
-        self, user_id: int, name: str, avatar: bytes | None = None
+            self, user_id: int, name: str, avatar: bytes | None = None
     ) -> None:
         """Insert or update a participant without resetting their score."""
         cur = self.conn.cursor()

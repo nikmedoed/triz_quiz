@@ -1,8 +1,8 @@
 """Convenience script to run the TRIZ quiz application."""
 
-from pathlib import Path
 import sys
 import threading
+from pathlib import Path
 
 # Ensure local src/ directory is on the import path
 ROOT = Path(__file__).resolve().parent

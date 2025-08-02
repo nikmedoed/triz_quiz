@@ -2,6 +2,7 @@
 
 import json
 import time
+
 import aiohttp
 from aiogram import Router
 from aiogram.filters import Command
@@ -57,8 +58,8 @@ async def name_received(msg: Message):
 
 @router.message(
     lambda m: core.db.get_stage() == 2
-    and core.current_step()
-    and core.current_step()['type'] == 'open'
+              and core.current_step()
+              and core.current_step()['type'] == 'open'
 )
 async def open_answer(msg: Message):
     text = msg.text.strip()[:200]
@@ -78,9 +79,9 @@ async def open_answer(msg: Message):
 
 @router.callback_query(
     lambda c: core.db.get_stage() == 2
-    and core.current_step()
-    and core.current_step()['type'] == 'vote'
-    and c.data.startswith('vote:')
+              and core.current_step()
+              and core.current_step()['type'] == 'vote'
+              and c.data.startswith('vote:')
 )
 async def vote(cb: CallbackQuery):
     idea_id = int(cb.data.split(':')[1])
@@ -104,9 +105,9 @@ async def vote(cb: CallbackQuery):
 
 @router.callback_query(
     lambda c: core.db.get_stage() == 2
-    and core.current_step()
-    and core.current_step()['type'] == 'quiz'
-    and c.data.startswith('quiz:')
+              and core.current_step()
+              and core.current_step()['type'] == 'quiz'
+              and c.data.startswith('quiz:')
 )
 async def quiz_answer(cb: CallbackQuery):
     ans = cb.data.split(':')[1]
