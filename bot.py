@@ -103,16 +103,16 @@ async def name_received(msg: Message):
     participants[user.id] = {"name": name, "score": score}
     db.add_participant(user.id, name, avatar)
     pending_names.remove(user.id)
-    await push(
-        "participants",
-        {
-            "who": [
-                {"id": uid, "name": p["name"]} for uid, p in participants.items()
-            ]
-        },
-    )
     stage = db.get_stage()
     if stage == 1:
+        await push(
+            "participants",
+            {
+                "who": [
+                    {"id": uid, "name": p["name"]} for uid, p in participants.items()
+                ]
+            },
+        )
         await msg.answer("Вы зарегистрированы! Ожидайте начала.")
     elif stage == 2:
         step = current_step()

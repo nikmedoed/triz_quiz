@@ -78,10 +78,20 @@ document.getElementById('nextBtn').addEventListener('click', async () => {
 socket.on('started', () => {
   document.getElementById('startBtn').style.display = 'none';
   document.getElementById('nextBtn').style.display = 'inline-block';
+  document.getElementById('participants').style.display = 'none';
 });
 
 socket.on('end', () => {
   document.getElementById('nextBtn').style.display = 'none';
+});
+
+socket.on('reset', () => {
+  document.getElementById('startBtn').style.display = 'inline-block';
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('participants').style.display = 'grid';
+  document.getElementById('title').textContent = 'Ожидание начала…';
+  document.getElementById('content').textContent = '';
+  document.getElementById('results').innerHTML = '';
 });
 </script>
 </body>

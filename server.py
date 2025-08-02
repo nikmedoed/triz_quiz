@@ -76,8 +76,10 @@ def handle_connect():
     people = [
         {"id": row["id"], "name": row["name"]} for row in db.get_participants()
     ]
-    emit("participants", {"who": people})
-    if db.get_stage() != 1:
+    stage = db.get_stage()
+    if stage == 1:
+        emit("participants", {"who": people})
+    else:
         emit("started", {})
         broadcast_step(db.get_step())
 
