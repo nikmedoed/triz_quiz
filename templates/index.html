@@ -72,9 +72,13 @@ function updateSince(ts) {
 socket.on('step', step => {
   document.getElementById('title').textContent = step.title;
   if (step.type === 'quiz') {
-    document.getElementById('content').textContent = step.options.join("\n");
-  } else if (step.type === 'open' || step.type === 'vote') {
+    document.getElementById('content').textContent =
+      step.options.map((o,i)=>`${i+1}. ${o}`).join("\n");
+  } else if (step.type === 'open') {
     document.getElementById('content').textContent = step.description || '';
+  } else if (step.type === 'vote') {
+    const txt = step.ideas.map(i=>`${i.id}. ${i.text} (${formatTime(Math.floor(i.time))})`).join("\n");
+    document.getElementById('content').textContent = txt;
   } else if (step.type === 'slide') {
     document.getElementById('content').textContent = step.content || '';
   }
@@ -96,12 +100,23 @@ socket.on('progress', data => {
   updateSince(data.ts);
 });
 
-socket.on('votes_result', tally => {
+socket.on('vote_result', data => {
   const div = document.getElementById('results');
   div.innerHTML = '<h2>Результаты голосования</h2>';
-  for (const [name, cnt] of Object.entries(tally)) {
-    div.innerHTML += `<div>${name}: <span class="highlight">${cnt}</span></div>`;
-  }
+  data.ideas.forEach(idea => {
+    let html = `<div style="margin-bottom:1rem"><strong>${idea.id}. ${idea.text}</strong> ` +
+      `<span class="highlight">${idea.votes.length}</span><br/>` +
+      `<img src="/avatar/${idea.author.id}" width="40" height="40"/> ${idea.author.name}<br/>`;
+    if (idea.votes.length) {
+      html += '<div>';
+      idea.votes.forEach(v => {
+        html += `<img src="/avatar/${v}" width="24" height="24"/>`;
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+    div.innerHTML += html;
+  });
 });
 
 socket.on('quiz_result', data => {

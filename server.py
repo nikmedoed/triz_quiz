@@ -46,7 +46,15 @@ def update():
 
 def broadcast_step(idx: int) -> None:
     if 0 <= idx < len(SCENARIO):
-        socketio.emit('step', SCENARIO[idx])
+        step = dict(SCENARIO[idx])
+        if step.get('type') == 'vote':
+            answers = db.get_open_answers(idx - 1)
+            answers.sort(key=lambda a: a['time'])
+            step['ideas'] = [
+                {"id": i + 1, "text": a["text"], "time": a["time"], "user": a["user_id"]}
+                for i, a in enumerate(answers)
+            ]
+        socketio.emit('step', step)
     else:
         socketio.emit('end', {})
 
