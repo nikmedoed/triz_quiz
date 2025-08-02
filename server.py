@@ -1,16 +1,19 @@
 
 """Real-time projector for TRIZ-quiz."""
 
-from flask import Flask, render_template, request, abort
+from flask import Flask, render_template, request, abort, send_file
 from flask_socketio import SocketIO
+from io import BytesIO
 
 from config import settings
+from db import Database
 
 HOST = settings.server_host
 PORT = settings.server_port
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")       # simple CORS for local network
+db = Database(settings.db_file)
 
 @app.route('/')
 def index():
@@ -27,6 +30,14 @@ def update():
     data = request.get_json()
     socketio.emit(data['event'], data['payload'])
     return '', 204
+
+
+@app.route('/avatar/<int:user_id>')
+def avatar(user_id: int):
+    data = db.get_avatar(user_id)
+    if not data:
+        abort(404)
+    return send_file(BytesIO(data), mimetype='image/jpeg')
 
 
 def run_server():

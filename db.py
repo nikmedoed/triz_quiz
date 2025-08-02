@@ -1,5 +1,5 @@
 import sqlite3
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 class Database:
     """Lightweight SQLite wrapper for storing quiz data."""
@@ -11,14 +11,18 @@ class Database:
 
     def _init_db(self) -> None:
         cur = self.conn.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             CREATE TABLE IF NOT EXISTS participants (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                score INTEGER NOT NULL DEFAULT 0
+                score INTEGER NOT NULL DEFAULT 0,
+                avatar BLOB
             )
-        """)
-        cur.execute("""
+            """
+        )
+        cur.execute(
+            """
             CREATE TABLE IF NOT EXISTS responses (
                 user_id INTEGER,
                 step INTEGER,
@@ -26,14 +30,25 @@ class Database:
                 value TEXT,
                 PRIMARY KEY(user_id, step, kind)
             )
-        """)
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS state (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+            """
+        )
         self.conn.commit()
 
-    def add_participant(self, user_id: int, name: str, score: int = 0) -> None:
+    def add_participant(
+        self, user_id: int, name: str, avatar: bytes | None = None, score: int = 0
+    ) -> None:
         cur = self.conn.cursor()
         cur.execute(
-            "INSERT OR REPLACE INTO participants (id, name, score) VALUES (?, ?, ?)",
-            (user_id, name, score),
+            "INSERT OR REPLACE INTO participants (id, name, score, avatar) VALUES (?, ?, ?, ?)",
+            (user_id, name, score, avatar),
         )
         self.conn.commit()
 
@@ -58,8 +73,41 @@ class Database:
         cur.execute("SELECT name, score FROM participants ORDER BY score DESC")
         return [(row["name"], row["score"]) for row in cur.fetchall()]
 
+    def get_participants(self) -> List[sqlite3.Row]:
+        cur = self.conn.cursor()
+        cur.execute("SELECT * FROM participants")
+        return cur.fetchall()
+
+    def get_avatar(self, user_id: int) -> bytes | None:
+        cur = self.conn.cursor()
+        cur.execute("SELECT avatar FROM participants WHERE id = ?", (user_id,))
+        row = cur.fetchone()
+        return row["avatar"] if row and row["avatar"] is not None else None
+
+    def get_responses(self, step: int, kind: str) -> Dict[int, str]:
+        cur = self.conn.cursor()
+        cur.execute(
+            "SELECT user_id, value FROM responses WHERE step = ? AND kind = ?",
+            (step, kind),
+        )
+        return {row["user_id"]: row["value"] for row in cur.fetchall()}
+
+    def get_step(self) -> int:
+        cur = self.conn.cursor()
+        cur.execute("SELECT value FROM state WHERE key = 'step'")
+        row = cur.fetchone()
+        return int(row["value"]) if row else 0
+
+    def set_step(self, step: int) -> None:
+        cur = self.conn.cursor()
+        cur.execute(
+            "REPLACE INTO state (key, value) VALUES ('step', ?)", (str(step),)
+        )
+        self.conn.commit()
+
     def reset(self) -> None:
         cur = self.conn.cursor()
         cur.execute("DELETE FROM participants")
         cur.execute("DELETE FROM responses")
+        cur.execute("DELETE FROM state")
         self.conn.commit()
