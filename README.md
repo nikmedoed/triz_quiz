@@ -16,14 +16,16 @@ PROJECTOR_URL=http://localhost:5000/update
 SERVER_HOST=0.0.0.0
 SERVER_PORT=5000
 DB_FILE=quiz.db
+AVATAR_DIR=avatars
 ```
 
 `BOT_TOKEN` and `ADMIN_ID` are required for the bot to operate.
 
 `DB_FILE` points to a SQLite database where quiz progress, participant info,
-their responses, and cached avatars are persisted. Schema migrations are
-applied automatically on startup so older databases upgrade in place. Admins can
-reset the state with `/reset`.
+and their responses are persisted. User avatars are cached on disk in the
+`AVATAR_DIR` folder instead of the database. Schema migrations are applied
+automatically on startup so older databases upgrade in place. Admins can reset
+the state with `/reset`.
 
 ## Running
 
@@ -39,7 +41,7 @@ Telegram for bot updates.
 ## Registration
 
 Participants join by messaging `/start` to the bot. It asks each user for a
-display name, caches their avatar, and stores everything in the SQLite
+display name, caches their avatar on disk, and stores metadata in the SQLite
 database. Sending `/start` again later lets a participant change their name or
 avatar and the bot replies with the current quiz step. The projector page lists
 registered players in a shrinking grid and features a **Начать** button to move

@@ -9,7 +9,7 @@ from ..resources import load_scenario
 
 PROJECTOR_URL = settings.projector_url
 
-db = Database(settings.db_file)
+db = Database(settings.db_file, settings.avatar_dir)
 SCENARIO = load_scenario()
 
 step_idx = -1  # текущий шаг сценария
