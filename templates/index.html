@@ -153,10 +153,16 @@ socket.on('quiz_result', data => {
 
 socket.on('rating', rating => {
   const div = document.getElementById('results');
-  div.innerHTML = '<h2>Итоговый рейтинг</h2>';
+  let html = '<h2>Итоговый рейтинг</h2>';
   rating.forEach(p => {
-    div.innerHTML += `<div>${p.name}: <span class="highlight">${p.score}</span></div>`;
+    html += `<div style="display:flex;align-items:center;margin-bottom:0.5rem">` +
+      `<div style="width:2rem">${p.place}</div>` +
+      `<img src="/avatar/${p.id}" width="40" height="40"/>` +
+      `<div style="flex:1;margin-left:0.5rem">${p.name}</div>` +
+      `<div class="highlight">${p.score}</div>` +
+      `</div>`;
   });
+  div.innerHTML = html;
 });
 
 socket.on('participants', data => {

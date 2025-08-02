@@ -49,7 +49,12 @@ def load_state() -> None:
         for uid, val in answers_raw.items()
     }
     quiz_raw = db.get_responses(step_idx, "quiz")
-    answers_current.update({uid: {'text': val} for uid, val in quiz_raw.items()})
+    answers_current.update(
+        {
+            uid: json.loads(val) if val.startswith('{') else {'text': val, 'time': 0}
+            for uid, val in quiz_raw.items()
+        }
+    )
     votes_raw = db.get_responses(step_idx, "vote")
     votes_current = {
         uid: set(json.loads(v)) if v.startswith('[') else set()
@@ -264,7 +269,39 @@ async def watch_steps():
                         else:
                             await bot.send_message(uid, text)
             else:
-                pass
+                if db.get_stage() == 3:
+                    board = db.get_leaderboard()
+                    await push(
+                        'rating',
+                        [
+                            {
+                                'id': r['id'],
+                                'name': r['name'],
+                                'score': r['score'],
+                                'place': r['place'],
+                            }
+                            for r in board
+                        ],
+                    )
+                    stats = db.get_times_by_user()
+                    for row in board:
+                        uid = row['id']
+                        o = stats.get(uid, {}).get('open', [])
+                        q = stats.get(uid, {}).get('quiz', [])
+                        avg_open = sum(o) / len(o) if o else 0
+                        avg_quiz = sum(q) / len(q) if q else 0
+                        text = (
+                            "Викторина завершена.\n\n"
+                            f"Вам набрано баллов: {row['score']}.\n"
+                            f"Ваше место: {row['place']}.\n\n"
+                            "Среднее время ответа:\n"
+                            f"{avg_open:.1f} c - открытый вопрос\n"
+                            f"{avg_quiz:.1f} c - выбор варианта"
+                        )
+                        await bot.send_message(uid, text)
+                    return
+                else:
+                    pass
 
 # ---------- регистрация ----------------------------
 @dp.message(Command('start'))
@@ -304,8 +341,8 @@ async def name_received(msg: Message):
             await msg.answer("Викторина уже началась, ожидайте вопросов.")
         await send_progress()
     else:
-        rating = db.get_rating()
-        table = "\n".join(f"{n}: {s}" for n, s in rating)
+        rows = db.get_leaderboard()
+        table = "\n".join(f"{r['place']}. {r['name']}: {r['score']}" for r in rows)
         await msg.answer("Викторина завершена.\n" + table)
 
 # ---------- ответы открытого вопроса ---------------
@@ -365,8 +402,11 @@ async def quiz_answer(cb: CallbackQuery):
     if prev == ans:
         await cb.answer("Этот вариант уже выбран.")
         return
-    answers_current[cb.from_user.id] = {'text': ans}
-    db.record_response(cb.from_user.id, step_idx, 'quiz', ans)
+    delta = time.time() - step_start_ts
+    answers_current[cb.from_user.id] = {'text': ans, 'time': delta}
+    db.record_response(
+        cb.from_user.id, step_idx, 'quiz', json.dumps({'text': ans, 'time': delta})
+    )
     last_answer_ts = time.time()
     step = current_step()
     kb = quiz_keyboard_for(step, cb.from_user.id)
@@ -388,10 +428,21 @@ async def cmd_next(msg: Message):
 @dp.message(Command('rating'), lambda m: m.from_user.id == ADMIN_ID)
 async def cmd_rating(msg: Message):
     """Показать общий рейтинг."""
-    rows = db.get_rating()
-    txt = "\n".join(f"{name}: {score}" for name, score in rows)
+    rows = db.get_leaderboard()
+    txt = "\n".join(f"{r['place']}. {r['name']}: {r['score']}" for r in rows)
     await msg.answer(txt)
-    await push('rating', [{'name': name, 'score': score} for name, score in rows])
+    await push(
+        'rating',
+        [
+            {
+                'id': r['id'],
+                'name': r['name'],
+                'score': r['score'],
+                'place': r['place'],
+            }
+            for r in rows
+        ],
+    )
 
 
 @dp.message(Command('reset'), lambda m: m.from_user.id == ADMIN_ID)
