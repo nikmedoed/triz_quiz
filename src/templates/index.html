@@ -186,6 +186,8 @@
     });
 
     socket.on('rating', rating => {
+        document.getElementById('title').textContent = 'Итоги';
+        document.getElementById('content').textContent = '';
         const div = document.getElementById('results');
         let html = '<h2>Итоговый рейтинг</h2>';
         rating.forEach(p => {
