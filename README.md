@@ -29,7 +29,7 @@ reset the state with `/reset`.
 Start the quiz bot and projector server together with:
 
 ```
-python main.py
+python run.py
 ```
 
 The command launches the Flask web interface in the background and begins polling

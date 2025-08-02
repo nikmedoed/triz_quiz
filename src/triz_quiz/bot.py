@@ -8,8 +8,9 @@ from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from config import settings
-from db import Database
+from .config import settings
+from .db import Database
+from .resources import load_scenario
 
 bot = Bot(settings.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())  # in-memory FSM
@@ -17,8 +18,7 @@ PROJECTOR_URL = settings.projector_url
 db = Database(settings.db_file)
 
 # ---------- простой статичный сценарий -------------
-with open('scenario.json', encoding='utf-8') as f:
-    SCENARIO = json.load(f)
+SCENARIO = load_scenario()
 
 step_idx = -1  # текущий шаг сценария
 participants: dict[int, dict] = {}

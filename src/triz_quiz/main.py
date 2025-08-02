@@ -1,8 +1,9 @@
 """Single entry point for TRIZ quiz app."""
+
 import threading
 
-from bot import run_bot
-from server import run_server
+from .bot import run_bot
+from .server import run_server
 
 
 def main():
@@ -12,5 +13,3 @@ def main():
     run_bot()
 
 
-if __name__ == "__main__":
-    main()
