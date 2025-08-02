@@ -89,6 +89,22 @@ def vote_keyboard_for(uid: int) -> InlineKeyboardMarkup:
     )
 
 
+def quiz_keyboard_for(step: dict, uid: int) -> InlineKeyboardMarkup:
+    """Build quiz keyboard with a checkmark on the selected option."""
+    chosen = answers_current.get(uid, {}).get('text')
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=f"{'✔ ' if str(i+1) == str(chosen) else ''}{i+1}. {opt[:30]}",
+                    callback_data=f"quiz:{i+1}",
+                )
+            ]
+            for i, opt in enumerate(step.get('options', []))
+        ]
+    )
+
+
 def format_step(step: dict) -> str:
     """Render message for current step according to its type."""
     t = step.get("type")
@@ -164,24 +180,50 @@ async def watch_steps():
             old_step = current_step()
             last = cur
             step_idx = cur
-            # если завершили голосование, подвести итоги
-            if old_step and old_step.get('type') == 'vote':
-                results = []
-                for idea in ideas:
-                    voters = [uid for uid, vs in votes_current.items() if idea['id'] in vs]
-                    results.append(
-                        {
-                            'id': idea['id'],
-                            'text': idea['text'],
-                            'author': {'id': idea['user_id'], 'name': participants[idea['user_id']]['name']},
-                            'votes': voters,
-                        }
-                    )
-                    pts = len(voters)
-                    if pts:
-                        participants[idea['user_id']]['score'] += pts
-                        db.update_score(idea['user_id'], pts)
-                await push('vote_result', {'ideas': results})
+            # обработать завершение предыдущего шага
+            if old_step:
+                if old_step.get('type') == 'vote':
+                    results = []
+                    for idea in ideas:
+                        voters = [uid for uid, vs in votes_current.items() if idea['id'] in vs]
+                        results.append(
+                            {
+                                'id': idea['id'],
+                                'text': idea['text'],
+                                'author': {'id': idea['user_id'], 'name': participants[idea['user_id']]['name']},
+                                'votes': voters,
+                            }
+                        )
+                        pts = len(voters)
+                        if pts:
+                            participants[idea['user_id']]['score'] += pts
+                            db.update_score(idea['user_id'], pts)
+                    await push('vote_result', {'ideas': results})
+                elif old_step.get('type') == 'quiz':
+                    # сообщить об окончании и подсчитать результаты
+                    for uid in participants:
+                        await bot.send_message(uid, 'Ответы более не принимаются, вернитесь в общий зал.')
+                    stepq = old_step
+                    correct = str(stepq.get('correct'))
+                    pts = stepq.get('points', 1)
+                    options = stepq.get('options', [])
+                    summary = []
+                    for i, opt in enumerate(options, start=1):
+                        voters = [uid for uid, ans in answers_current.items() if ans.get('text') == str(i)]
+                        summary.append({'id': i, 'text': opt, 'voters': voters})
+                        if str(i) == correct:
+                            for uid in voters:
+                                participants[uid]['score'] += pts
+                                db.update_score(uid, pts)
+                    await push('quiz_result', {'options': summary, 'correct': correct})
+                    for uid in participants:
+                        ans = answers_current.get(uid, {}).get('text')
+                        if ans == correct:
+                            await bot.send_message(uid, f'Верно! Вы получили {pts} балл(ов).')
+                        elif ans:
+                            await bot.send_message(uid, 'Неверно.')
+                        else:
+                            await bot.send_message(uid, 'Вы не ответили.')
             answers_current.clear(); votes_current.clear(); ideas = []
             step = current_step()
             if step and step.get("type") in ("open", "quiz", "vote"):
@@ -205,17 +247,7 @@ async def watch_steps():
                     ]
                 for uid in participants:
                     if step['type'] == 'quiz':
-                        kb = InlineKeyboardMarkup(
-                            inline_keyboard=[
-                                [
-                                    InlineKeyboardButton(
-                                        text=f"{i+1}. {opt[:30]}",
-                                        callback_data=f"quiz:{i+1}",
-                                    )
-                                ]
-                                for i, opt in enumerate(step.get('options', []))
-                            ]
-                        )
+                        kb = quiz_keyboard_for(step, uid)
                         await bot.send_message(uid, text, reply_markup=kb)
                     elif step['type'] == 'vote':
                         kb = vote_keyboard_for(uid)
@@ -326,6 +358,9 @@ async def quiz_answer(cb: CallbackQuery):
     answers_current[cb.from_user.id] = {'text': ans}
     db.record_response(cb.from_user.id, step_idx, 'quiz', ans)
     last_answer_ts = time.time()
+    step = current_step()
+    kb = quiz_keyboard_for(step, cb.from_user.id)
+    await cb.message.edit_reply_markup(reply_markup=kb)
     await cb.answer("Ответ записан.")
     await send_progress()
     await push('answer_in', {'name': cb.from_user.full_name})
@@ -339,18 +374,6 @@ async def cmd_next(msg: Message):
         await session.post(f"{base}/next")
     await msg.answer("Переключение шага.")
 
-
-@dp.message(Command('show_quiz'), lambda m: m.from_user.id == ADMIN_ID)
-async def cmd_show_quiz(msg: Message):
-    """Проверить правильные ответы, начислить баллы."""
-    step = current_step()
-    correct = step['correct']
-    for uid, ans in answers_current.items():
-        if ans.get('text', '').upper() == correct.upper():
-            participants[uid]['score'] += step.get('points', 1)
-            db.update_score(uid, step.get('points', 1))
-    await push('quiz_result', {'correct': correct})
-    await msg.answer("Итоги квиза выведены.")
 
 @dp.message(Command('rating'), lambda m: m.from_user.id == ADMIN_ID)
 async def cmd_rating(msg: Message):

@@ -87,7 +87,8 @@ socket.on('step', step => {
   }
   document.getElementById('results').innerHTML = '';
   if (['quiz','open','vote'].includes(step.type)) {
-    startTimer(step.type === 'vote' ? 60 : 300);
+    const secs = step.type === 'open' ? 300 : 60;
+    startTimer(secs);
   } else {
     hideProgress();
   }
@@ -111,12 +112,12 @@ socket.on('progress', data => {
 });
 
 socket.on('vote_result', data => {
-  const div = document.getElementById('results');
-  div.innerHTML = '<h2>Результаты голосования</h2>';
+  const div = document.getElementById('content');
+  let html = '';
   data.ideas.forEach(idea => {
-    let html = `<div style="margin-bottom:1rem"><strong>${idea.id}. ${idea.text}</strong> ` +
+    html += `<div style="margin-bottom:1rem"><strong>${idea.id}. ${idea.text}</strong> ` +
       `<span class="highlight">${idea.votes.length}</span><br/>` +
-      `<img src="/avatar/${idea.author.id}" width="40" height="40"/> ${idea.author.name}<br/>`;
+      `<img src="/avatar/${idea.author.id}" width="40" height="40"/> ${idea.author.name}`;
     if (idea.votes.length) {
       html += '<div>';
       idea.votes.forEach(v => {
@@ -125,13 +126,27 @@ socket.on('vote_result', data => {
       html += '</div>';
     }
     html += '</div>';
-    div.innerHTML += html;
   });
+  div.innerHTML = html;
 });
 
 socket.on('quiz_result', data => {
-  document.getElementById('results').innerHTML =
-    `<h2>Верный ответ: <span class="highlight">${data.correct}</span></h2>`;
+  const div = document.getElementById('results');
+  div.innerHTML = '<h2>Результаты</h2>';
+  data.options.forEach(opt => {
+    const count = opt.voters.length;
+    let row = `<div style="margin-bottom:1rem">${opt.id}. ${opt.text}<br/>` +
+      `<div style="background:#ddd;width:${count*40}px;height:20px"></div>` +
+      `<div><span class="highlight">${count}</span>`;
+    opt.voters.forEach(v => {
+      row += ` <img src="/avatar/${v}" width="24" height="24"/>`;
+    });
+    row += '</div></div>';
+    if (String(opt.id) === String(data.correct)) {
+      row = `<div class="highlight">${row}</div>`;
+    }
+    div.innerHTML += row;
+  });
 });
 
 socket.on('rating', rating => {
