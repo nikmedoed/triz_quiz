@@ -132,6 +132,7 @@ socket.on('vote_result', data => {
 });
 
 socket.on('quiz_result', data => {
+  document.getElementById('content').textContent = '';
   const div = document.getElementById('results');
   div.innerHTML = '<h2>Результаты</h2>';
   data.options.forEach(opt => {

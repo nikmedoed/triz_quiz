@@ -138,9 +138,10 @@ def format_step(step: dict) -> str:
         return header + body + tail
     if t == "vote":
         return (
-            "Ответы более не принимаются.\n"  # newline for readability
-            "Начато голосование за идеи, выберите номера, которые считаете "
-            "достойным и методологически обоснованным решением описанной проблемы."
+            "Ответы более не принимаются.\n\n"
+            "<b>Начато голосование за идеи.</b>\n\n"
+            "Выберите номера, которые считаете достойным и методологически "
+            "обоснованным решением описанной проблемы."
         )
     if t == "vote_results":
         return "Голосование завершено. Результаты на экране."
@@ -201,9 +202,7 @@ async def watch_steps():
                             db.update_score(idea['user_id'], pts)
                     await push('vote_result', {'ideas': results})
                 elif old_step.get('type') == 'quiz':
-                    # сообщить об окончании и подсчитать результаты
-                    for uid in participants:
-                        await bot.send_message(uid, 'Ответы более не принимаются, вернитесь в общий зал.')
+                    # подсчитать результаты и сообщить участникам
                     stepq = old_step
                     correct = str(stepq.get('correct'))
                     pts = stepq.get('points', 1)
@@ -220,11 +219,12 @@ async def watch_steps():
                     for uid in participants:
                         ans = answers_current.get(uid, {}).get('text')
                         if ans == correct:
-                            await bot.send_message(uid, f'Верно! Вы получили {pts} балл(ов).')
+                            msg = f'Ответы более не принимаются, вернитесь в общий зал.\n\nВерно! Вы получили {pts} балл(ов).'
                         elif ans:
-                            await bot.send_message(uid, 'Неверно.')
+                            msg = 'Ответы более не принимаются, вернитесь в общий зал.\n\nНеверно.'
                         else:
-                            await bot.send_message(uid, 'Вы не ответили.')
+                            msg = 'Ответы более не принимаются, вернитесь в общий зал.\n\nВы не ответили.'
+                        await bot.send_message(uid, msg)
             answers_current.clear(); votes_current.clear(); ideas = []
             step = current_step()
             if step and step.get("type") in ("open", "quiz", "vote"):
