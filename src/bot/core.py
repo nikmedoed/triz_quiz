@@ -8,6 +8,7 @@ from typing import Any
 
 import aiohttp
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
 from ..config import settings
 from ..db import Database
 from ..resources import load_scenario
