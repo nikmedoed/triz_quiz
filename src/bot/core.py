@@ -134,10 +134,13 @@ async def finish_quiz(bot) -> None:
 
 async def watch_steps(bot):
     last = state.step_idx
+    finished = False
     while True:
         await asyncio.sleep(1)
         cur = state.db.get_step()
         if cur == last:
+            if state.db.get_stage() != 3:
+                finished = False
             continue
         old_step = state.current_step()
         last = cur
@@ -165,5 +168,8 @@ async def watch_steps(bot):
                 await announce_step(bot, step)
         else:
             if state.db.get_stage() == 3:
-                await finish_quiz(bot)
-                return
+                if not finished:
+                    await finish_quiz(bot)
+                    finished = True
+            else:
+                finished = False
