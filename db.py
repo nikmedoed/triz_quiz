@@ -1,4 +1,5 @@
 import sqlite3
+import json
 from typing import Dict, List, Tuple
 
 class Database:
@@ -115,11 +116,54 @@ class Database:
         )
         return {row["user_id"]: row["value"] for row in cur.fetchall()}
 
+    def get_open_answers(self, step: int) -> List[dict]:
+        cur = self.conn.cursor()
+        cur.execute(
+            """
+            SELECT r.user_id, r.value, p.name
+            FROM responses r JOIN participants p ON r.user_id = p.id
+            WHERE r.step = ? AND r.kind = 'open'
+            """,
+            (step,),
+        )
+        rows = []
+        for row in cur.fetchall():
+            try:
+                data = json.loads(row["value"])
+                text = data.get("text", "")
+                ts = data.get("time", 0)
+            except Exception:
+                text = row["value"]
+                ts = 0
+            rows.append(
+                {
+                    "user_id": row["user_id"],
+                    "name": row["name"],
+                    "text": text,
+                    "time": ts,
+                }
+            )
+        return rows
+
+    def get_votes(self, step: int) -> Dict[int, List[int]]:
+        cur = self.conn.cursor()
+        cur.execute(
+            "SELECT user_id, value FROM responses WHERE step = ? AND kind = 'vote'",
+            (step,),
+        )
+        votes: Dict[int, List[int]] = {}
+        for row in cur.fetchall():
+            try:
+                votes[row["user_id"]] = json.loads(row["value"])
+            except Exception:
+                votes[row["user_id"]] = []
+        return votes
+
     def get_step(self) -> int:
         cur = self.conn.cursor()
         cur.execute("SELECT value FROM state WHERE key = 'step'")
         row = cur.fetchone()
-        return int(row["value"]) if row else 0
+        return int(row["value"]) if row else -1
 
     def set_step(self, step: int) -> None:
         cur = self.conn.cursor()
@@ -148,4 +192,4 @@ class Database:
         cur.execute("DELETE FROM state")
         self.conn.commit()
         self.set_stage(1)
-        self.set_step(0)
+        self.set_step(-1)
