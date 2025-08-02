@@ -2,7 +2,7 @@
 """Real-time projector for TRIZ-quiz."""
 
 from flask import Flask, render_template, request, abort, send_file
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 from io import BytesIO
 
 from config import settings
@@ -45,6 +45,16 @@ def avatar(user_id: int):
     if not data:
         abort(404)
     return send_file(BytesIO(data), mimetype='image/jpeg')
+
+
+@socketio.on('connect')
+def handle_connect():
+    people = [
+        {"id": row["id"], "name": row["name"]} for row in db.get_participants()
+    ]
+    emit("participants", {"who": people})
+    if db.get_stage() != 1:
+        emit("started", {})
 
 
 def run_server():
