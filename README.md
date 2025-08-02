@@ -20,8 +20,9 @@ DB_FILE=quiz.db
 `BOT_TOKEN` and `ADMIN_ID` are required for the bot to operate.
 
 `DB_FILE` points to a SQLite database where quiz progress, participant info,
-their responses, and cached avatars are persisted. Admins can reset the state
-with `/reset`.
+their responses, and cached avatars are persisted. Schema migrations are
+applied automatically on startup so older databases upgrade in place. Admins can
+reset the state with `/reset`.
 
 ## Running
 

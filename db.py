@@ -7,10 +7,21 @@ class Database:
     def __init__(self, path: str):
         self.conn = sqlite3.connect(path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
-        self._init_db()
+        self._apply_migrations()
 
-    def _init_db(self) -> None:
+    def _apply_migrations(self) -> None:
+        """Apply pending schema migrations in order."""
         cur = self.conn.cursor()
+        migrations = [self._migration_initial, self._migration_add_avatar]
+        cur.execute("PRAGMA user_version")
+        version = cur.fetchone()[0]
+        for idx in range(version, len(migrations)):
+            migrations[idx](cur)
+            cur.execute(f"PRAGMA user_version = {idx + 1}")
+            self.conn.commit()
+
+    def _migration_initial(self, cur: sqlite3.Cursor) -> None:
+        """Create base tables if they do not exist."""
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS participants (
@@ -40,7 +51,13 @@ class Database:
             )
             """
         )
-        self.conn.commit()
+
+    def _migration_add_avatar(self, cur: sqlite3.Cursor) -> None:
+        """Ensure the avatar column exists for participants."""
+        cur.execute("PRAGMA table_info(participants)")
+        columns = [row[1] for row in cur.fetchall()]
+        if "avatar" not in columns:
+            cur.execute("ALTER TABLE participants ADD COLUMN avatar BLOB")
 
     def add_participant(
         self, user_id: int, name: str, avatar: bytes | None = None
