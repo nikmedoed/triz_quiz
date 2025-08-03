@@ -7,6 +7,16 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from . import state
 
 
+# Telegram limits button text to 64 characters. Use the limit to avoid API
+# errors while letting clients handle visual truncation.
+MAX_BUTTON_TEXT_LEN = 64
+
+
+def _button_text(prefix: str, text: str) -> str:
+    """Join prefix and text ensuring the result fits Telegram's limits."""
+    return (prefix + text)[:MAX_BUTTON_TEXT_LEN]
+
+
 def vote_keyboard_for(uid: int) -> InlineKeyboardMarkup:
     """Build inline keyboard with checkmarks for selected ideas."""
     selected = state.votes_current.get(uid, set())
@@ -14,7 +24,10 @@ def vote_keyboard_for(uid: int) -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=f"{'✅ ' if idea['id'] in selected else ''}{idea['id']}. {idea['text'][:30]}",
+                    text=_button_text(
+                        f"{'✅ ' if idea['id'] in selected else ''}{idea['id']}. ",
+                        idea['text'],
+                    ),
                     callback_data=f"vote:{idea['id']}",
                 )
             ]
@@ -31,7 +44,10 @@ def quiz_keyboard_for(step: dict, uid: int) -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text=f"{'✅ ' if str(i + 1) == str(chosen) else ''}{i + 1}. {opt[:30]}",
+                    text=_button_text(
+                        f"{'✅ ' if str(i + 1) == str(chosen) else ''}{i + 1}. ",
+                        opt,
+                    ),
                     callback_data=f"quiz:{i + 1}",
                 )
             ]
