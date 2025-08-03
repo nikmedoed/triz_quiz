@@ -56,8 +56,27 @@ def load_state() -> None:
     }
     vote_gains = db.get_vote_gains()
     pending_names = set(db.get_pending_names())
-    if current_step() and current_step().get("type") == "vote":
+    step = current_step()
+    if step and step.get("type") == "vote":
         ideas = db.get_ideas(step_idx - 1)
+    else:
+        ideas = []
+        if (
+            step_idx > 0
+            and SCENARIO[step_idx - 1].get("type") == "vote"
+            and not vote_gains
+        ):
+            prev = db.get_ideas(step_idx - 1)
+            votes = db.get_votes(step_idx - 1)
+            vote_gains = {uid: 0 for uid in participants}
+            for idea in prev:
+                voters = [uid for uid, ids in votes.items() if idea["id"] in ids]
+                pts = len(voters)
+                vote_gains[idea["user_id"]] = pts
+                if pts:
+                    participants[idea["user_id"]]["score"] += pts
+                    db.update_score(idea["user_id"], pts)
+            db.set_vote_gains(vote_gains)
 
 
 def reset_state() -> None:
