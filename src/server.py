@@ -17,6 +17,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")  # simple CORS for local netw
 db = Database(settings.db_file, settings.avatar_dir)
 progress_state = None
 rating_state = None
+skip_vote_results = False
 
 SCENARIO = load_scenario()
 
@@ -62,20 +63,35 @@ def broadcast_step(idx: int) -> None:
 
 
 def next_step() -> None:
-    global progress_state
+    global progress_state, skip_vote_results
     step = db.get_step() + 1
-    db.set_step(step)
-    if step < len(SCENARIO):
-        broadcast_step(step)
-    elif step == len(SCENARIO):
-        # Last step finished; keep stage 2 so results remain visible.
-        # No "end" signal yet to allow manual transition to rating.
-        progress_state = None
-    else:
-        # Explicit transition to final rating after moderator presses Next again.
-        db.set_stage(3)
-        progress_state = None
-        socketio.emit('end', {})
+    while True:
+        if step < len(SCENARIO):
+            stype = SCENARIO[step].get('type')
+            if stype == 'vote_results' and skip_vote_results:
+                skip_vote_results = False
+                step += 1
+                continue
+            db.set_step(step)
+            if stype == 'vote':
+                ideas = db.get_ideas(step - 1)
+                if not ideas:
+                    skip_vote_results = True
+                    socketio.emit('step', {**SCENARIO[step], 'ideas': []})
+                    return
+            broadcast_step(step)
+        elif step == len(SCENARIO):
+            db.set_step(step)
+            # Last step finished; keep stage 2 so results remain visible.
+            # No "end" signal yet to allow manual transition to rating.
+            progress_state = None
+        else:
+            db.set_step(step)
+            # Explicit transition to final rating after moderator presses Next again.
+            db.set_stage(3)
+            progress_state = None
+            socketio.emit('end', {})
+        break
 
 
 @app.route('/start', methods=['POST'])
