@@ -99,6 +99,16 @@ class Database:
         cur.execute("SELECT * FROM participants")
         return cur.fetchall()
 
+    def get_participant(self, user_id: int) -> sqlite3.Row | None:
+        cur = self.conn.cursor()
+        cur.execute("SELECT * FROM participants WHERE id = ?", (user_id,))
+        return cur.fetchone()
+
+    def count_participants(self) -> int:
+        cur = self.conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM participants")
+        return cur.fetchone()[0]
+
     def get_avatar(self, user_id: int) -> bytes | None:
         path = self.avatar_dir / f"{user_id}.jpg"
         return path.read_bytes() if path.exists() else None
@@ -110,6 +120,15 @@ class Database:
             (step, kind),
         )
         return {row["user_id"]: row["value"] for row in cur.fetchall()}
+
+    def get_response(self, user_id: int, step: int, kind: str) -> str | None:
+        cur = self.conn.cursor()
+        cur.execute(
+            "SELECT value FROM responses WHERE user_id = ? AND step = ? AND kind = ?",
+            (user_id, step, kind),
+        )
+        row = cur.fetchone()
+        return row["value"] if row else None
 
     def get_open_answers(self, step: int) -> List[dict]:
         cur = self.conn.cursor()

@@ -2,6 +2,8 @@
 
 import html
 
+import json
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from . import state
@@ -9,7 +11,9 @@ from . import state
 
 def vote_keyboard_for(uid: int) -> InlineKeyboardMarkup:
     """Build inline keyboard with checkmarks for selected ideas."""
-    selected = state.votes_current.get(uid, set())
+    step_idx = state.db.get_step()
+    ideas = state.db.get_ideas(step_idx - 1)
+    selected = set(state.db.get_votes(step_idx).get(uid, []))
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -18,7 +22,7 @@ def vote_keyboard_for(uid: int) -> InlineKeyboardMarkup:
                     callback_data=f"vote:{idea['id']}",
                 )
             ]
-            for idea in state.ideas
+            for idea in ideas
             if idea['user_id'] != uid
         ]
     )
@@ -26,7 +30,14 @@ def vote_keyboard_for(uid: int) -> InlineKeyboardMarkup:
 
 def quiz_keyboard_for(step: dict, uid: int) -> InlineKeyboardMarkup:
     """Build quiz keyboard with a checkmark on the selected option."""
-    chosen = state.answers_current.get(uid, {}).get('text')
+    step_idx = state.db.get_step()
+    val = state.db.get_response(uid, step_idx, 'quiz')
+    chosen = ''
+    if val:
+        try:
+            chosen = json.loads(val).get('text', '')
+        except Exception:
+            chosen = val
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [

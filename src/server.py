@@ -2,9 +2,10 @@
 
 from io import BytesIO
 
-from flask import Flask, render_template, request, abort, send_file
+from flask import Flask, render_template, request, abort, send_file, redirect, url_for
 from flask_socketio import SocketIO, emit
 
+from .bot import formatting
 from .config import settings
 from .db import Database
 from .resources import load_scenario
@@ -15,8 +16,6 @@ PORT = settings.server_port
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")  # simple CORS for local network
 db = Database(settings.db_file, settings.avatar_dir)
-progress_state = None
-rating_state = None
 skip_vote_results = False
 
 SCENARIO = load_scenario()
@@ -27,6 +26,16 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/reset', methods=['GET', 'POST'])
+def reset_view():
+    if request.method == 'POST':
+        db.reset()
+        socketio.emit('participants', {'who': []})
+        socketio.emit('reset', {})
+        return redirect(url_for('index'))
+    return render_template('reset.html')
+
+
 @app.route('/update', methods=['POST'])
 def update():
     """
@@ -35,18 +44,10 @@ def update():
     """
     if not request.is_json:
         abort(415)
-    global progress_state, rating_state
     data = request.get_json()
     event = data['event']
     payload = data['payload']
     socketio.emit(event, payload)
-    if event == 'progress':
-        progress_state = None if payload.get('inactive') else payload
-    elif event == 'reset':
-        progress_state = None
-        rating_state = None
-    elif event == 'rating':
-        rating_state = payload
     return '', 204
 
 
@@ -63,7 +64,7 @@ def broadcast_step(idx: int) -> None:
 
 
 def next_step() -> None:
-    global progress_state, skip_vote_results
+    global skip_vote_results
     step = db.get_step() + 1
     while True:
         if step < len(SCENARIO):
@@ -84,22 +85,17 @@ def next_step() -> None:
             db.set_step(step)
             # Last step finished; keep stage 2 so results remain visible.
             # No "end" signal yet to allow manual transition to rating.
-            progress_state = None
         else:
             db.set_step(step)
             # Explicit transition to final rating after moderator presses Next again.
             db.set_stage(3)
-            progress_state = None
             socketio.emit('end', {})
         break
 
 
 @app.route('/start', methods=['POST'])
 def start_quiz():
-    global progress_state, rating_state
     db.set_stage(2)
-    progress_state = None
-    rating_state = None
     socketio.emit('started', {})
     next_step()
     return '', 204
@@ -127,17 +123,26 @@ def handle_connect():
     stage = db.get_stage()
     if stage == 1:
         emit("participants", {"who": people})
-    else:
-        emit("started", {})
-        step = db.get_step()
-        if step < len(SCENARIO):
-            broadcast_step(step)
-        if progress_state:
-            emit('progress', progress_state)
-        if stage == 3:
-            emit('end', {})
-            if rating_state:
-                emit('rating', rating_state)
+        return
+    emit("started", {})
+    step = db.get_step()
+    if step < len(SCENARIO):
+        broadcast_step(step)
+        stype = SCENARIO[step].get('type')
+        if stype in ('open', 'quiz', 'vote'):
+            if stype == 'vote' and not db.get_ideas(step - 1):
+                pass
+            else:
+                if stype == 'vote':
+                    votes = db.get_votes(step)
+                    answered = sum(1 for v in votes.values() if v)
+                else:
+                    answered = len(db.get_responses(step, stype))
+                total = db.count_participants()
+                emit('progress', {'answered': answered, 'total': total})
+    if stage == 3:
+        emit('end', {})
+        emit('rating', formatting.build_rating(db.get_leaderboard()))
 
 
 def run_server():

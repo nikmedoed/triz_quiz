@@ -57,7 +57,7 @@ async def start(msg: Message):
     uid = msg.from_user.id
     state.pending_names.add(uid)
     kb = None
-    if uid in state.participants:
+    if state.db.get_participant(uid):
         kb = InlineKeyboardMarkup(
             inline_keyboard=[[InlineKeyboardButton(text="Отменить", callback_data="cancel_name")]]
         )
@@ -73,20 +73,16 @@ async def name_received(msg: Message):
     if photos.total_count:
         file = await msg.bot.get_file(photos.photos[0][-1].file_id)
         avatar = (await msg.bot.download_file(file.file_path)).getvalue()
-    score = state.participants.get(user.id, {}).get("score", 0)
-    state.participants[user.id] = {"name": name, "score": score}
+    row = state.db.get_participant(user.id)
+    score = row["score"] if row else 0
     state.db.add_participant(user.id, name, avatar)
     state.pending_names.remove(user.id)
     stage = state.db.get_stage()
     if stage == 1:
-        await core.push(
-            "participants",
-            {
-                "who": [
-                    {"id": uid, "name": p["name"]} for uid, p in state.participants.items()
-                ]
-            },
-        )
+        people = [
+            {"id": r["id"], "name": r["name"]} for r in state.db.get_participants()
+        ]
+        await core.push("participants", {"who": people})
         await msg.answer("Вы зарегистрированы! Ожидайте начала.")
         return
     await send_current_step(user.id, msg.bot)
@@ -116,17 +112,20 @@ async def open_answer(msg: Message):
 
 @router.callback_query(step_filter('vote'), lambda c: c.data.startswith('vote:'))
 async def vote(cb: CallbackQuery):
+    step_idx = state.db.get_step()
     idea_id = int(cb.data.split(':')[1])
-    idea = next((i for i in state.ideas if i['id'] == idea_id), None)
+    ideas = state.db.get_ideas(step_idx - 1)
+    idea = next((i for i in ideas if i['id'] == idea_id), None)
     if not idea or idea['user_id'] == cb.from_user.id:
         await cb.answer("За себя голосовать нельзя!", show_alert=True)
         return
-    votes = state.votes_current.setdefault(cb.from_user.id, set())
+    val = state.db.get_response(cb.from_user.id, step_idx, 'vote')
+    votes = set(json.loads(val)) if val else set()
     if idea_id in votes:
         votes.remove(idea_id)
     else:
         votes.add(idea_id)
-    state.db.record_response(cb.from_user.id, state.step_idx, 'vote', json.dumps(list(votes)))
+    state.db.record_response(cb.from_user.id, step_idx, 'vote', json.dumps(list(votes)))
     state.last_answer_ts = time.time()
     kb = formatting.vote_keyboard_for(cb.from_user.id)
     await cb.message.edit_reply_markup(reply_markup=kb)
@@ -137,9 +136,11 @@ async def vote(cb: CallbackQuery):
 
 @router.callback_query(step_filter('quiz'), lambda c: c.data.startswith('quiz:'))
 async def quiz_answer(cb: CallbackQuery):
+    step_idx = state.db.get_step()
     ans = cb.data.split(':')[1]
-    prev = state.answers_current.get(cb.from_user.id, {}).get('text')
-    if prev == ans:
+    prev = state.db.get_response(cb.from_user.id, step_idx, 'quiz')
+    prev_text = json.loads(prev).get('text') if prev else None
+    if prev_text == ans:
         await cb.answer("Этот вариант уже выбран.")
         return
     state.record_answer(cb.from_user.id, 'quiz', ans)
@@ -168,11 +169,6 @@ async def cmd_rating(msg: Message):
 
 @router.message(Command('reset'), lambda m: m.from_user.id == state.ADMIN_ID)
 async def cmd_reset(msg: Message):
-    state.step_idx = -1
-    state.participants.clear()
-    state.answers_current.clear()
-    state.votes_current.clear()
-    state.ideas = []
     state.vote_gains = {}
     state.db.reset()
     await msg.answer("Состояние сброшено.")

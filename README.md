@@ -25,7 +25,8 @@ AVATAR_DIR=avatars
 and their responses are persisted. User avatars are cached on disk in the
 `AVATAR_DIR` folder instead of the database. Schema migrations are applied
 automatically on startup so older databases upgrade in place. Admins can reset
-the state with `/reset`.
+the state with `/reset` or via the web page at `/reset`, which asks for
+confirmation before clearing the database.
 
 ## Running
 

@@ -58,6 +58,7 @@
 <div id="participants"></div>
 <button id="startBtn">Начать</button>
 <button id="nextBtn" style="display:none">Далее</button>
+<a id="resetLink" href="/reset" style="display:none;margin-left:1rem">Сбросить</a>
 <div id="results"></div>
 
 <script>
@@ -205,13 +206,14 @@
         div.innerHTML = html;
     });
 
-    socket.on('participants', data => {
-        const div = document.getElementById('participants');
-        div.innerHTML = '';
-        data.who.forEach(p => {
-            div.innerHTML += `<div class="participant"><img src="/avatar/${p.id}"/><div>${p.name}</div></div>`;
-        });
-    });
+      socket.on('participants', data => {
+          const div = document.getElementById('participants');
+          div.innerHTML = '';
+          data.who.forEach(p => {
+              div.innerHTML += `<div class="participant"><img src="/avatar/${p.id}"/><div>${p.name}</div></div>`;
+          });
+          document.getElementById('resetLink').style.display = 'inline-block';
+      });
 
     document.getElementById('startBtn').addEventListener('click', async () => {
         await fetch('/start', {method: 'POST'});
@@ -221,27 +223,30 @@
         await fetch('/next', {method: 'POST'});
     });
 
-    socket.on('started', () => {
-        document.getElementById('startBtn').style.display = 'none';
-        document.getElementById('nextBtn').style.display = 'inline-block';
-        document.getElementById('participants').style.display = 'none';
-        hideProgress();
-    });
+      socket.on('started', () => {
+          document.getElementById('startBtn').style.display = 'none';
+          document.getElementById('nextBtn').style.display = 'inline-block';
+          document.getElementById('participants').style.display = 'none';
+          document.getElementById('resetLink').style.display = 'none';
+          hideProgress();
+      });
 
-    socket.on('end', () => {
-        document.getElementById('nextBtn').style.display = 'none';
-        hideProgress();
-    });
+      socket.on('end', () => {
+          document.getElementById('nextBtn').style.display = 'none';
+          document.getElementById('resetLink').style.display = 'inline-block';
+          hideProgress();
+      });
 
-    socket.on('reset', () => {
-        document.getElementById('startBtn').style.display = 'inline-block';
-        document.getElementById('nextBtn').style.display = 'none';
-        document.getElementById('participants').style.display = 'grid';
-        document.getElementById('title').textContent = 'Ожидание начала…';
-        document.getElementById('content').textContent = '';
-        document.getElementById('results').innerHTML = '';
-        hideProgress();
-    });
+      socket.on('reset', () => {
+          document.getElementById('startBtn').style.display = 'inline-block';
+          document.getElementById('nextBtn').style.display = 'none';
+          document.getElementById('participants').style.display = 'grid';
+          document.getElementById('resetLink').style.display = 'inline-block';
+          document.getElementById('title').textContent = 'Ожидание начала…';
+          document.getElementById('content').textContent = '';
+          document.getElementById('results').innerHTML = '';
+          hideProgress();
+      });
 </script>
 </body>
 </html>
