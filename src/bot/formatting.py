@@ -78,7 +78,7 @@ def format_step(step: dict) -> str:
             "обоснованным решением описанной проблемы."
         )
     if t == "vote_results":
-        return "Голосование завершено. Результаты на экране."
+        return "Дождитесь команды модератора."
     text = f"Сейчас идёт шаг: {step['title']}"
     if step.get('description'):
         text += f"\n{step['description']}"

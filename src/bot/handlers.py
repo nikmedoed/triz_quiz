@@ -6,7 +6,12 @@ import time
 import aiohttp
 from aiogram import Router
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+)
 
 from . import core, formatting, state
 
@@ -21,10 +26,42 @@ def step_filter(step_type: str):
     return check
 
 
+async def send_current_step(uid: int, bot) -> None:
+    stage = state.db.get_stage()
+    if stage == 1:
+        await bot.send_message(uid, "Вы зарегистрированы! Ожидайте начала.")
+        return
+    if stage == 2:
+        step = state.current_step()
+        if step:
+            text = formatting.format_step(step)
+            if step["type"] == "quiz":
+                kb = formatting.quiz_keyboard_for(step, uid)
+            elif step["type"] == "vote":
+                kb = formatting.vote_keyboard_for(uid)
+            else:
+                kb = None
+            await bot.send_message(uid, text, reply_markup=kb)
+        else:
+            await bot.send_message(uid, "Викторина уже началась, ожидайте вопросов.")
+        await core.send_progress()
+        return
+    rows = state.db.get_leaderboard()
+    await bot.send_message(
+        uid, "Викторина завершена.\n" + formatting.format_leaderboard(rows)
+    )
+
+
 @router.message(Command("start"))
 async def start(msg: Message):
-    state.pending_names.add(msg.from_user.id)
-    await msg.answer("Введите ваше имя:")
+    uid = msg.from_user.id
+    state.pending_names.add(uid)
+    kb = None
+    if uid in state.participants:
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text="Отменить", callback_data="cancel_name")]]
+        )
+    await msg.answer("Введите ваше имя:", reply_markup=kb)
 
 
 @router.message(lambda m: m.from_user.id in state.pending_names)
@@ -51,16 +88,18 @@ async def name_received(msg: Message):
             },
         )
         await msg.answer("Вы зарегистрированы! Ожидайте начала.")
-    elif stage == 2:
-        step = state.current_step()
-        if step:
-            await msg.answer(formatting.format_step(step))
-        else:
-            await msg.answer("Викторина уже началась, ожидайте вопросов.")
-        await core.send_progress()
-    else:
-        rows = state.db.get_leaderboard()
-        await msg.answer("Викторина завершена.\n" + formatting.format_leaderboard(rows))
+        return
+    await send_current_step(user.id, msg.bot)
+
+
+@router.callback_query(lambda c: c.data == "cancel_name")
+async def cancel_name(cb: CallbackQuery):
+    uid = cb.from_user.id
+    if uid in state.pending_names:
+        state.pending_names.remove(uid)
+    await cb.message.edit_text("Отменено.")
+    await send_current_step(uid, cb.bot)
+    await cb.answer()
 
 
 @router.message(step_filter('open'))
