@@ -172,9 +172,6 @@ async def watch_steps(bot):
                             await session.post(f'{base}/next')
                         state.vote_gains = {uid: 0 for uid in state.participants}
                         await push('vote_result', {'ideas': []})
-                        await asyncio.sleep(1)
-                        async with aiohttp.ClientSession() as session:
-                            await session.post(f'{base}/next')
                         state.skip_vote_finalize = True
                         continue
                 await announce_step(bot, step)
