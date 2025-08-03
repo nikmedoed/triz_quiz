@@ -9,10 +9,7 @@
     <script defer src="{{ url_for('static', filename='main.js') }}"></script>
 </head>
 <body>
-<div id="step" hx-get="/current" hx-trigger="load" hx-swap="outerHTML">
-    <div id="title">Ожидание начала…</div>
-    <div id="content"></div>
-</div>
+{{ step_html|safe }}
 <div id="timer"></div>
 <div id="answerStats"></div>
 <div id="lastAnswer"></div>

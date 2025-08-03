@@ -97,7 +97,10 @@ def current_step_route():
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    html = current_step_html()
+    if not html:
+        html = """<div id=\"step\"><div id=\"title\">Ожидание начала…</div><div id=\"content\"></div></div>"""
+    return render_template("index.html", step_html=html)
 
 
 @app.route('/update', methods=['POST'])
@@ -198,6 +201,7 @@ def next_route():
             return render_step(step)
         return "", 204
     if stype == 'quiz' and quiz_result_state is None:
+        next_step()
         return "", 204
     step = next_step()
     socketio.emit('reload', {})

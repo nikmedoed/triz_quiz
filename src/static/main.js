@@ -43,19 +43,27 @@ function updateSince(ts) {
     sinceId = setInterval(tick, 1000);
 }
 
+function applyStep(stepEl) {
+    if (stepEl.dataset.type !== 'quiz_results') {
+        document.getElementById('results').innerHTML = '';
+    }
+    const timer = stepEl.dataset.timer;
+    if (timer) {
+        startTimer(parseInt(timer, 10));
+    } else {
+        hideProgress();
+    }
+}
+
 document.body.addEventListener('htmx:afterSwap', (e) => {
     if (e.target.id === 'step') {
-        const stepEl = e.target;
-        if (stepEl.dataset.type !== 'quiz_results') {
-            document.getElementById('results').innerHTML = '';
-        }
-        const timer = stepEl.dataset.timer;
-        if (timer) {
-            startTimer(parseInt(timer, 10));
-        } else {
-            hideProgress();
-        }
+        applyStep(e.target);
     }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('step');
+    if (el) applyStep(el);
 });
 
 socket.on('reload', () => {
