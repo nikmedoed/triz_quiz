@@ -22,9 +22,45 @@ skip_vote_results = False
 SCENARIO = load_scenario()
 
 
-@app.route('/')
+def get_step_data(idx: int) -> dict:
+    """Return scenario step enriched with dynamic data."""
+    step = dict(SCENARIO[idx])
+    if step.get("type") == "vote":
+        step["ideas"] = [
+            {
+                "id": idea["id"],
+                "text": idea["text"],
+                "time": idea["time"],
+                "user": idea["user_id"],
+            }
+            for idea in db.get_ideas(idx - 1)
+        ]
+    return step
+
+
+def render_step(step: dict) -> str:
+    """Render HTML for a step using its type-specific template."""
+    return render_template(f"steps/{step['type']}.html", step=step)
+
+
+def current_step_html() -> str:
+    idx = db.get_step()
+    if 0 <= idx < len(SCENARIO):
+        return render_step(get_step_data(idx))
+    return ""
+
+
+@app.route("/current")
+def current_step_route():
+    html = current_step_html()
+    if html:
+        return html
+    return "", 204
+
+
+@app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
 @app.route('/update', methods=['POST'])
@@ -50,48 +86,34 @@ def update():
     return '', 204
 
 
-def broadcast_step(idx: int) -> None:
-    if 0 <= idx < len(SCENARIO):
-        step = dict(SCENARIO[idx])
-        if step.get('type') == 'vote':
-            step['ideas'] = [
-                {"id": idea["id"], "text": idea["text"], "time": idea["time"], "user": idea["user_id"]}
-                for idea in db.get_ideas(idx - 1)
-            ]
-        socketio.emit('step', step)
-    # Do not emit anything if scenario index is out of range.
-
-
-def next_step() -> None:
+def next_step() -> dict | None:
+    """Advance scenario and return new step data if available."""
     global progress_state, skip_vote_results
     step = db.get_step() + 1
     while True:
         if step < len(SCENARIO):
-            stype = SCENARIO[step].get('type')
-            if stype == 'vote_results' and skip_vote_results:
+            stype = SCENARIO[step].get("type")
+            if stype == "vote_results" and skip_vote_results:
                 skip_vote_results = False
                 step += 1
                 continue
             db.set_step(step)
-            if stype == 'vote':
+            if stype == "vote":
                 ideas = db.get_ideas(step - 1)
                 if not ideas:
                     skip_vote_results = True
-                    socketio.emit('step', {**SCENARIO[step], 'ideas': []})
-                    return
-            broadcast_step(step)
+                    return {**SCENARIO[step], "ideas": []}
+            return get_step_data(step)
         elif step == len(SCENARIO):
             db.set_step(step)
-            # Last step finished; keep stage 2 so results remain visible.
-            # No "end" signal yet to allow manual transition to rating.
             progress_state = None
+            return None
         else:
             db.set_step(step)
-            # Explicit transition to final rating after moderator presses Next again.
             db.set_stage(3)
             progress_state = None
-            socketio.emit('end', {})
-        break
+            socketio.emit("end", {})
+            return None
 
 
 @app.route('/start', methods=['POST'])
@@ -101,14 +123,20 @@ def start_quiz():
     progress_state = None
     rating_state = None
     socketio.emit('started', {})
-    next_step()
-    return '', 204
+    step = next_step()
+    socketio.emit('reload', {})
+    if step:
+        return render_step(step)
+    return "", 204
 
 
 @app.route('/next', methods=['POST'])
 def next_route():
-    next_step()
-    return '', 204
+    step = next_step()
+    socketio.emit('reload', {})
+    if step:
+        return render_step(step)
+    return "", 204
 
 
 @app.route('/reset', methods=['GET', 'POST'])
@@ -143,9 +171,6 @@ def handle_connect():
         emit("participants", {"who": people})
     else:
         emit("started", {})
-        step = db.get_step()
-        if step < len(SCENARIO):
-            broadcast_step(step)
         if progress_state:
             emit('progress', progress_state)
         if stage == 3:

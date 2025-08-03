@@ -1,0 +1,17 @@
+<div id="step">
+  <div id="title">{{ step.title }}</div>
+  <div id="content">
+    {% if step.ideas %}
+      {% for idea in step.ideas %}
+        {{ idea.id }}. {{ idea.text }} ({{ idea.time|round|int }})<br/>
+      {% endfor %}
+    {% else %}
+      нет ответов
+    {% endif %}
+  </div>
+  {% if step.ideas %}
+  <script>document.getElementById('results').innerHTML=''; startTimer(60)</script>
+  {% else %}
+  <script>document.getElementById('results').innerHTML=''; hideProgress()</script>
+  {% endif %}
+</div>
