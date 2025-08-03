@@ -40,6 +40,26 @@ def get_step_data(idx: int) -> dict:
     return step
 
 
+def compute_vote_results(vote_step: int) -> dict:
+    """Aggregate votes for a step into result payload."""
+    ideas = db.get_ideas(vote_step - 1)
+    votes = db.get_votes(vote_step)
+    names = {row["id"]: row["name"] for row in db.get_participants()}
+    results = []
+    for idea in ideas:
+        voters = [uid for uid, vs in votes.items() if idea["id"] in vs]
+        results.append(
+            {
+                "id": idea["id"],
+                "text": idea["text"],
+                "author": {"id": idea["user_id"], "name": names.get(idea["user_id"], "")},
+                "votes": voters,
+                "time": idea["time"],
+            }
+        )
+    return {"ideas": results}
+
+
 def render_step(step: dict) -> str:
     """Render HTML for a step using its type-specific template."""
     stype = step['type']
@@ -157,11 +177,17 @@ def start_quiz():
 
 @app.route('/next', methods=['POST'])
 def next_route():
+    global vote_result_state, quiz_result_state
     idx = db.get_step()
     stype = SCENARIO[idx]['type'] if 0 <= idx < len(SCENARIO) else None
-    if stype == 'quiz' and quiz_result_state is None:
-        return "", 204
     if stype == 'vote' and vote_result_state is None:
+        step = next_step()
+        vote_result_state = compute_vote_results(idx)
+        socketio.emit('reload', {})
+        if step:
+            return render_step(step)
+        return "", 204
+    if stype == 'quiz' and quiz_result_state is None:
         return "", 204
     step = next_step()
     socketio.emit('reload', {})
