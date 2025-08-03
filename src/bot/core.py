@@ -162,6 +162,14 @@ async def watch_steps(bot):
             else:
                 if step['type'] == 'vote':
                     state.ideas = state.db.get_ideas(state.step_idx - 1)
+                    if not state.ideas:
+                        for uid in state.participants:
+                            await bot.send_message(uid, 'Ответов нет, голосование пропущено.')
+                        base = state.PROJECTOR_URL.rsplit('/', 1)[0]
+                        async with aiohttp.ClientSession() as session:
+                            await session.post(f'{base}/next')
+                            await session.post(f'{base}/next')
+                        continue
                 await announce_step(bot, step)
         else:
             if state.db.get_stage() == 3:

@@ -147,6 +147,10 @@
 
     socket.on('vote_result', data => {
         const div = document.getElementById('content');
+        if (!data.ideas.length) {
+            div.textContent = 'Нет ответов.';
+            return;
+        }
         let html = '';
         data.ideas.forEach(idea => {
             html += `<div style="margin-bottom:1rem"><strong>${idea.id}. ${idea.text}</strong> ` +
