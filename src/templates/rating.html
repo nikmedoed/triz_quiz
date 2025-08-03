@@ -1,0 +1,19 @@
+<div id="main">
+    <div id="title">Итоговый рейтинг</div>
+    <div id="content"></div>
+    <div id="results">
+        {% for p in rating %}
+        <div style="display:flex;align-items:center;margin-bottom:0.5rem">
+            <div style="width:2rem">{{ p.place }}</div>
+            <img src="/avatar/{{ p.id }}" width="40" height="40"/>
+            <div style="flex:1;margin-left:0.5rem">{{ p.name }}</div>
+            <div class="highlight">{{ p.score }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<div id="startBtn" hx-swap-oob="true" style="display:none"></div>
+<div id="participants" hx-swap-oob="true" style="display:none"></div>
+<div id="nextBtn" hx-swap-oob="true" style="display:none"></div>
+<div id="resetBtn" hx-swap-oob="true" style="display:inline-block"></div>
+<script>hideProgress();</script>

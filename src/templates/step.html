@@ -1,0 +1,79 @@
+<div id="main">
+    <div id="title">{{ step.title if step else 'Ожидание начала…' }}</div>
+    <div id="content">
+        {% if step %}
+            {% if step.type == 'quiz' %}
+                {% for o in step.options %}
+                    <div>{{ loop.index }}. {{ o }}</div>
+                {% endfor %}
+            {% elif step.type == 'open' %}
+                {{ step.description or '' }}
+            {% elif step.type == 'vote' %}
+                {% if step.ideas %}
+                    {% for idea in step.ideas %}
+                        <div>{{ idea.id }}. {{ idea.text }} ({{ idea.time|int }})</div>
+                    {% endfor %}
+                {% else %}
+                    нет ответов
+                {% endif %}
+            {% elif step.type == 'vote_results' %}
+                {% if vote_result %}
+                    {% for idea in vote_result.ideas %}
+                        <div style="margin-bottom:1rem">
+                            <strong>{{ idea.id }}. {{ idea.text }}</strong>
+                            <span class="highlight">{{ idea.votes|length }}</span>
+                            <span style="color:#666">({{ idea.time|int }})</span><br/>
+                            <img src="/avatar/{{ idea.author.id }}" width="40" height="40"/> {{ idea.author.name }}
+                            {% if idea.votes %}
+                                <div>
+                                {% for v in idea.votes %}
+                                    <img src="/avatar/{{ v }}" width="24" height="24"/>
+                                {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div>Нет данных о голосовании</div>
+                {% endif %}
+            {% elif step.type == 'quiz_results' %}
+                {% if quiz_result %}
+                    <h2>Результаты</h2>
+                    {% for opt in quiz_result.options %}
+                        {% set count = opt.voters|length %}
+                        <div style="margin-bottom:1rem">{{ opt.id }}. {{ opt.text }}<br/>
+                            <div style="background:#ddd;width:{{ count * 40 }}px;height:20px"></div>
+                            <div><span class="highlight">{{ count }}</span>
+                                {% for v in opt.voters %}
+                                    <img src="/avatar/{{ v }}" width="24" height="24"/>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div>Нет данных викторины</div>
+                {% endif %}
+            {% elif step.type == 'slide' %}
+                {{ step.content or '' }}
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+{% if stage != 1 %}
+<div id="startBtn" hx-swap-oob="true" style="display:none"></div>
+<div id="participants" hx-swap-oob="true" style="display:none"></div>
+{% endif %}
+{% if stage == 2 %}
+<div id="nextBtn" hx-swap-oob="true" style="display:inline-block"></div>
+<div id="resetBtn" hx-swap-oob="true" style="display:none"></div>
+{% elif stage == 3 %}
+<div id="nextBtn" hx-swap-oob="true" style="display:none"></div>
+<div id="resetBtn" hx-swap-oob="true" style="display:inline-block"></div>
+{% endif %}
+
+{% if step and step.type in ['quiz','open','vote'] and not (step.type == 'vote' and not step.ideas) %}
+<script>startTimer({{ 300 if step.type == 'open' else 60 }});</script>
+{% else %}
+<script>hideProgress();</script>
+{% endif %}

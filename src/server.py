@@ -17,6 +17,8 @@ socketio = SocketIO(app, cors_allowed_origins="*")  # simple CORS for local netw
 db = Database(settings.db_file, settings.avatar_dir)
 progress_state = None
 rating_state = None
+vote_result_state = None
+quiz_result_state = None
 skip_vote_results = False
 
 SCENARIO = load_scenario()
@@ -31,26 +33,37 @@ def index():
 def update():
     """
     Bot POSTs json {event: str, payload: {...}}.
-    We just broadcast to all connected clients.
+    Broadcast small real-time updates to connected clients
+    and store larger payloads for HTTP rendering.
     """
     if not request.is_json:
         abort(415)
-    global progress_state, rating_state
+    global progress_state, rating_state, vote_result_state, quiz_result_state
     data = request.get_json()
     event = data['event']
     payload = data['payload']
-    socketio.emit(event, payload)
+    if event in {'progress', 'participants', 'reset'}:
+        socketio.emit(event, payload)
     if event == 'progress':
         progress_state = None if payload.get('inactive') else payload
     elif event == 'reset':
         progress_state = None
         rating_state = None
+        vote_result_state = None
+        quiz_result_state = None
     elif event == 'rating':
         rating_state = payload
+    elif event == 'vote_result':
+        vote_result_state = payload
+    elif event == 'quiz_result':
+        quiz_result_state = payload
     return '', 204
 
 
-def broadcast_step(idx: int) -> None:
+def get_step(idx: int | None = None) -> dict | None:
+    """Return current scenario step with extra data from the database."""
+    if idx is None:
+        idx = db.get_step()
     if 0 <= idx < len(SCENARIO):
         step = dict(SCENARIO[idx])
         if step.get('type') == 'vote':
@@ -58,12 +71,13 @@ def broadcast_step(idx: int) -> None:
                 {"id": idea["id"], "text": idea["text"], "time": idea["time"], "user": idea["user_id"]}
                 for idea in db.get_ideas(idx - 1)
             ]
-        socketio.emit('step', step)
-    # Do not emit anything if scenario index is out of range.
+        return step
+    return None
 
 
 def next_step() -> None:
-    global progress_state, skip_vote_results
+    """Advance to the next step in the scenario."""
+    global progress_state, skip_vote_results, vote_result_state, quiz_result_state
     step = db.get_step() + 1
     while True:
         if step < len(SCENARIO):
@@ -77,38 +91,66 @@ def next_step() -> None:
                 ideas = db.get_ideas(step - 1)
                 if not ideas:
                     skip_vote_results = True
-                    socketio.emit('step', {**SCENARIO[step], 'ideas': []})
                     return
-            broadcast_step(step)
+            vote_result_state = None
+            quiz_result_state = None
         elif step == len(SCENARIO):
             db.set_step(step)
             # Last step finished; keep stage 2 so results remain visible.
-            # No "end" signal yet to allow manual transition to rating.
             progress_state = None
         else:
             db.set_step(step)
             # Explicit transition to final rating after moderator presses Next again.
             db.set_stage(3)
             progress_state = None
-            socketio.emit('end', {})
         break
+
+
+def render_current():
+    """Render current state (step or rating) as HTML."""
+    stage = db.get_stage()
+    if stage == 3:
+        if rating_state:
+            return render_template("rating.html", rating=rating_state, stage=stage)
+        step = {"title": "Ожидание рейтинга", "type": "slide", "content": ""}
+        return render_template(
+            "step.html",
+            step=step,
+            stage=stage,
+            vote_result=vote_result_state,
+            quiz_result=quiz_result_state,
+        )
+    step = get_step()
+    return render_template(
+        "step.html",
+        step=step,
+        stage=stage,
+        vote_result=vote_result_state,
+        quiz_result=quiz_result_state,
+    )
+
+
+@app.route('/step')
+def step_route():
+    return render_current()
 
 
 @app.route('/start', methods=['POST'])
 def start_quiz():
-    global progress_state, rating_state
+    global progress_state, rating_state, vote_result_state, quiz_result_state
     db.set_stage(2)
     progress_state = None
     rating_state = None
-    socketio.emit('started', {})
+    vote_result_state = None
+    quiz_result_state = None
     next_step()
-    return '', 204
+    return render_current()
 
 
 @app.route('/next', methods=['POST'])
 def next_route():
     next_step()
-    return '', 204
+    return render_current()
 
 
 @app.route('/reset', methods=['GET', 'POST'])
@@ -119,6 +161,8 @@ def reset_route():
         global progress_state, rating_state
         progress_state = None
         rating_state = None
+        vote_result_state = None
+        quiz_result_state = None
         socketio.emit('participants', {'who': []})
         socketio.emit('reset', {})
         return redirect('/')
@@ -138,20 +182,9 @@ def handle_connect():
     people = [
         {"id": row["id"], "name": row["name"]} for row in db.get_participants()
     ]
-    stage = db.get_stage()
-    if stage == 1:
-        emit("participants", {"who": people})
-    else:
-        emit("started", {})
-        step = db.get_step()
-        if step < len(SCENARIO):
-            broadcast_step(step)
-        if progress_state:
-            emit('progress', progress_state)
-        if stage == 3:
-            emit('end', {})
-            if rating_state:
-                emit('rating', rating_state)
+    emit("participants", {"who": people})
+    if progress_state:
+        emit('progress', progress_state)
 
 
 def run_server():

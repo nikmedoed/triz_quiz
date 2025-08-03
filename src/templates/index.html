@@ -9,38 +9,31 @@
             margin: 0;
             padding: 1rem;
         }
-
         #title {
             font-size: 2rem;
             margin-bottom: 1rem;
         }
-
         #content {
             font-size: 1.3rem;
             white-space: pre-wrap;
         }
-
         .highlight {
             background: #ffd;
             padding: 0.2rem 0.4rem;
             border-radius: 4px;
         }
-
         #results {
             margin-top: 2rem;
         }
-
         #participants {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             gap: 0.5rem;
         }
-
         .participant {
             text-align: center;
             font-size: 0.9rem;
         }
-
         .participant img {
             width: 80px;
             height: 80px;
@@ -48,18 +41,17 @@
         }
     </style>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body>
-<div id="title">Ожидание начала…</div>
-<div id="content"></div>
+<div id="main" hx-get="/step" hx-trigger="load"></div>
 <div id="timer" style="margin-top:1rem; font-size:1.2rem; display:none"></div>
 <div id="answerStats" style="margin-top:0.5rem; display:none"></div>
 <div id="lastAnswer" style="margin-top:0.5rem; display:none"></div>
 <div id="participants"></div>
-<button id="startBtn">Начать</button>
-<button id="nextBtn" style="display:none">Далее</button>
+<button id="startBtn" hx-post="/start" hx-target="#main">Начать</button>
+<button id="nextBtn" hx-post="/next" hx-target="#main" style="display:none">Далее</button>
 <button id="resetBtn">Сбросить базу</button>
-<div id="results"></div>
 
 <script>
     const socket = io();
@@ -107,32 +99,6 @@
         sinceId = setInterval(tick, 1000);
     }
 
-    socket.on('step', step => {
-        document.getElementById('title').textContent = step.title;
-        if (step.type === 'quiz') {
-            document.getElementById('content').textContent =
-                step.options.map((o, i) => `${i + 1}. ${o}`).join("\n");
-        } else if (step.type === 'open') {
-            document.getElementById('content').textContent = step.description || '';
-        } else if (step.type === 'vote') {
-            if (step.ideas.length) {
-                const txt = step.ideas.map(i => `${i.id}. ${i.text} (${formatTime(Math.floor(i.time))})`).join("\n");
-                document.getElementById('content').textContent = txt;
-            } else {
-                document.getElementById('content').textContent = 'нет ответов';
-            }
-        } else if (step.type === 'slide') {
-            document.getElementById('content').textContent = step.content || '';
-        }
-        document.getElementById('results').innerHTML = '';
-        if (['quiz', 'open', 'vote'].includes(step.type) && !(step.type === 'vote' && !step.ideas.length)) {
-            const secs = step.type === 'open' ? 300 : 60;
-            startTimer(secs);
-        } else {
-            hideProgress();
-        }
-    });
-
     socket.on('progress', data => {
         if (data.inactive) {
             hideProgress();
@@ -150,62 +116,6 @@
         }
     });
 
-    socket.on('vote_result', data => {
-        const div = document.getElementById('content');
-        let html = '';
-        data.ideas.forEach(idea => {
-            html += `<div style="margin-bottom:1rem"><strong>${idea.id}. ${idea.text}</strong> ` +
-                `<span class="highlight">${idea.votes.length}</span> ` +
-                `<span style="color:#666">(${formatTime(Math.floor(idea.time))})</span><br/>` +
-                `<img src="/avatar/${idea.author.id}" width="40" height="40"/> ${idea.author.name}`;
-            if (idea.votes.length) {
-                html += '<div>';
-                idea.votes.forEach(v => {
-                    html += `<img src="/avatar/${v}" width="24" height="24"/>`;
-                });
-                html += '</div>';
-            }
-            html += '</div>';
-        });
-        div.innerHTML = html;
-    });
-
-    socket.on('quiz_result', data => {
-        document.getElementById('content').textContent = '';
-        const div = document.getElementById('results');
-        div.innerHTML = '<h2>Результаты</h2>';
-        data.options.forEach(opt => {
-            const count = opt.voters.length;
-            let row = `<div style="margin-bottom:1rem">${opt.id}. ${opt.text}<br/>` +
-                `<div style="background:#ddd;width:${count * 40}px;height:20px"></div>` +
-                `<div><span class="highlight">${count}</span>`;
-            opt.voters.forEach(v => {
-                row += ` <img src="/avatar/${v}" width="24" height="24"/>`;
-            });
-            row += '</div></div>';
-            if (String(opt.id) === String(data.correct)) {
-                row = `<div class="highlight">${row}</div>`;
-            }
-            div.innerHTML += row;
-        });
-    });
-
-    socket.on('rating', rating => {
-        document.getElementById('title').textContent = 'Итоговый рейтинг';
-        document.getElementById('content').textContent = '';
-        const div = document.getElementById('results');
-        let html = '';
-        rating.forEach(p => {
-            html += `<div style="display:flex;align-items:center;margin-bottom:0.5rem">` +
-                `<div style="width:2rem">${p.place}</div>` +
-                `<img src="/avatar/${p.id}" width="40" height="40"/>` +
-                `<div style="flex:1;margin-left:0.5rem">${p.name}</div>` +
-                `<div class="highlight">${p.score}</div>` +
-                `</div>`;
-        });
-        div.innerHTML = html;
-    });
-
     socket.on('participants', data => {
         const div = document.getElementById('participants');
         div.innerHTML = '';
@@ -214,41 +124,10 @@
         });
     });
 
-    document.getElementById('startBtn').addEventListener('click', async () => {
-        await fetch('/start', {method: 'POST'});
-    });
-
-    document.getElementById('nextBtn').addEventListener('click', async () => {
-        await fetch('/next', {method: 'POST'});
-    });
+    socket.on('reset', () => { window.location.reload(); });
 
     document.getElementById('resetBtn').addEventListener('click', () => {
         window.location.href = '/reset';
-    });
-
-    socket.on('started', () => {
-        document.getElementById('startBtn').style.display = 'none';
-        document.getElementById('nextBtn').style.display = 'inline-block';
-        document.getElementById('participants').style.display = 'none';
-        document.getElementById('resetBtn').style.display = 'none';
-        hideProgress();
-    });
-
-    socket.on('end', () => {
-        document.getElementById('nextBtn').style.display = 'none';
-        document.getElementById('resetBtn').style.display = 'inline-block';
-        hideProgress();
-    });
-
-    socket.on('reset', () => {
-        document.getElementById('startBtn').style.display = 'inline-block';
-        document.getElementById('nextBtn').style.display = 'none';
-        document.getElementById('resetBtn').style.display = 'inline-block';
-        document.getElementById('participants').style.display = 'grid';
-        document.getElementById('title').textContent = 'Ожидание начала…';
-        document.getElementById('content').textContent = '';
-        document.getElementById('results').innerHTML = '';
-        hideProgress();
     });
 </script>
 </body>
