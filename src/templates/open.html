@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<p>{{ step.description }}</p>
+{% endblock %}
+{% block controls %}
+<form method="post" action="/next"><button type="submit">Далее</button></form>
+{% endblock %}

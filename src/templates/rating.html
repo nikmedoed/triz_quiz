@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<ol>
+    {% for p in rating %}
+    <li>{{ p.name }} — {{ p.score }}</li>
+    {% endfor %}
+</ol>
+{% endblock %}
+{% block controls %}
+<form method="get" action="/reset"><button type="submit">Сбросить базу</button></form>
+{% endblock %}

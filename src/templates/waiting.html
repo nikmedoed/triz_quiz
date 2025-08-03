@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="participants">
+    {% for p in participants %}
+        <div>{{ p.name }}</div>
+    {% endfor %}
+</div>
+{% endblock %}
+{% block controls %}
+<form method="post" action="/start"><button type="submit">Начать</button></form>
+<form method="get" action="/reset"><button type="submit">Сбросить базу</button></form>
+{% endblock %}

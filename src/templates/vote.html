@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+{% if step.ideas %}
+<ul>
+    {% for idea in step.ideas %}
+    <li>{{ idea.id }}. {{ idea.text }}</li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>нет ответов</p>
+{% endif %}
+{% endblock %}
+{% block controls %}
+<form method="post" action="/next"><button type="submit">Далее</button></form>
+{% endblock %}
