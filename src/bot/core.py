@@ -2,32 +2,8 @@
 
 import asyncio
 import time
-from typing import Any
-
-import aiohttp
 
 from . import formatting, state
-
-Payload = dict[str, Any] | list[dict[str, Any]]
-
-
-async def push(event: str, payload: Payload):
-    """Отправка данных на проектор."""
-    async with aiohttp.ClientSession() as session:
-        await session.post(state.PROJECTOR_URL, json={'event': event, 'payload': payload})
-
-
-async def send_progress():
-    step = state.current_step()
-    if not step or step.get("type") not in ("open", "quiz", "vote"):
-        await push('progress', {'inactive': True})
-        return
-    if step['type'] == 'vote':
-        answered = sum(1 for v in state.votes_current.values() if v)
-    else:
-        answered = len(state.answers_current)
-    ts = state.last_answer_ts if answered else None
-    await push('progress', {'answered': answered, 'total': len(state.participants), 'ts': ts})
 
 
 async def finalize_vote() -> None:
@@ -55,11 +31,10 @@ async def finalize_vote() -> None:
         if pts:
             state.participants[idea['user_id']]['score'] += pts
             state.db.update_score(idea['user_id'], pts)
-    await push('vote_result', {'ideas': results})
 
 
 async def finalize_quiz(bot, stepq: dict) -> None:
-    """Process quiz answers, push results and notify users."""
+    """Process quiz answers and notify users."""
     correct = str(stepq.get('correct'))
     pts = stepq.get('points', 1)
     options = stepq.get('options', [])
@@ -71,7 +46,6 @@ async def finalize_quiz(bot, stepq: dict) -> None:
             for uid in voters:
                 state.participants[uid]['score'] += pts
                 state.db.update_score(uid, pts)
-    await push('quiz_result', {'options': summary, 'correct': correct})
     for uid in state.participants:
         ans = state.answers_current.get(uid, {}).get('text')
         if ans == correct:
@@ -107,15 +81,9 @@ async def notify_vote_results(bot) -> None:
         )
 
 
-async def broadcast_rating(rows: list[dict]) -> None:
-    """Push rating update to projector."""
-    await push('rating', formatting.build_rating(rows))
-
-
 async def finish_quiz(bot) -> None:
     """Send final rating and statistics to participants."""
     board = state.db.get_leaderboard()
-    await broadcast_rating(board)
     stats = state.db.get_times_by_user()
     for row in board:
         uid = row['id']
@@ -157,14 +125,6 @@ async def watch_steps(bot):
             state.step_start_ts = state.last_answer_ts = time.time()
             if step['type'] == 'vote':
                 state.ideas = state.db.get_ideas(state.step_idx - 1)
-                if state.ideas:
-                    await send_progress()
-                else:
-                    await push('progress', {'inactive': True})
-            else:
-                await send_progress()
-        else:
-            await push('progress', {'inactive': True})
         if step:
             if step['type'] == 'vote_results':
                 await notify_vote_results(bot)

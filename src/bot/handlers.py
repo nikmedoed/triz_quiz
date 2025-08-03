@@ -13,7 +13,7 @@ from aiogram.types import (
     Message,
 )
 
-from . import core, formatting, state
+from . import formatting, state
 
 router = Router()
 
@@ -44,7 +44,6 @@ async def send_current_step(uid: int, bot) -> None:
             await bot.send_message(uid, text, reply_markup=kb)
         else:
             await bot.send_message(uid, "Викторина уже началась, ожидайте вопросов.")
-        await core.send_progress()
         return
     rows = state.db.get_leaderboard()
     await bot.send_message(
@@ -79,14 +78,6 @@ async def name_received(msg: Message):
     state.pending_names.remove(user.id)
     stage = state.db.get_stage()
     if stage == 1:
-        await core.push(
-            "participants",
-            {
-                "who": [
-                    {"id": uid, "name": p["name"]} for uid, p in state.participants.items()
-                ]
-            },
-        )
         await msg.answer("Вы зарегистрированы! Ожидайте начала.")
         return
     await send_current_step(user.id, msg.bot)
@@ -110,8 +101,6 @@ async def open_answer(msg: Message):
         "Идея принята!\n\n<i>Вы можете изменить ответ, отправив новое сообщение. "
         "Редактирование сообщений не поддерживается, скопируйте, измените и пришлите новое</i>"
     )
-    await core.send_progress()
-    await core.push('answer_in', {'name': msg.from_user.full_name})
 
 
 @router.callback_query(step_filter('vote'), lambda c: c.data.startswith('vote:'))
@@ -131,8 +120,6 @@ async def vote(cb: CallbackQuery):
     kb = formatting.vote_keyboard_for(cb.from_user.id)
     await cb.message.edit_reply_markup(reply_markup=kb)
     await cb.answer("Голос учтён.")
-    await core.send_progress()
-    await core.push('vote_in', {'voter': cb.from_user.full_name})
 
 
 @router.callback_query(step_filter('quiz'), lambda c: c.data.startswith('quiz:'))
@@ -147,15 +134,13 @@ async def quiz_answer(cb: CallbackQuery):
     kb = formatting.quiz_keyboard_for(step, cb.from_user.id)
     await cb.message.edit_reply_markup(reply_markup=kb)
     await cb.answer("Ответ записан.")
-    await core.send_progress()
-    await core.push('answer_in', {'name': cb.from_user.full_name})
 
 
 @router.message(Command('next'), lambda m: m.from_user.id == state.ADMIN_ID)
 async def cmd_next(msg: Message):
     base = state.PROJECTOR_URL.rsplit('/', 1)[0]
     async with aiohttp.ClientSession() as session:
-        await session.post(f"{base}/next")
+        await session.get(f"{base}/next")
     await msg.answer("Переключение шага.")
 
 
@@ -163,12 +148,9 @@ async def cmd_next(msg: Message):
 async def cmd_rating(msg: Message):
     rows = state.db.get_leaderboard()
     await msg.answer("Текущий рейтинг:\n" + formatting.format_leaderboard(rows))
-    await core.broadcast_rating(rows)
 
 
 @router.message(Command('reset'), lambda m: m.from_user.id == state.ADMIN_ID)
 async def cmd_reset(msg: Message):
     state.reset_state()
     await msg.answer("Состояние сброшено.")
-    await core.push('participants', {'who': []})
-    await core.push('reset', {})

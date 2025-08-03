@@ -41,14 +41,14 @@ def index():
     return render_template("rating.html", title="Итоговый рейтинг", rating=rating)
 
 
-@app.post("/start")
+@app.get("/start")
 def start_quiz():
     db.set_stage(2)
     db.set_step(0)
     return redirect("/")
 
 
-@app.post("/next")
+@app.get("/next")
 def next_step():
     step = db.get_step() + 1
     if step < len(SCENARIO):
