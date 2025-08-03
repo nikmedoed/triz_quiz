@@ -18,6 +18,7 @@ answers_current: dict[int, dict] = {}
 votes_current: dict[int, set[int]] = {}
 ideas: list[dict] = []  # текущие идеи для голосования
 vote_gains: dict[int, int] = {}  # очки, полученные на последнем голосовании
+skip_vote_finalize = False  # пропустить finalize_vote, если голосование было пропущено
 ADMIN_ID = settings.admin_id  # ведущий
 pending_names: set[int] = set()
 last_answer_ts = time.time()

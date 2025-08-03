@@ -144,7 +144,9 @@ async def watch_steps(bot):
         state.step_idx = cur
         if old_step:
             if old_step.get('type') == 'vote':
-                await finalize_vote()
+                if not state.skip_vote_finalize:
+                    await finalize_vote()
+                state.skip_vote_finalize = False
             elif old_step.get('type') == 'quiz':
                 await finalize_quiz(bot, old_step)
         state.answers_current.clear()
@@ -168,7 +170,12 @@ async def watch_steps(bot):
                         base = state.PROJECTOR_URL.rsplit('/', 1)[0]
                         async with aiohttp.ClientSession() as session:
                             await session.post(f'{base}/next')
+                        state.vote_gains = {uid: 0 for uid in state.participants}
+                        await push('vote_result', {'ideas': []})
+                        await asyncio.sleep(1)
+                        async with aiohttp.ClientSession() as session:
                             await session.post(f'{base}/next')
+                        state.skip_vote_finalize = True
                         continue
                 await announce_step(bot, step)
         else:
