@@ -165,12 +165,3 @@ async def cmd_rating(msg: Message):
     rows = state.db.get_leaderboard()
     await msg.answer("Текущий рейтинг:\n" + formatting.format_leaderboard(rows))
     await core.broadcast_rating(rows)
-
-
-@router.message(Command('reset'), lambda m: m.from_user.id == state.ADMIN_ID)
-async def cmd_reset(msg: Message):
-    state.vote_gains = {}
-    state.db.reset()
-    await msg.answer("Состояние сброшено.")
-    await core.push('participants', {'who': []})
-    await core.push('reset', {})

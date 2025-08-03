@@ -5,7 +5,7 @@ from io import BytesIO
 from flask import Flask, render_template, request, abort, send_file, redirect, url_for
 from flask_socketio import SocketIO, emit
 
-from .bot import formatting
+from .bot import formatting, state
 from .config import settings
 from .db import Database
 from .resources import load_scenario
@@ -30,6 +30,8 @@ def index():
 def reset_view():
     if request.method == 'POST':
         db.reset()
+        state.vote_gains = {}
+        state.pending_names.clear()
         socketio.emit('participants', {'who': []})
         socketio.emit('reset', {})
         return redirect(url_for('index'))

@@ -25,7 +25,7 @@ def run_bot() -> None:
     async def main_loop():
         asyncio.create_task(core.watch_steps(bot))
         reset_url = settings.projector_url.rsplit('/', 1)[0] + '/reset'
-        await bot.send_message(settings.admin_id, f"Страница сброса: {reset_url}")
+        logging.info("Reset page: %s", reset_url)
         await dp.start_polling(bot)
 
     asyncio.run(main_loop())

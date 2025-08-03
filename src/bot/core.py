@@ -41,8 +41,10 @@ async def send_progress():
 
 async def finalize_vote() -> None:
     """Process vote results and update scores."""
-    step_idx = state.db.get_step()
-    ideas = state.db.get_ideas(step_idx - 1)
+    step_idx = state.db.get_step() - 1
+    if step_idx < 0:
+        return
+    ideas = state.db.get_ideas(step_idx)
     if not ideas:
         return
     votes = state.db.get_votes(step_idx)
@@ -72,7 +74,9 @@ async def finalize_quiz(bot, stepq: dict) -> None:
     correct = str(stepq.get('correct'))
     pts = stepq.get('points', 1)
     options = stepq.get('options', [])
-    step_idx = state.db.get_step()
+    step_idx = state.db.get_step() - 1
+    if step_idx < 0:
+        return
     raw_answers = state.db.get_responses(step_idx, 'quiz')
     answers: dict[int, str] = {}
     for uid, val in raw_answers.items():
@@ -155,18 +159,21 @@ async def finish_quiz(bot) -> None:
 
 async def watch_steps(bot):
     last = state.db.get_step()
+    finished = False
     while True:
         await asyncio.sleep(1)
         cur = state.db.get_step()
-        if cur == last:
-            continue
-        old_step = state.SCENARIO[last] if 0 <= last < len(state.SCENARIO) else None
-        last = cur
-        if old_step:
-            if old_step.get('type') == 'vote':
-                await finalize_vote()
-            elif old_step.get('type') == 'quiz':
-                await finalize_quiz(bot, old_step)
+        if cur != last:
+            old_step = (
+                state.SCENARIO[last] if 0 <= last < len(state.SCENARIO) else None
+            )
+            last = cur
+            finished = False
+            if old_step:
+                if old_step.get('type') == 'vote':
+                    await finalize_vote()
+                elif old_step.get('type') == 'quiz':
+                    await finalize_quiz(bot, old_step)
         step = state.current_step()
         if step and step.get('type') in ('open', 'quiz', 'vote'):
             state.step_start_ts = state.last_answer_ts = time.time()
@@ -186,6 +193,6 @@ async def watch_steps(bot):
             else:
                 await announce_step(bot, step)
         else:
-            if state.db.get_stage() == 3:
+            if state.db.get_stage() == 3 and not finished:
                 await finish_quiz(bot)
-                return
+                finished = True
