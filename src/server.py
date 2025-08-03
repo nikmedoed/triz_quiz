@@ -2,7 +2,7 @@
 
 from io import BytesIO
 
-from flask import Flask, render_template, request, abort, send_file
+from flask import Flask, render_template, request, abort, send_file, redirect
 from flask_socketio import SocketIO, emit
 
 from .config import settings
@@ -109,6 +109,20 @@ def start_quiz():
 def next_route():
     next_step()
     return '', 204
+
+
+@app.route('/reset', methods=['GET', 'POST'])
+def reset_route():
+    if request.method == 'POST':
+        from .bot import state
+        state.reset_state()
+        global progress_state, rating_state
+        progress_state = None
+        rating_state = None
+        socketio.emit('participants', {'who': []})
+        socketio.emit('reset', {})
+        return redirect('/')
+    return render_template('reset.html')
 
 
 @app.route('/avatar/<int:user_id>')
