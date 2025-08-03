@@ -176,4 +176,4 @@ async def watch_steps(bot):
         else:
             if state.db.get_stage() == 3:
                 await finish_quiz(bot)
-                return
+                continue

@@ -24,7 +24,7 @@ def run_bot() -> None:
 
     async def main_loop():
         base = settings.projector_url.rsplit('/', 1)[0]
-        await bot.send_message(state.ADMIN_ID, f"Сброс состояния: {base}/reset")
+        logging.info("Reset link: %s/reset", base)
         asyncio.create_task(core.watch_steps(bot))
         await dp.start_polling(bot)
 
