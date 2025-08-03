@@ -61,15 +61,15 @@
 </div>
 
 {% if stage != 1 %}
-<div id="startBtn" hx-swap-oob="true" style="display:none"></div>
+<button id="startBtn" hx-post="/start" hx-target="#main" hx-swap-oob="true" style="display:none">Начать</button>
 <div id="participants" hx-swap-oob="true" style="display:none"></div>
 {% endif %}
 {% if stage == 2 %}
-<div id="nextBtn" hx-swap-oob="true" style="display:inline-block"></div>
-<div id="resetBtn" hx-swap-oob="true" style="display:none"></div>
+<button id="nextBtn" hx-post="/next" hx-target="#main" hx-swap-oob="true" style="display:inline-block">Далее</button>
+<button id="resetBtn" onclick="window.location.href='/reset'" hx-swap-oob="true" style="display:none">Сбросить базу</button>
 {% elif stage == 3 %}
-<div id="nextBtn" hx-swap-oob="true" style="display:none"></div>
-<div id="resetBtn" hx-swap-oob="true" style="display:inline-block"></div>
+<button id="nextBtn" hx-post="/next" hx-target="#main" hx-swap-oob="true" style="display:none">Далее</button>
+<button id="resetBtn" onclick="window.location.href='/reset'" hx-swap-oob="true" style="display:inline-block">Сбросить базу</button>
 {% endif %}
 
 {% if step and step.type in ['quiz','open','vote'] and not (step.type == 'vote' and not step.ideas) %}

@@ -12,8 +12,8 @@
         {% endfor %}
     </div>
 </div>
-<div id="startBtn" hx-swap-oob="true" style="display:none"></div>
+<button id="startBtn" hx-post="/start" hx-target="#main" hx-swap-oob="true" style="display:none">Начать</button>
 <div id="participants" hx-swap-oob="true" style="display:none"></div>
-<div id="nextBtn" hx-swap-oob="true" style="display:none"></div>
-<div id="resetBtn" hx-swap-oob="true" style="display:inline-block"></div>
+<button id="nextBtn" hx-post="/next" hx-target="#main" hx-swap-oob="true" style="display:none">Далее</button>
+<button id="resetBtn" onclick="window.location.href='/reset'" hx-swap-oob="true" style="display:inline-block">Сбросить базу</button>
 <script>hideProgress();</script>
