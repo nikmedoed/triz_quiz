@@ -1,5 +1,24 @@
-<div id="step">
+<div id="step" data-type="vote_results">
   <div id="title">{{ step.title }}</div>
-  <div id="content"></div>
-  <script>document.getElementById('results').innerHTML=''; hideProgress()</script>
+  <div id="content">
+    {% if result %}
+      {% for idea in result.ideas %}
+        <div style="margin-bottom:1rem">
+          <strong>{{ idea.id }}. {{ idea.text }}</strong>
+          <span class="highlight">{{ idea.votes|length }}</span>
+          <span style="color:#666">({{ idea.time|round|int }})</span><br/>
+          <img src="/avatar/{{ idea.author.id }}" width="40" height="40"/> {{ idea.author.name }}
+          {% if idea.votes %}
+          <div>
+            {% for v in idea.votes %}
+              <img src="/avatar/{{ v }}" width="24" height="24"/>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      Подсчет...
+    {% endif %}
+  </div>
 </div>

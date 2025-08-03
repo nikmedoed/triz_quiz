@@ -1,0 +1,19 @@
+<div id="step" data-type="quiz_results">
+  <div id="title">{{ step.title }}</div>
+  <div id="content"></div>
+</div>
+<div id="results" hx-swap-oob="true">
+  <h2>Результаты</h2>
+  {% for opt in result.options %}
+    {% set count = opt.voters|length %}
+    <div style="margin-bottom:1rem"{% if opt.id|string == result.correct|string %} class="highlight"{% endif %}>
+      {{ opt.id }}. {{ opt.text }}<br/>
+      <div style="background:#ddd;width:{{ count * 40 }}px;height:20px"></div>
+      <div><span class="highlight">{{ count }}</span>
+      {% for v in opt.voters %}
+        <img src="/avatar/{{ v }}" width="24" height="24"/>
+      {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+</div>

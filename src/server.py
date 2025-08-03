@@ -18,6 +18,8 @@ db = Database(settings.db_file, settings.avatar_dir)
 progress_state = None
 rating_state = None
 skip_vote_results = False
+quiz_result_state = None
+vote_result_state = None
 
 SCENARIO = load_scenario()
 
@@ -40,7 +42,12 @@ def get_step_data(idx: int) -> dict:
 
 def render_step(step: dict) -> str:
     """Render HTML for a step using its type-specific template."""
-    return render_template(f"steps/{step['type']}.html", step=step)
+    stype = step['type']
+    if stype == 'quiz' and quiz_result_state:
+        return render_template('steps/quiz_results.html', step=step, result=quiz_result_state)
+    if stype == 'vote_results':
+        return render_template('steps/vote_results.html', step=step, result=vote_result_state)
+    return render_template(f"steps/{stype}.html", step=step)
 
 
 def current_step_html() -> str:
@@ -71,7 +78,7 @@ def update():
     """
     if not request.is_json:
         abort(415)
-    global progress_state, rating_state
+    global progress_state, rating_state, quiz_result_state, vote_result_state
     data = request.get_json()
     event = data['event']
     payload = data['payload']
@@ -81,15 +88,31 @@ def update():
     elif event == 'reset':
         progress_state = None
         rating_state = None
+        quiz_result_state = None
+        vote_result_state = None
     elif event == 'rating':
         rating_state = payload
+    elif event == 'quiz_result':
+        quiz_result_state = payload
+        progress_state = None
+        socketio.emit('reload', {})
+    elif event == 'vote_result':
+        vote_result_state = payload
+        progress_state = None
+        socketio.emit('reload', {})
     return '', 204
 
 
 def next_step() -> dict | None:
     """Advance scenario and return new step data if available."""
-    global progress_state, skip_vote_results
-    step = db.get_step() + 1
+    global progress_state, skip_vote_results, quiz_result_state, vote_result_state
+    prev_idx = db.get_step()
+    prev_type = SCENARIO[prev_idx].get('type') if 0 <= prev_idx < len(SCENARIO) else None
+    if prev_type == 'quiz':
+        quiz_result_state = None
+    elif prev_type in ('vote', 'vote_results'):
+        vote_result_state = None
+    step = prev_idx + 1
     while True:
         if step < len(SCENARIO):
             stype = SCENARIO[step].get("type")
@@ -118,10 +141,12 @@ def next_step() -> dict | None:
 
 @app.route('/start', methods=['POST'])
 def start_quiz():
-    global progress_state, rating_state
+    global progress_state, rating_state, quiz_result_state, vote_result_state
     db.set_stage(2)
     progress_state = None
     rating_state = None
+    quiz_result_state = None
+    vote_result_state = None
     socketio.emit('started', {})
     step = next_step()
     socketio.emit('reload', {})
@@ -144,9 +169,11 @@ def reset_route():
     if request.method == 'POST':
         from .bot import state
         state.reset_state()
-        global progress_state, rating_state
+        global progress_state, rating_state, quiz_result_state, vote_result_state
         progress_state = None
         rating_state = None
+        quiz_result_state = None
+        vote_result_state = None
         socketio.emit('participants', {'who': []})
         socketio.emit('reset', {})
         return redirect('/')

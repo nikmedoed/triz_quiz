@@ -1,4 +1,4 @@
-<div id="step">
+<div id="step" data-type="vote"{% if step.ideas %} data-timer="60"{% endif %}>
   <div id="title">{{ step.title }}</div>
   <div id="content">
     {% if step.ideas %}
@@ -9,9 +9,4 @@
       нет ответов
     {% endif %}
   </div>
-  {% if step.ideas %}
-  <script>document.getElementById('results').innerHTML=''; startTimer(60)</script>
-  {% else %}
-  <script>document.getElementById('results').innerHTML=''; hideProgress()</script>
-  {% endif %}
 </div>

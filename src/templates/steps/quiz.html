@@ -1,9 +1,8 @@
-<div id="step">
+<div id="step" data-type="quiz" data-timer="60">
   <div id="title">{{ step.title }}</div>
   <div id="content">
     {% for opt in step.options %}
       {{ loop.index }}. {{ opt }}<br/>
     {% endfor %}
   </div>
-  <script>document.getElementById('results').innerHTML=''; startTimer(60)</script>
 </div>
