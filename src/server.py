@@ -1,6 +1,7 @@
 """Real-time projector for TRIZ-quiz."""
 
 from io import BytesIO
+import json
 
 from flask import Flask, render_template, request, abort, send_file, redirect
 from flask_socketio import SocketIO, emit
@@ -42,6 +43,46 @@ def compute_progress() -> dict | None:
         answered = len(answers)
     ts = db.get_last_answer_ts()
     return {"answered": answered, "total": total, "ts": ts if answered else None}
+
+
+def build_vote_results(step: int) -> list[dict]:
+    people = {row["id"]: row["name"] for row in db.get_participants()}
+    ideas = db.get_ideas(step - 1)
+    votes = db.get_votes(step - 1)
+    results = []
+    for idea in ideas:
+        voters = [uid for uid, ids in votes.items() if idea["id"] in ids]
+        results.append(
+            {
+                "id": idea["id"],
+                "text": idea["text"],
+                "author": {"id": idea["user_id"], "name": people.get(idea["user_id"], "")},
+                "votes": voters,
+                "time": idea["time"],
+            }
+        )
+    return results
+
+
+def build_quiz_results(step: int) -> dict:
+    stepq = SCENARIO[step]
+    options = [
+        {"id": i + 1, "text": text, "voters": []}
+        for i, text in enumerate(stepq.get("options", []))
+    ]
+    responses = db.get_responses(step, "quiz")
+    for uid, raw in responses.items():
+        try:
+            ans = json.loads(raw)["text"] if raw.startswith("{") else raw
+        except Exception:
+            ans = raw
+        try:
+            idx = int(ans)
+        except Exception:
+            continue
+        if 1 <= idx <= len(options):
+            options[idx - 1]["voters"].append(uid)
+    return {"options": options, "correct": SCENARIO[step].get("correct")}
 
 
 @app.route('/')
@@ -154,6 +195,14 @@ def handle_connect():
         step = db.get_step()
         if step < len(SCENARIO):
             broadcast_step(step)
+            stype = SCENARIO[step].get('type')
+            if stype == 'vote_results':
+                emit('vote_result', {'ideas': build_vote_results(step)})
+            elif step > 0 and SCENARIO[step - 1].get('type') == 'quiz':
+                emit('quiz_result', build_quiz_results(step - 1))
+        else:
+            if SCENARIO and SCENARIO[-1].get('type') == 'quiz':
+                emit('quiz_result', build_quiz_results(len(SCENARIO) - 1))
         prog = compute_progress()
         if prog:
             emit('progress', prog)
