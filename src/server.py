@@ -24,10 +24,20 @@ vote_result_state = None
 SCENARIO = load_scenario()
 
 
+@app.template_filter("mmss")
+def format_mmss(seconds: float) -> str:
+    """Format seconds as MM:SS string."""
+    m, s = divmod(int(seconds), 60)
+    return f"{m:02d}:{s:02d}"
+
+
 def get_step_data(idx: int) -> dict:
     """Return scenario step enriched with dynamic data."""
     step = dict(SCENARIO[idx])
     if step.get("type") == "vote":
+        prev = SCENARIO[idx - 1] if idx > 0 else {}
+        step["question"] = prev.get("title", "")
+        step["description"] = prev.get("description", "")
         step["ideas"] = [
             {
                 "id": idea["id"],

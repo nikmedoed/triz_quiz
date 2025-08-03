@@ -1,9 +1,15 @@
 <div id="step" data-type="vote"{% if step.ideas %} data-timer="60"{% endif %}>
-  <div id="title">{{ step.title }}</div>
+  <div id="title">Оценка идей</div>
   <div id="content">
+    {% if step.question %}
+      <div>{{ step.question }}</div>
+      {% if step.description %}
+        <div>{{ step.description }}</div>
+      {% endif %}
+    {% endif %}
     {% if step.ideas %}
       {% for idea in step.ideas %}
-        {{ idea.id }}. {{ idea.text }} ({{ idea.time|round|int }})<br/>
+        {{ idea.id }}. {{ idea.text }} ({{ idea.time|mmss }})<br/>
       {% endfor %}
     {% else %}
       нет ответов
