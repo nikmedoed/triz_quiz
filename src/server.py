@@ -157,6 +157,12 @@ def start_quiz():
 
 @app.route('/next', methods=['POST'])
 def next_route():
+    idx = db.get_step()
+    stype = SCENARIO[idx]['type'] if 0 <= idx < len(SCENARIO) else None
+    if stype == 'quiz' and quiz_result_state is None:
+        return "", 204
+    if stype == 'vote' and vote_result_state is None:
+        return "", 204
     step = next_step()
     socketio.emit('reload', {})
     if step:
