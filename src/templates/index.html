@@ -48,16 +48,19 @@
         }
     </style>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 </head>
 <body>
-<div id="title">Ожидание начала…</div>
-<div id="content"></div>
+<div id="step" hx-get="/current" hx-trigger="load" hx-swap="outerHTML">
+    <div id="title">Ожидание начала…</div>
+    <div id="content"></div>
+</div>
 <div id="timer" style="margin-top:1rem; font-size:1.2rem; display:none"></div>
 <div id="answerStats" style="margin-top:0.5rem; display:none"></div>
 <div id="lastAnswer" style="margin-top:0.5rem; display:none"></div>
 <div id="participants"></div>
-<button id="startBtn">Начать</button>
-<button id="nextBtn" style="display:none">Далее</button>
+<button id="startBtn" hx-post="/start" hx-target="#step" hx-swap="outerHTML">Начать</button>
+<button id="nextBtn" hx-post="/next" hx-target="#step" hx-swap="outerHTML" style="display:none">Далее</button>
 <button id="resetBtn">Сбросить базу</button>
 <div id="results"></div>
 
@@ -107,30 +110,8 @@
         sinceId = setInterval(tick, 1000);
     }
 
-    socket.on('step', step => {
-        document.getElementById('title').textContent = step.title;
-        if (step.type === 'quiz') {
-            document.getElementById('content').textContent =
-                step.options.map((o, i) => `${i + 1}. ${o}`).join("\n");
-        } else if (step.type === 'open') {
-            document.getElementById('content').textContent = step.description || '';
-        } else if (step.type === 'vote') {
-            if (step.ideas.length) {
-                const txt = step.ideas.map(i => `${i.id}. ${i.text} (${formatTime(Math.floor(i.time))})`).join("\n");
-                document.getElementById('content').textContent = txt;
-            } else {
-                document.getElementById('content').textContent = 'нет ответов';
-            }
-        } else if (step.type === 'slide') {
-            document.getElementById('content').textContent = step.content || '';
-        }
-        document.getElementById('results').innerHTML = '';
-        if (['quiz', 'open', 'vote'].includes(step.type) && !(step.type === 'vote' && !step.ideas.length)) {
-            const secs = step.type === 'open' ? 300 : 60;
-            startTimer(secs);
-        } else {
-            hideProgress();
-        }
+    socket.on('reload', () => {
+        htmx.ajax('GET', '/current', '#step');
     });
 
     socket.on('progress', data => {
@@ -212,14 +193,6 @@
         data.who.forEach(p => {
             div.innerHTML += `<div class="participant"><img src="/avatar/${p.id}"/><div>${p.name}</div></div>`;
         });
-    });
-
-    document.getElementById('startBtn').addEventListener('click', async () => {
-        await fetch('/start', {method: 'POST'});
-    });
-
-    document.getElementById('nextBtn').addEventListener('click', async () => {
-        await fetch('/next', {method: 'POST'});
     });
 
     document.getElementById('resetBtn').addEventListener('click', () => {
