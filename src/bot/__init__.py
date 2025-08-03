@@ -23,6 +23,8 @@ def run_bot() -> None:
     state.load_state()
 
     async def main_loop():
+        base = settings.projector_url.rsplit('/', 1)[0]
+        logging.info("Reset link: %s/reset", base)
         asyncio.create_task(core.watch_steps(bot))
         await dp.start_polling(bot)
 
