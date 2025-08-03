@@ -36,7 +36,10 @@ def index():
                 results.append({**idea, "count": count})
             step["results"] = results
         template = f"{step['type']}.html"
-        return render_template(template, title=step.get("title", ""), step=step)
+        title = step.get("title", "")
+        if step["type"] == "vote_results":
+            title = "Результаты голосования"
+        return render_template(template, title=title, step=step)
     rating = db.get_leaderboard()
     return render_template("rating.html", title="Итоговый рейтинг", rating=rating)
 

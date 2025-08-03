@@ -128,6 +128,7 @@ async def watch_steps(bot):
         if step:
             if step['type'] == 'vote_results':
                 await notify_vote_results(bot)
+                continue
             elif step['type'] == 'vote':
                 if state.ideas:
                     await announce_step(bot, step)
