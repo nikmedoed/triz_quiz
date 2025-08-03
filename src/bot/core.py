@@ -32,6 +32,8 @@ async def send_progress():
 
 async def finalize_vote() -> None:
     """Process vote results and update scores."""
+    if not state.ideas:
+        return
     state.vote_gains = {uid: 0 for uid in state.participants}
     results = []
     for idea in state.ideas:
@@ -153,15 +155,23 @@ async def watch_steps(bot):
         step = state.current_step()
         if step and step.get('type') in ('open', 'quiz', 'vote'):
             state.step_start_ts = state.last_answer_ts = time.time()
-            await send_progress()
+            if step['type'] == 'vote':
+                state.ideas = state.db.get_ideas(state.step_idx - 1)
+                if state.ideas:
+                    await send_progress()
+                else:
+                    await push('progress', {'inactive': True})
+            else:
+                await send_progress()
         else:
             await push('progress', {'inactive': True})
         if step:
             if step['type'] == 'vote_results':
                 await notify_vote_results(bot)
+            elif step['type'] == 'vote':
+                if state.ideas:
+                    await announce_step(bot, step)
             else:
-                if step['type'] == 'vote':
-                    state.ideas = state.db.get_ideas(state.step_idx - 1)
                 await announce_step(bot, step)
         else:
             if state.db.get_stage() == 3:

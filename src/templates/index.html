@@ -114,13 +114,17 @@
         } else if (step.type === 'open') {
             document.getElementById('content').textContent = step.description || '';
         } else if (step.type === 'vote') {
-            const txt = step.ideas.map(i => `${i.id}. ${i.text} (${formatTime(Math.floor(i.time))})`).join("\n");
-            document.getElementById('content').textContent = txt;
+            if (step.ideas.length) {
+                const txt = step.ideas.map(i => `${i.id}. ${i.text} (${formatTime(Math.floor(i.time))})`).join("\n");
+                document.getElementById('content').textContent = txt;
+            } else {
+                document.getElementById('content').textContent = 'нет ответов';
+            }
         } else if (step.type === 'slide') {
             document.getElementById('content').textContent = step.content || '';
         }
         document.getElementById('results').innerHTML = '';
-        if (['quiz', 'open', 'vote'].includes(step.type)) {
+        if (['quiz', 'open', 'vote'].includes(step.type) && !(step.type === 'vote' && !step.ideas.length)) {
             const secs = step.type === 'open' ? 300 : 60;
             startTimer(secs);
         } else {
