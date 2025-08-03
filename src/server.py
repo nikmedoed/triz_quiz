@@ -92,8 +92,10 @@ def next_step() -> None:
                 if not ideas:
                     skip_vote_results = True
                     return
-            vote_result_state = None
-            quiz_result_state = None
+            if stype != 'vote_results':
+                vote_result_state = None
+            if stype != 'quiz_results':
+                quiz_result_state = None
         elif step == len(SCENARIO):
             db.set_step(step)
             # Last step finished; keep stage 2 so results remain visible.
