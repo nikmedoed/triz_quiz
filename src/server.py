@@ -15,11 +15,33 @@ PORT = settings.server_port
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")  # simple CORS for local network
 db = Database(settings.db_file, settings.avatar_dir)
-progress_state = None
-rating_state = None
-skip_vote_results = False
 
 SCENARIO = load_scenario()
+
+
+def build_rating(rows: list[dict]) -> list[dict]:
+    return [
+        {"id": r["id"], "name": r["name"], "score": r["score"], "place": r["place"]}
+        for r in rows
+    ]
+
+
+def compute_progress() -> dict | None:
+    step = db.get_step()
+    if step < 0 or step >= len(SCENARIO):
+        return None
+    stype = SCENARIO[step].get('type')
+    if stype not in ('open', 'quiz', 'vote'):
+        return None
+    total = len(db.get_participants())
+    if stype == 'vote':
+        votes = db.get_votes(step)
+        answered = sum(1 for v in votes.values() if v)
+    else:
+        answers = db.get_responses(step, stype)
+        answered = len(answers)
+    ts = db.get_last_answer_ts()
+    return {"answered": answered, "total": total, "ts": ts if answered else None}
 
 
 @app.route('/')
@@ -35,18 +57,10 @@ def update():
     """
     if not request.is_json:
         abort(415)
-    global progress_state, rating_state
     data = request.get_json()
     event = data['event']
     payload = data['payload']
     socketio.emit(event, payload)
-    if event == 'progress':
-        progress_state = None if payload.get('inactive') else payload
-    elif event == 'reset':
-        progress_state = None
-        rating_state = None
-    elif event == 'rating':
-        rating_state = payload
     return '', 204
 
 
@@ -63,43 +77,40 @@ def broadcast_step(idx: int) -> None:
 
 
 def next_step() -> None:
-    global progress_state, skip_vote_results
     step = db.get_step() + 1
     while True:
         if step < len(SCENARIO):
             stype = SCENARIO[step].get('type')
-            if stype == 'vote_results' and skip_vote_results:
-                skip_vote_results = False
+            # Skip vote results if there were no ideas
+            if (
+                stype == 'vote_results'
+                and step > 0
+                and SCENARIO[step - 1].get('type') == 'vote'
+                and not db.get_ideas(step - 1)
+            ):
                 step += 1
                 continue
             db.set_step(step)
             if stype == 'vote':
                 ideas = db.get_ideas(step - 1)
                 if not ideas:
-                    skip_vote_results = True
                     socketio.emit('step', {**SCENARIO[step], 'ideas': []})
                     return
             broadcast_step(step)
         elif step == len(SCENARIO):
             db.set_step(step)
             # Last step finished; keep stage 2 so results remain visible.
-            # No "end" signal yet to allow manual transition to rating.
-            progress_state = None
         else:
             db.set_step(step)
             # Explicit transition to final rating after moderator presses Next again.
             db.set_stage(3)
-            progress_state = None
             socketio.emit('end', {})
         break
 
 
 @app.route('/start', methods=['POST'])
 def start_quiz():
-    global progress_state, rating_state
     db.set_stage(2)
-    progress_state = None
-    rating_state = None
     socketio.emit('started', {})
     next_step()
     return '', 204
@@ -116,9 +127,6 @@ def reset_route():
     if request.method == 'POST':
         from .bot import state
         state.reset_state()
-        global progress_state, rating_state
-        progress_state = None
-        rating_state = None
         socketio.emit('participants', {'who': []})
         socketio.emit('reset', {})
         return redirect('/')
@@ -146,12 +154,13 @@ def handle_connect():
         step = db.get_step()
         if step < len(SCENARIO):
             broadcast_step(step)
-        if progress_state:
-            emit('progress', progress_state)
+        prog = compute_progress()
+        if prog:
+            emit('progress', prog)
         if stage == 3:
             emit('end', {})
-            if rating_state:
-                emit('rating', rating_state)
+            rows = db.get_leaderboard()
+            emit('rating', build_rating(rows))
 
 
 def run_server():

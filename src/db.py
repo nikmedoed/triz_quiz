@@ -1,7 +1,7 @@
 import json
 import sqlite3
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 
 class Database:
@@ -209,18 +209,37 @@ class Database:
             row["place"] = i
         return board
 
-    def _get_state(self, key: str, default: int) -> int:
+    def _get_state_raw(self, key: str) -> str | None:
         cur = self.conn.cursor()
         cur.execute("SELECT value FROM state WHERE key = ?", (key,))
         row = cur.fetchone()
-        return int(row["value"]) if row else default
+        return row["value"] if row else None
+
+    def _set_state_raw(self, key: str, value: str) -> None:
+        cur = self.conn.cursor()
+        cur.execute("REPLACE INTO state (key, value) VALUES (?, ?)", (key, value))
+        self.conn.commit()
+
+    def _get_state(self, key: str, default: int) -> int:
+        val = self._get_state_raw(key)
+        return int(val) if val is not None else default
 
     def _set_state(self, key: str, value: int) -> None:
-        cur = self.conn.cursor()
-        cur.execute(
-            "REPLACE INTO state (key, value) VALUES (?, ?)", (key, str(value))
-        )
-        self.conn.commit()
+        self._set_state_raw(key, str(value))
+
+    def _get_state_float(self, key: str, default: float) -> float:
+        val = self._get_state_raw(key)
+        return float(val) if val is not None else default
+
+    def _set_state_float(self, key: str, value: float) -> None:
+        self._set_state_raw(key, str(value))
+
+    def _get_state_json(self, key: str, default: Any) -> Any:
+        val = self._get_state_raw(key)
+        return json.loads(val) if val is not None else default
+
+    def _set_state_json(self, key: str, value: Any) -> None:
+        self._set_state_raw(key, json.dumps(value))
 
     def get_step(self) -> int:
         return self._get_state("step", -1)
@@ -233,6 +252,31 @@ class Database:
 
     def set_stage(self, stage: int) -> None:
         self._set_state("stage", stage)
+
+    def get_step_start_ts(self) -> float:
+        return self._get_state_float("step_start_ts", 0.0)
+
+    def set_step_start_ts(self, ts: float) -> None:
+        self._set_state_float("step_start_ts", ts)
+
+    def get_last_answer_ts(self) -> float:
+        return self._get_state_float("last_answer_ts", 0.0)
+
+    def set_last_answer_ts(self, ts: float) -> None:
+        self._set_state_float("last_answer_ts", ts)
+
+    def get_vote_gains(self) -> Dict[int, int]:
+        data = self._get_state_json("vote_gains", {})
+        return {int(k): int(v) for k, v in data.items()}
+
+    def set_vote_gains(self, gains: Dict[int, int]) -> None:
+        self._set_state_json("vote_gains", gains)
+
+    def get_pending_names(self) -> List[int]:
+        return [int(x) for x in self._get_state_json("pending_names", [])]
+
+    def set_pending_names(self, names: List[int]) -> None:
+        self._set_state_json("pending_names", names)
 
     def reset(self) -> None:
         cur = self.conn.cursor()

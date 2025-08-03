@@ -56,6 +56,7 @@ async def finalize_vote() -> None:
             state.participants[idea['user_id']]['score'] += pts
             state.db.update_score(idea['user_id'], pts)
     await push('vote_result', {'ideas': results})
+    state.db.set_vote_gains(state.vote_gains)
 
 
 async def finalize_quiz(bot, stepq: dict) -> None:
@@ -105,6 +106,8 @@ async def notify_vote_results(bot) -> None:
             uid,
             f"Голосование завершено.\nРезультаты на экране.\nВы набрали {pts} балл(ов).",
         )
+    state.vote_gains = {}
+    state.db.set_vote_gains({})
 
 
 async def broadcast_rating(rows: list[dict]) -> None:
@@ -155,6 +158,8 @@ async def watch_steps(bot):
         step = state.current_step()
         if step and step.get('type') in ('open', 'quiz', 'vote'):
             state.step_start_ts = state.last_answer_ts = time.time()
+            state.db.set_step_start_ts(state.step_start_ts)
+            state.db.set_last_answer_ts(state.last_answer_ts)
             if step['type'] == 'vote':
                 state.ideas = state.db.get_ideas(state.step_idx - 1)
                 if state.ideas:

@@ -56,6 +56,7 @@ async def send_current_step(uid: int, bot) -> None:
 async def start(msg: Message):
     uid = msg.from_user.id
     state.pending_names.add(uid)
+    state.db.set_pending_names(list(state.pending_names))
     kb = None
     if uid in state.participants:
         kb = InlineKeyboardMarkup(
@@ -77,6 +78,7 @@ async def name_received(msg: Message):
     state.participants[user.id] = {"name": name, "score": score}
     state.db.add_participant(user.id, name, avatar)
     state.pending_names.remove(user.id)
+    state.db.set_pending_names(list(state.pending_names))
     stage = state.db.get_stage()
     if stage == 1:
         await core.push(
@@ -97,6 +99,7 @@ async def cancel_name(cb: CallbackQuery):
     uid = cb.from_user.id
     if uid in state.pending_names:
         state.pending_names.remove(uid)
+        state.db.set_pending_names(list(state.pending_names))
     await cb.message.edit_text("Отменено.")
     await send_current_step(uid, cb.bot)
     await cb.answer()
@@ -128,6 +131,7 @@ async def vote(cb: CallbackQuery):
         votes.add(idea_id)
     state.db.record_response(cb.from_user.id, state.step_idx, 'vote', json.dumps(list(votes)))
     state.last_answer_ts = time.time()
+    state.db.set_last_answer_ts(state.last_answer_ts)
     kb = formatting.vote_keyboard_for(cb.from_user.id)
     await cb.message.edit_reply_markup(reply_markup=kb)
     await cb.answer("Голос учтён.")
