@@ -38,7 +38,6 @@ class Hub:
             self.disconnect(ws)
 
 hub = Hub()
-from app.bot import send_prompt
 
 @router.get("/", response_class=HTMLResponse)
 async def public(request: Request, session: AsyncSession = Depends(get_session)):
@@ -88,6 +87,7 @@ async def api_prev(session: AsyncSession = Depends(get_session)):
     return {"ok": True}
 
 async def notify_all(session: AsyncSession):
+    from app.bot import send_prompt
     gs = await session.get(GlobalState, 1)
     step = await session.get(Step, gs.current_step_id)
     bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
