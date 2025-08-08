@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block body %}
+<div class="container">
+  <h1>Moderator</h1>
+  <div class="controls">
+    <button onclick="post('/api/prev')">◀️ Prev</button>
+    <button onclick="post('/api/next')">Next ▶️</button>
+    <button onclick="if(confirm('Reset DB?')) post('/api/reset')">Reset DB</button>
+  </div>
+  <div id="log"></div>
+</div>
+<script>
+async function post(url){
+  const r = await fetch(url, {method:'POST'});
+  const t = await r.text();
+  document.getElementById('log').textContent = t;
+}
+</script>
+{% endblock %}
