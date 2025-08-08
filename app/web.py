@@ -147,6 +147,7 @@ async def move_to_block(session: AsyncSession, target_order_index: int, to_last_
     gs = await session.get(GlobalState, 1)
     gs.current_step_id = target.id
     gs.step_started_at = datetime.utcnow()
+    # compute correct "last phase" depending on step type and existing data
     if to_last_phase and target.type == "open":
         ideas_count = await session.scalar(select(func.count(Idea.id)).where(Idea.step_id == target.id))
         gs.phase = 3 if ideas_count else 1
@@ -154,6 +155,7 @@ async def move_to_block(session: AsyncSession, target_order_index: int, to_last_
         gs.phase = 1
     else:
         gs.phase = 0
+    await session.commit()
 
 async def build_public_context(session: AsyncSession, step: Step, gs: GlobalState):
     ctx = {"step": step, "phase": gs.phase, "since": gs.step_started_at}
