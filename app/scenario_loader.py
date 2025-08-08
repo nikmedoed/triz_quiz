@@ -49,6 +49,7 @@ async def load_if_empty(session: AsyncSession, path: str) -> None:
             add_step("open", title=item.get("title", "Гипотезы решения"), text=item.get("description") or item.get("text"))
         elif t == "quiz":
             s = add_step("quiz", title=item.get("title", "Квиз"), text=item.get("text"))
+            await session.flush()
             opts = item.get("options", [])
             for idx, text in enumerate(opts):
                 session.add(StepOption(step_id=s.id, idx=idx, text=text))
