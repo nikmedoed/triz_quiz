@@ -4,7 +4,6 @@
 import asyncio
 
 from aiogram import Bot, Dispatcher
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -52,5 +51,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    load_dotenv()
     asyncio.run(main())
