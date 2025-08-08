@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block body %}
+<div class="container">
+  <h1>{{ step.title }}</h1>
+
+  {% if step.type == 'registration' %}
+    <div class="grid">
+      {% for u in users %}
+        <div class="card">
+          <div class="avatar">👤</div>
+          <div class="name">{{ u.name }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+  {% elif step.type == 'open' %}
+    {% if phase == 0 %}
+      <p class="question">{{ step.text }}</p>
+      <p class="hint">Отправляйте идеи боту. Здесь они пока не видны.</p>
+    {% elif phase == 1 %}
+      {% if ideas|length == 0 %}
+        <p class="hint">Ответов нет.</p>
+      {% else %}
+        <ol>
+        {% for idea in ideas %}
+          <li><div class="idea">{{ idea.text }}</div>
+              <div class="meta">ответ через {{ (idea.submitted_at - since).seconds }} секунд</div></li>
+        {% endfor %}
+        </ol>
+      {% endif %}
+    {% elif phase == 2 %}
+      <p class="question">Голосование за идеи</p>
+      <ol>
+      {% for idea in ideas %}
+        <li><div class="idea">{{ idea.text }}</div>
+            <div class="meta">ответ через {{ (idea.submitted_at - since).seconds }} секунд</div></li>
+      {% endfor %}
+      </ol>
+      <div class="progress">Проголосовало (≥1): {{ voters_count }}
+        {% if last_vote_at %} • последний голос {{ ((now() - last_vote_at).seconds) }} с назад{% endif %}
+      </div>
+    {% elif phase == 3 %}
+      <ol>
+        {% for idea in ideas %}
+        <li>
+          <div class="idea">{{ idea.text }}</div>
+          <div class="votes">Голоса: {{ (voters_map.get(idea.id) or [])|length }}</div>
+        </li>
+        {% endfor %}
+      </ol>
+    {% endif %}
+
+  {% elif step.type == 'quiz' %}
+    {% if phase == 0 %}
+      <div class="question">{{ step.text }}</div>
+      <ol>
+        {% for opt in options %}
+          <li>{{ opt.text }}</li>
+        {% endfor %}
+      </ol>
+      <div class="hint">Участники выбирают вариант в боте.</div>
+    {% else %}
+      <div class="question">Результаты</div>
+      <canvas id="mcqChart"></canvas>
+      <script>
+        window.__mcq = {
+          labels: [{% for opt in options %}'{{ opt.text|replace("'", "\'") }}',{% endfor %}],
+          counts: [{% for c in counts %}{{ c }},{% endfor %}],
+          correct: {{ correct }}
+        };
+        document.addEventListener('DOMContentLoaded', () => window.renderMcq());
+      </script>
+    {% endif %}
+
+  {% elif step.type == 'leaderboard' %}
+    <table class="board">
+      <thead><tr><th>#</th><th>Имя</th><th>Баллы</th><th>Время (с)</th></tr></thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ u.name }}</td>
+            <td>{{ u.total_score }}</td>
+            <td>{{ (u.total_answer_ms/1000)|round(1) }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>
+
+<script>
+  const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
+  ws.onmessage = (ev) => { const msg = JSON.parse(ev.data); if (msg.type === 'reload') location.reload(); };
+</script>
+{% endblock %}
