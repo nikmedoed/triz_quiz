@@ -29,35 +29,6 @@ This project implements a TRIZ-club quiz/presentation system with **Telegram + W
 
 ---
 
-## Project structure
-
-```
-triz_quiz/
-├─ app/
-│  ├─ settings.py
-│  ├─ db.py
-│  ├─ models.py
-│  ├─ scoring.py
-│  ├─ scenario_loader.py
-│  ├─ bot.py
-│  ├─ web.py
-│  ├─ main.py
-│  ├─ templates/
-│  │  ├─ base.html
-│  │  ├─ public.html
-│  │  └─ moderator.html
-│  └─ static/
-│     ├─ app.js
-│     └─ styles.css
-├─ scenario.example.yaml
-├─ requirements.txt
-├─ Dockerfile
-├─ docker-compose.yml
-└─ run_local.sh
-```
-
----
-
 ## Quick start (local)
 
 1. **Create `.env`** with:
