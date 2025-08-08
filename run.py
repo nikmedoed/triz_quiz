@@ -2,9 +2,9 @@
 """Start both the Telegram bot and the web app simultaneously."""
 
 import asyncio
+import os
 
 from aiogram import Bot, Dispatcher
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -21,9 +21,9 @@ async def init_db_and_scenario() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     async with AsyncSessionLocal() as session:
-        try:
+        if os.path.exists("scenario.yaml"):
             await load_if_empty(session, path="scenario.yaml")
-        except FileNotFoundError:
+        elif os.path.exists("scenario.json"):
             await load_if_empty(session, path="scenario.json")
 
 
@@ -52,5 +52,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    load_dotenv()
     asyncio.run(main())
