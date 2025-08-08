@@ -36,8 +36,7 @@
             <div class="meta">ответ через {{ (idea.submitted_at - since).seconds }} секунд</div></li>
       {% endfor %}
       </ol>
-      <div class="progress">
-        Проголосовало (≥1): {{ voters_count }}
+      <div class="progress">Проголосовало (≥1): {{ voters_count }}
         {% if last_vote_ago_s is not none %} • последний голос {{ last_vote_ago_s }} с назад{% endif %}
       </div>
     {% elif phase == 3 %}

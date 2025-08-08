@@ -13,6 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_session
 from app.models import User, Step, StepOption, GlobalState, Idea, IdeaVote, McqAnswer
 from app.scoring import add_vote_points, add_mcq_points
+from aiogram import Bot
+from app.settings import settings
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -36,6 +38,7 @@ class Hub:
             self.disconnect(ws)
 
 hub = Hub()
+from app.bot import send_prompt
 
 @router.get("/", response_class=HTMLResponse)
 async def public(request: Request, session: AsyncSession = Depends(get_session)):
@@ -84,36 +87,58 @@ async def api_prev(session: AsyncSession = Depends(get_session)):
     await hub.broadcast({"type": "reload"})
     return {"ok": True}
 
+async def notify_all(session: AsyncSession):
+    gs = await session.get(GlobalState, 1)
+    step = await session.get(Step, gs.current_step_id)
+    bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
+    users = (await session.execute(select(User))).scalars().all()
+    for u in users:
+        try:
+            await send_prompt(bot, u, step, gs.phase)
+        except Exception:
+            pass
+    await bot.session.close()
+
+
 async def advance(session: AsyncSession, forward: bool):
     gs = await session.get(GlobalState, 1)
     step = await session.get(Step, gs.current_step_id)
+
+    async def commit_and_notify():
+        await session.commit()
+        await notify_all(session)
+
     if forward:
         if step.type == "open":
             ideas_count = await session.scalar(select(func.count(Idea.id)).where(Idea.step_id == step.id))
             total_phases = 4 if ideas_count else 2
             if gs.phase + 1 < total_phases:
                 gs.phase += 1
-                # Award votes when entering reveal (phase 3)
                 if ideas_count and gs.phase == 3:
                     await add_vote_points(session, step.id)
-                await session.commit()
+                await commit_and_notify()
             else:
                 await move_to_block(session, step.order_index + 1)
+                await commit_and_notify()
         elif step.type == "quiz":
             if gs.phase == 0:
                 gs.phase = 1
                 await add_mcq_points(session, step)
-                await session.commit()
+                await commit_and_notify()
             else:
                 await move_to_block(session, step.order_index + 1)
+                await commit_and_notify()
         else:
             await move_to_block(session, step.order_index + 1)
+            await commit_and_notify()
     else:
         if step.type in ("open", "quiz") and gs.phase > 0:
             gs.phase -= 1
-            await session.commit()
+            await commit_and_notify()
         else:
             await move_to_block(session, step.order_index - 1, to_last_phase=True)
+            await commit_and_notify()
+
 
 async def move_to_block(session: AsyncSession, target_order_index: int, to_last_phase: bool = False):
     target = await session.scalar(select(Step).where(Step.order_index == target_order_index))
@@ -121,8 +146,7 @@ async def move_to_block(session: AsyncSession, target_order_index: int, to_last_
         return
     gs = await session.get(GlobalState, 1)
     gs.current_step_id = target.id
-    gs.step_started_at = datetime.utcnow()  # reset only when changing block
-    # вычисляем корректную «последнюю фазу» для open
+    gs.step_started_at = datetime.utcnow()
     if to_last_phase and target.type == "open":
         ideas_count = await session.scalar(select(func.count(Idea.id)).where(Idea.step_id == target.id))
         gs.phase = 3 if ideas_count else 1
@@ -130,7 +154,6 @@ async def move_to_block(session: AsyncSession, target_order_index: int, to_last_
         gs.phase = 1
     else:
         gs.phase = 0
-    await session.commit()
 
 async def build_public_context(session: AsyncSession, step: Step, gs: GlobalState):
     ctx = {"step": step, "phase": gs.phase, "since": gs.step_started_at}
