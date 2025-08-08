@@ -34,35 +34,35 @@ class GlobalState(Base):
 
 class StepOption(Base):
     __tablename__ = "step_options"
+    __table_args__ = (UniqueConstraint("step_id", "idx"),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     step_id: Mapped[int] = mapped_column(ForeignKey("steps.id"), index=True)
     idx: Mapped[int] = mapped_column(Integer)  # 0..N-1
     text: Mapped[str] = mapped_column(Text)
-    UniqueConstraint("step_id", "idx")
 
 class Idea(Base):
     __tablename__ = "ideas"
+    __table_args__ = (UniqueConstraint("step_id", "user_id"),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     step_id: Mapped[int] = mapped_column(ForeignKey("steps.id"), index=True)  # open block
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     text: Mapped[str] = mapped_column(Text)
     submitted_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    UniqueConstraint("step_id", "user_id")
 
 class IdeaVote(Base):
     __tablename__ = "idea_votes"
+    __table_args__ = (UniqueConstraint("step_id", "idea_id", "voter_id"),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     step_id: Mapped[int] = mapped_column(ForeignKey("steps.id"), index=True)  # open block
     idea_id: Mapped[int] = mapped_column(ForeignKey("ideas.id"), index=True)
     voter_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    UniqueConstraint("step_id", "idea_id", "voter_id")
 
 class McqAnswer(Base):
     __tablename__ = "mcq_answers"
+    __table_args__ = (UniqueConstraint("step_id", "user_id"),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     step_id: Mapped[int] = mapped_column(ForeignKey("steps.id"), index=True)  # quiz block
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     choice_idx: Mapped[int] = mapped_column(Integer)
     answered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    UniqueConstraint("step_id", "user_id")

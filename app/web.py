@@ -122,13 +122,20 @@ async def move_to_block(session: AsyncSession, target_order_index: int, to_last_
     gs = await session.get(GlobalState, 1)
     gs.current_step_id = target.id
     gs.step_started_at = datetime.utcnow()  # reset only when changing block
-    gs.phase = 1 if (to_last_phase and target.type == "quiz") else 3 if (to_last_phase and target.type == "open") else 0
+    # вычисляем корректную «последнюю фазу» для open
+    if to_last_phase and target.type == "open":
+        ideas_count = await session.scalar(select(func.count(Idea.id)).where(Idea.step_id == target.id))
+        gs.phase = 3 if ideas_count else 1
+    elif to_last_phase and target.type == "quiz":
+        gs.phase = 1
+    else:
+        gs.phase = 0
     await session.commit()
 
 async def build_public_context(session: AsyncSession, step: Step, gs: GlobalState):
     ctx = {"step": step, "phase": gs.phase, "since": gs.step_started_at}
     if step.type == "registration":
-        users = (await session.execute(select(User).order_by(User.joined_at.asc()))).scalars().all()
+        users = (await session.execute(select(User).where(User.name != "").order_by(User.joined_at.asc()))).scalars().all()
         ctx.update(users=users)
     elif step.type == "open":
         ideas = (await session.execute(select(Idea).where(Idea.step_id == step.id).order_by(Idea.submitted_at.asc()))).scalars().all()
@@ -136,7 +143,10 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
         if gs.phase == 2:  # vote
             voters = (await session.execute(select(IdeaVote.voter_id).where(IdeaVote.step_id == step.id).group_by(IdeaVote.voter_id))).all()
             last_vote_at = await session.scalar(select(func.max(IdeaVote.created_at)).where(IdeaVote.step_id == step.id))
-            ctx.update(voters_count=len(voters), last_vote_at=last_vote_at)
+            last_vote_ago_s = None
+            if last_vote_at:
+                last_vote_ago_s = int((datetime.utcnow() - last_vote_at).total_seconds())
+            ctx.update(voters_count=len(voters), last_vote_ago_s=last_vote_ago_s)
         if gs.phase == 3:  # reveal
             # map idea_id -> [User]
             voters_map = {}

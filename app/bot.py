@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import AsyncSessionLocal
 from app.models import User, GlobalState, Step, StepOption, Idea, IdeaVote, McqAnswer
 from app.scoring import add_mcq_points
+from app.web import hub  # broadcast on state-affecting user actions
 
 router = Router()
 
@@ -81,6 +82,8 @@ async def on_text(message: Message, bot: Bot):
             user.name = message.text.strip()[:120]
             await session.commit()
             await message.answer("Имя сохранено. Готово к участию.")
+            # обновить экран регистрации всем
+            await hub.broadcast({"type": "reload"})
             await send_prompt(bot, user, step, state.phase)
             return
         # Open ideas only in phase 0
@@ -139,6 +142,8 @@ async def cb_vote(cb: CallbackQuery, bot: Bot):
             await cb.answer("Голос засчитан.")
         kb = await idea_vote_kb(session, step, user)
         await cb.message.edit_reply_markup(reply_markup=kb)
+        # обновить прогресс на общем экране (voters_count, last_vote_at)
+        await hub.broadcast({"type": "reload"})
     finally:
         await session.close()
 
