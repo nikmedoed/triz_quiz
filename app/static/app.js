@@ -17,11 +17,13 @@ window.renderMcq = function() {
   function drawAvatars(){
     container.querySelectorAll('.mcq-avatar-col').forEach(e => e.remove());
     const meta = chart.getDatasetMeta(0);
+    const xScale = chart.scales.x;
     meta.data.forEach((bar, i) => {
       const div = document.createElement('div');
       div.className = 'mcq-avatar-col';
       div.style.left = bar.x + 'px';
-      div.style.top = (chart.chartArea.bottom + 4) + 'px';
+      div.style.top = (xScale.bottom + 4) + 'px';
+      div.style.width = bar.width + 'px';
       (data.avatars[i] || []).forEach(id => {
         const img = document.createElement('img');
         img.className = 'avatar small';

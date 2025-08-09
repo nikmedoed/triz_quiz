@@ -19,6 +19,11 @@ from app.settings import settings
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
+
+def humanize_seconds(sec: int) -> str:
+    m, s = divmod(sec, 60)
+    return f"{m} мин {s} с" if m else f"{s} с"
+
 class Hub:
     def __init__(self):
         self.active: Set[WebSocket] = set()
@@ -172,6 +177,11 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
         for idea, author in rows:
             idea.author = author
             ideas.append(idea)
+        if ideas:
+            open_start = min(i.submitted_at for i in ideas)
+            for i in ideas:
+                delta = int((i.submitted_at - open_start).total_seconds())
+                i.delay_text = humanize_seconds(delta)
         ctx.update(ideas=ideas)
         if gs.phase == 0:
             total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))

@@ -24,7 +24,7 @@
       <ol>
       {% for idea in ideas %}
         <li><div class="idea">{{ idea.text }}</div>
-            <div class="meta">ответ через {{ (idea.submitted_at - since).seconds }} секунд</div></li>
+            <div class="meta">ответ через {{ idea.delay_text }}</div></li>
       {% endfor %}
       </ol>
       <div class="progress">Проголосовало: <span id="votesCount">{{ voters_count }}</span>{% if last_vote_ago_s is not none %} • последний голос <span id="lastVoteAgo">{{ last_vote_ago_s }}</span>{% else %} • последний голос <span id="lastVoteAgo">-</span>{% endif %}</div>
