@@ -146,6 +146,9 @@ async def cb_mcq(cb: CallbackQuery, bot: Bot):
             await cb.answer("Сейчас не этап ответов.", show_alert=True)
             return
         existing = (await session.execute(select(McqAnswer).where(McqAnswer.step_id == step.id, McqAnswer.user_id == user.id))).scalar_one_or_none()
+        if existing and existing.choice_idx == choice_idx:
+            await cb.answer("Ответ не изменён.")
+            return
         if existing:
             existing.choice_idx = choice_idx
             existing.answered_at = datetime.utcnow()
