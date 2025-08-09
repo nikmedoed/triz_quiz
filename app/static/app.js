@@ -1,11 +1,25 @@
 // Minimal Chart.js render for MCQ reveal (no custom colors per requirements)
+const mcqCountPlugin = {
+  id: 'mcqCounts',
+  afterDatasetsDraw(chart, args, opts) {
+    const {ctx} = chart;
+    ctx.save();
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'center';
+    const meta = chart.getDatasetMeta(0);
+    meta.data.forEach((bar, i) => {
+      ctx.fillText(`${opts.counts[i]} (${opts.percents[i]}%)`, bar.x, bar.y - 5);
+    });
+    ctx.restore();
+  }
+};
+
 window.renderMcq = function() {
   const ctx = document.getElementById('mcqChart');
   if (!ctx || !window.__mcq) return;
   const data = window.__mcq;
   const container = ctx.parentNode;
   const colors = data.labels.map((_, i) => i === data.correct ? '#4caf50' : '#888');
-  const counts = data.counts;
   const chart = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -18,9 +32,10 @@ window.renderMcq = function() {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: ctx => `${counts[ctx.dataIndex]} (${data.percents[ctx.dataIndex]}%)`
+            label: ctx => `${data.counts[ctx.dataIndex]} (${data.percents[ctx.dataIndex]}%)`
           }
-        }
+        },
+        mcqCounts: { counts: data.counts, percents: data.percents }
       },
       scales: {
         y: {
@@ -28,21 +43,10 @@ window.renderMcq = function() {
           suggestedMax: 100
         }
       },
-      animation: { onComplete: () => { drawAvatars(); drawCounts(); } }
-    }
+      animation: { onComplete: () => { drawAvatars(); } }
+    },
+    plugins: [mcqCountPlugin]
   });
-
-  function drawCounts(){
-    const meta = chart.getDatasetMeta(0);
-    const ctx2 = chart.ctx;
-    ctx2.save();
-    ctx2.fillStyle = '#000';
-    ctx2.textAlign = 'center';
-    meta.data.forEach((bar, i) => {
-      ctx2.fillText(`${counts[i]} (${data.percents[i]}%)`, bar.x, bar.y - 5);
-    });
-    ctx2.restore();
-  }
 
   function drawAvatars(){
     container.querySelectorAll('.mcq-avatar-col').forEach(e => e.remove());
@@ -63,4 +67,4 @@ window.renderMcq = function() {
       container.appendChild(div);
     });
   }
-};
+  };
