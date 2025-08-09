@@ -185,5 +185,4 @@ frontend/index.html
 /uploads
 uv.lock
 state.json
-/avatars/*
-!avatars/.gitkeep
+/avatars/

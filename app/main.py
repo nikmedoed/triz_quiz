@@ -13,7 +13,7 @@ from app.bot import router as bot_router
 app = FastAPI()
 app.include_router(router)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-app.mount("/avatars", StaticFiles(directory=settings.AVATAR_DIR), name="avatars")
+app.mount("/avatars", StaticFiles(directory=settings.AVATAR_DIR, check_dir=False), name="avatars")
 
 @app.on_event("startup")
 async def on_startup():
