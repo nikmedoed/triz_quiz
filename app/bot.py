@@ -15,9 +15,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import AsyncSessionLocal
 from app.models import User, GlobalState, Step, StepOption, Idea, IdeaVote, McqAnswer
-from app.scoring import add_mcq_points
+from app.scoring import add_mcq_points, get_leaderboard_users
 from app.web import hub
 from app.settings import settings
+import app.texts as texts
 
 router = Router()
 
@@ -103,9 +104,9 @@ async def cmd_start(message: Message, bot: Bot):
         user.waiting_for_name = True
         await session.commit()
         if user.name:
-            await message.answer(f"Текущее имя: {user.name}\nОтправьте новое имя одним сообщением.\nИли /cancel — оставить как есть.")
+            await message.answer(texts.CURRENT_NAME.format(name=user.name))
         else:
-            await message.answer("Введите имя для участия (одним сообщением).")
+            await message.answer(texts.ENTER_NAME)
     finally:
         await session.close()
 
@@ -115,7 +116,7 @@ async def cmd_cancel(message: Message, bot: Bot):
     try:
         user.waiting_for_name = False
         await session.commit()
-        await send_prompt(bot, user, step, state.phase, prefix="Ок, имя не меняем.")
+        await send_prompt(bot, user, step, state.phase, prefix=texts.NAME_UNCHANGED)
     finally:
         await session.close()
 
@@ -127,7 +128,7 @@ async def on_text(message: Message, bot: Bot):
         if user.waiting_for_name:
             new_name = message.text.strip()[:120]
             if not new_name:
-                await message.answer("Имя пустое. Введите заново или /cancel.")
+                await message.answer(texts.NAME_EMPTY)
                 return
             user.name = new_name
             user.waiting_for_name = False
@@ -135,7 +136,7 @@ async def on_text(message: Message, bot: Bot):
             await save_avatar(bot, user)
             await session.commit()
             await hub.broadcast({"type": "reload"})  # появится на экране регистрации
-            await send_prompt(bot, user, step, state.phase, prefix="Имя сохранено. Готово к участию.")
+            await send_prompt(bot, user, step, state.phase, prefix=texts.NAME_SAVED)
             return
 
         # 2) обычные текстовые ответы принимаем только в open:collect
@@ -169,12 +170,13 @@ async def on_text(message: Message, bot: Bot):
                 user.open_answer_ms += delta_ms
                 user.open_answer_count += 1
             await session.commit()
-            await message.answer(
-                "Идея принята!\n\n<i>Вы можете изменить ответ, отправив новое сообщение.\nРедактирование сообщений не поддерживается, скопируйте, измените и пришлите новое.</i>",
-                parse_mode="HTML",
+            await message.answer(texts.IDEA_ACCEPTED, parse_mode="HTML")
+            count = await session.scalar(
+                select(func.count(Idea.id)).where(Idea.step_id == step.id)
             )
-            count = await session.scalar(select(func.count(Idea.id)).where(Idea.step_id == step.id))
-            total = await session.scalar(select(func.count(User.id)).where(User.name != ""))
+            total = await session.scalar(
+                select(func.count(User.id)).where(User.name != "")
+            )
             last_at = await session.scalar(
                 select(func.max(Idea.submitted_at)).where(Idea.step_id == step.id)
             )
@@ -185,7 +187,7 @@ async def on_text(message: Message, bot: Bot):
                 {"type": "idea_progress", "count": int(count or 0), "total": int(total or 0), "last": last_ago}
             )
         else:
-            await message.answer("Сейчас текстовые ответы не принимаются. Дождитесь команды модератора.\nЧтобы изменить имя: /start")
+            await message.answer(texts.TEXT_NOT_ACCEPTED)
     finally:
         await session.close()
 
@@ -195,7 +197,7 @@ async def cb_mcq(cb: CallbackQuery, bot: Bot):
     session, user, state, step = await get_ctx(str(cb.from_user.id))
     try:
         if step.type != "quiz" or state.phase != 0:
-            await cb.answer("Сейчас не этап ответов.", show_alert=True)
+            await cb.answer(texts.NOT_ANSWER_PHASE, show_alert=True)
             return
         existing = (
             await session.execute(
@@ -208,7 +210,7 @@ async def cb_mcq(cb: CallbackQuery, bot: Bot):
         delta_ms = int((now - state.step_started_at).total_seconds() * 1000)
         delta_ms = max(0, delta_ms)
         if existing and existing.choice_idx == choice_idx:
-            await cb.answer("Ответ не изменён.")
+            await cb.answer(texts.ANSWER_UNCHANGED)
             return
         if existing:
             old_delta = int(
@@ -231,7 +233,7 @@ async def cb_mcq(cb: CallbackQuery, bot: Bot):
             user.quiz_answer_ms += delta_ms
             user.quiz_answer_count += 1
         await session.commit()
-        await cb.answer("Ответ сохранён.")
+        await cb.answer(texts.ANSWER_SAVED)
         options = [o.text for o in (await session.execute(select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx))).scalars().all()]
         await cb.message.edit_reply_markup(reply_markup=mcq_kb(options, selected=choice_idx))
         count = await session.scalar(select(func.count(McqAnswer.id)).where(McqAnswer.step_id == step.id))
@@ -252,17 +254,17 @@ async def cb_vote(cb: CallbackQuery, bot: Bot):
     session, user, state, step = await get_ctx(str(cb.from_user.id))
     try:
         if step.type != "open" or state.phase != 1:
-            await cb.answer("Сейчас не этап голосования.", show_alert=True)
+            await cb.answer(texts.NOT_VOTE_PHASE, show_alert=True)
             return
         existing = (await session.execute(select(IdeaVote).where(IdeaVote.step_id == step.id, IdeaVote.idea_id == idea_id, IdeaVote.voter_id == user.id))).scalar_one_or_none()
         if existing:
             await session.delete(existing)
             await session.commit()
-            await cb.answer("Голос снят.")
+            await cb.answer(texts.VOTE_REMOVED)
         else:
             session.add(IdeaVote(step_id=step.id, idea_id=idea_id, voter_id=user.id))
             await session.commit()
-            await cb.answer("Голос засчитан.")
+            await cb.answer(texts.VOTE_COUNTED)
         kb = await idea_vote_kb(session, step, user)
         await cb.message.edit_reply_markup(reply_markup=kb)
         # обновить прогресс на общем экране (voters_count, last_vote_at)
@@ -286,19 +288,13 @@ async def cb_vote(cb: CallbackQuery, bot: Bot):
 async def build_prompt_messages(user: User, step: Step, phase: int):
     msgs = []
     if step.type == "registration":
-        msgs.append(("Ждём начала. Вы на экране регистрации.", {}))
+        msgs.append((texts.REGISTRATION_WAIT, {}))
     elif step.type == "open":
         if phase == 0:
-            header = "Предложите идею решения проблемной ситуации (открытый ответ)"
+            header = texts.OPEN_HEADER
             title = escape(step.title)
             body = escape(step.text or "")
-            instr = (
-                "Пришлите ваш ответ в этот чат.\n"
-                "- Учитывается один последний ответ\n"
-                "- В свободной форме\n"
-                "- Лаконично, важна скорость\n"
-                "- Укажите логику решения, использванные приёмы, методы, обоснуйте"
-            )
+            instr = texts.OPEN_INSTR
             text = (
                 f"<b>{header}</b>\n\n"
                 f"{title}\n\n"
@@ -310,15 +306,9 @@ async def build_prompt_messages(user: User, step: Step, phase: int):
             async with AsyncSessionLocal() as s:
                 kb = await idea_vote_kb(s, step, user)
                 if kb:
-                    text = (
-                        "Ответы более не принимаются.\n\n"
-                        "<b>Начато голосование за идеи.</b>\n\n"
-                        "Выберите номера, которые считаете достойным и методологически обоснованным решением описанной проблемы.\n\n"
-                        "<i>Можно выбрать несколько, или ничего не выбирать.</i>"
-                    )
-                    msgs.append((text, {"parse_mode": "HTML", "reply_markup": kb}))
+                    msgs.append((texts.VOTE_START, {"parse_mode": "HTML", "reply_markup": kb}))
                 else:
-                    msgs.append(("Начато голосование за идеи. Для вас нет вариантов, ожидайте.", {}))
+                    msgs.append((texts.VOTE_NO_OPTIONS, {}))
         elif phase == 2:
             async with AsyncSessionLocal() as s:
                 points = await s.scalar(
@@ -326,12 +316,7 @@ async def build_prompt_messages(user: User, step: Step, phase: int):
                     .join(Idea, Idea.id == IdeaVote.idea_id)
                     .where(Idea.step_id == step.id, Idea.user_id == user.id)
                 )
-            text = (
-                "Голосование завершено.\n"
-                "Результаты на экране.\n"
-                f"Вы набрали {int(points or 0)} балл(ов)."
-            )
-            msgs.append((text, {}))
+            msgs.append((texts.VOTE_FINISHED.format(points=int(points or 0)), {}))
     elif step.type == "quiz":
         if phase == 0:
             async with AsyncSessionLocal() as s:
@@ -345,14 +330,9 @@ async def build_prompt_messages(user: User, step: Step, phase: int):
                         )
                     ).scalars().all()
                 ]
-            header = "Выберите один вариант ответа"
+            header = texts.QUIZ_HEADER
             title = escape(step.title)
-            instr = (
-                "Выберите\n"
-                "- Наиболее подходящий вариант\n"
-                "- Быстро, пока есть время\n"
-                "- Можно изменить выбор"
-            )
+            instr = texts.QUIZ_INSTR
             text = f"<b>{header}</b>\n\n{title}\n\n<i>{instr}</i>"
             msgs.append((text, {"parse_mode": "HTML", "reply_markup": mcq_kb(options, selected=None)}))
         else:
@@ -365,26 +345,16 @@ async def build_prompt_messages(user: User, step: Step, phase: int):
                     )
                 ).scalar_one_or_none()
             if not ans:
-                text = (
-                    "Вы не ответили.\n\n"
-                    "Ответы более не принимаются, вернитесь в общий зал."
-                )
+                text = texts.NO_ANSWER + texts.RESPONSES_CLOSED
             elif step.correct_index is not None and ans.choice_idx == step.correct_index:
                 points = step.points_correct or 0
-                text = (
-                    f"Верно! Вы получили {points} балл(ов).\n\n"
-                    "Ответы более не принимаются, вернитесь в общий зал."
-                )
+                text = texts.CORRECT_PREFIX.format(points=points) + texts.RESPONSES_CLOSED
             else:
-                text = (
-                    "Вы ответили неверно.\n\n"
-                    "Ответы более не принимаются, вернитесь в общий зал."
-                )
+                text = texts.WRONG_ANSWER + texts.RESPONSES_CLOSED
             msgs.append((text, {}))
     elif step.type == "leaderboard":
         async with AsyncSessionLocal() as s:
-            users = (await s.execute(select(User))).scalars().all()
-        users.sort(key=lambda u: (-u.total_score, u.total_answer_ms, u.joined_at))
+            users = await get_leaderboard_users(s)
         place = next(i for i, u in enumerate(users, start=1) if u.id == user.id)
         open_avg = (
             user.open_answer_ms / user.open_answer_count / 1000
@@ -396,13 +366,8 @@ async def build_prompt_messages(user: User, step: Step, phase: int):
             if user.quiz_answer_count
             else 0
         )
-        text = (
-            "Викторина завершена.\n\n"
-            f"Набрано баллов: {user.total_score}.\n"
-            f"Ваше место: {place}.\n\n"
-            "Среднее время ответа:\n"
-            f"{open_avg:.1f} c - открытый вопрос\n"
-            f"{quiz_avg:.1f} c - выбор варианта"
+        text = texts.LEADERBOARD.format(
+            score=user.total_score, place=place, open_avg=open_avg, quiz_avg=quiz_avg
         )
         msgs.append((text, {}))
     return msgs

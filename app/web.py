@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
 from app.models import User, Step, StepOption, GlobalState, Idea, IdeaVote, McqAnswer
-from app.scoring import add_vote_points, add_mcq_points
+from app.scoring import add_vote_points, add_mcq_points, get_leaderboard_users
 from aiogram import Bot
 from app.settings import settings
 
@@ -291,7 +291,6 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 names_map=names_map,
             )
     elif step.type == "leaderboard":
-        users = (await session.execute(select(User))).scalars().all()
-        users.sort(key=lambda u: (-u.total_score, u.total_answer_ms, u.joined_at))
+        users = await get_leaderboard_users(session)
         ctx.update(users=users)
     return ctx
