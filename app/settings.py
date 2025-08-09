@@ -16,6 +16,8 @@ class Settings(BaseModel):
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./quiz.db")
     AVATAR_DIR: str = os.getenv("AVATAR_DIR", "avatars")
     TELEGRAM_SEND_DELAY: float = float(os.getenv("TELEGRAM_SEND_DELAY", "0.05"))
+    APP_HOST: str = os.getenv("APP_HOST", "0.0.0.0")
+    APP_PORT: int = int(os.getenv("APP_PORT", "8000"))
 
 
 settings = Settings()
