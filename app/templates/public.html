@@ -20,19 +20,19 @@
       <div class="progress">Ответов: <span id="answersCount">{{ ideas|length }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} • последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} • последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
       <div class="timer" id="ideaTimer">05:00</div>
       {% elif phase == 1 %}
-        <p class="question">Голосование за идеи</p>
         {% if ideas %}
+        <p class="question">Голосование за идеи</p>
         <ol>
         {% for idea in ideas %}
           <li><div class="idea">{{ idea.text }}</div>
               <div class="meta">ответ через {{ idea.delay_text }}</div></li>
         {% endfor %}
         </ol>
+        <div class="progress">Проголосовало: <span id="votesCount">{{ voters_count }}</span>{% if last_vote_ago_s is not none %} • последний голос <span id="lastVoteAgo">{{ last_vote_ago_s }}</span>{% else %} • последний голос <span id="lastVoteAgo">-</span>{% endif %}</div>
+        <div class="timer" id="voteTimer">01:00</div>
         {% else %}
         <p class="hint">Ответов нет</p>
         {% endif %}
-        <div class="progress">Проголосовало: <span id="votesCount">{{ voters_count }}</span>{% if last_vote_ago_s is not none %} • последний голос <span id="lastVoteAgo">{{ last_vote_ago_s }}</span>{% else %} • последний голос <span id="lastVoteAgo">-</span>{% endif %}</div>
-        <div class="timer" id="voteTimer">01:00</div>
     {% elif phase == 2 %}
         <ol>
           {% for idea in ideas %}

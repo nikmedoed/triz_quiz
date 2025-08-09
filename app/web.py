@@ -190,9 +190,17 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             if last_at:
                 last_ago_s = int((datetime.utcnow() - last_at).total_seconds())
             ctx.update(total_users=int(total_users or 0), last_answer_ago_s=last_ago_s)
-        if gs.phase == 1:  # vote
-            voters = (await session.execute(select(IdeaVote.voter_id).where(IdeaVote.step_id == step.id).group_by(IdeaVote.voter_id))).all()
-            last_vote_at = await session.scalar(select(func.max(IdeaVote.created_at)).where(IdeaVote.step_id == step.id))
+        if gs.phase == 1 and ideas:  # vote
+            voters = (
+                await session.execute(
+                    select(IdeaVote.voter_id)
+                    .where(IdeaVote.step_id == step.id)
+                    .group_by(IdeaVote.voter_id)
+                )
+            ).all()
+            last_vote_at = await session.scalar(
+                select(func.max(IdeaVote.created_at)).where(IdeaVote.step_id == step.id)
+            )
             last_vote_ago_s = None
             if last_vote_at:
                 last_vote_ago_s = int((datetime.utcnow() - last_vote_at).total_seconds())
