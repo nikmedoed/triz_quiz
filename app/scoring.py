@@ -28,3 +28,10 @@ async def add_mcq_points(session: AsyncSession, mcq_step: Step) -> None:
     for (user,) in res.all():
         user.total_score += mcq_step.points_correct
     await session.commit()
+
+
+async def get_leaderboard_users(session: AsyncSession) -> list[User]:
+    """Return users sorted for leaderboard display."""
+    users = (await session.execute(select(User))).scalars().all()
+    users.sort(key=lambda u: (-u.total_score, u.total_answer_ms, u.joined_at))
+    return users

@@ -40,14 +40,20 @@ DATABASE_URL=sqlite+aiosqlite:///./quiz.db
 TELEGRAM_SEND_DELAY=0.05
 ```
 
-2. **Install**:
+2. **Copy example scenario** (optional):
+
+```
+cp scenario.example.yaml scenario.yaml  # edit as needed
+```
+
+3. **Install**:
 
 ```
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-3. **Run**:
+4. **Run**:
 
 ```
 ./run_local.sh

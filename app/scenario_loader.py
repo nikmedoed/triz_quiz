@@ -3,6 +3,7 @@ import json, yaml, os
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Step, StepOption, GlobalState
+import app.texts as texts
 
 SUPPORTED = {"open", "quiz", "vote", "vote_results"}
 
@@ -38,7 +39,7 @@ async def load_if_empty(session: AsyncSession, path: str) -> None:
         return s
 
     # Registration (implicit)
-    add_step("registration", title="Регистрация")
+    add_step("registration", title=texts.TITLE_REGISTRATION)
 
     # Normalize items
     for item in items:
@@ -46,9 +47,17 @@ async def load_if_empty(session: AsyncSession, path: str) -> None:
         if t not in SUPPORTED:
             continue
         if t == "open":
-            add_step("open", title=item.get("title", "Гипотезы решения"), text=item.get("description") or item.get("text"))
+            add_step(
+                "open",
+                title=item.get("title", texts.TITLE_OPEN),
+                text=item.get("description") or item.get("text"),
+            )
         elif t == "quiz":
-            s = add_step("quiz", title=item.get("title", "Квиз"), text=item.get("text"))
+            s = add_step(
+                "quiz",
+                title=item.get("title", texts.TITLE_QUIZ),
+                text=item.get("text"),
+            )
             await session.flush()
             opts = item.get("options", [])
             for idx, text in enumerate(opts):
@@ -62,7 +71,7 @@ async def load_if_empty(session: AsyncSession, path: str) -> None:
         # vote/vote_results are ignored (implicit in `open`)
 
     # Leaderboard (implicit)
-    add_step("leaderboard", title="Финальная таблица")
+    add_step("leaderboard", title=texts.TITLE_LEADERBOARD)
 
     # Global state
     first_step_id = await session.scalar(select(Step.id).order_by(Step.order_index.asc()))
