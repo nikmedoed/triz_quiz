@@ -56,6 +56,13 @@ body {
   color: var(--color-dark);
   font-family: var(--font-sans);
   font-weight: var(--font-weight-regular);
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
 }
 
 a {
@@ -71,7 +78,7 @@ a:focus {
 
 .container {
   max-width: 1200px;
-  margin: var(--space-6) auto;
+  width: 100%;
   padding: 0 var(--space-6);
 }
 
@@ -174,10 +181,6 @@ h2 {
   padding: var(--space-2);
 }
 
-.controls button {
-  margin-right: var(--space-2);
-}
-
 ol {
   margin-left: var(--space-4);
 }
@@ -234,33 +237,26 @@ ol {
   background: var(--color-slate-50);
 }
 
-/* Navbar */
-.navbar {
-  background: #ffffff;
-  border-bottom: 1px solid var(--color-light);
-}
-
-.nav-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.nav-links a {
-  margin-left: var(--space-4);
-  padding-bottom: var(--space-1);
-  font-weight: var(--font-weight-medium);
-}
-
-.nav-links a.active {
-  border-bottom: 2px solid var(--color-primary-500);
-}
-
 .brand {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-4);
   font-weight: var(--font-weight-black);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--color-dark);
   text-decoration: none;
+}
+
+.reset-form {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+}
+
+.next-btn {
+  position: absolute;
+  bottom: var(--space-4);
+  right: var(--space-4);
 }
 

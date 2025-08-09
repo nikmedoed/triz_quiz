@@ -1,4 +1,4 @@
-# FastAPI web (public & moderator), WebSockets broadcasting, block/phase transitions
+# FastAPI web (public screen), WebSockets broadcasting, block/phase transitions
 from __future__ import annotations
 import asyncio
 from datetime import datetime
@@ -53,11 +53,6 @@ async def public(request: Request, session: AsyncSession = Depends(get_session))
     step = await session.get(Step, gs.current_step_id)
     ctx = await build_public_context(session, step, gs)
     return templates.TemplateResponse("public.html", {"request": request, **ctx})
-
-@router.get("/moderator", response_class=HTMLResponse)
-async def moderator(request: Request):
-    return templates.TemplateResponse("moderator.html", {"request": request})
-
 
 @router.get("/reset", response_class=HTMLResponse)
 async def reset_page(request: Request):

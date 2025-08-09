@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% set active_page = 'public' %}
 {% block body %}
 <div class="container">
   <h1>{{ step.title }}</h1>
@@ -98,22 +97,15 @@
       </tbody>
     </table>
   {% endif %}
-
-  <div class="controls">
-    {% if step.type == 'registration' %}
-      <button class="btn btn-primary" onclick="post('/api/next')">Next ▶️</button>
-      <form method="get" action="/reset" style="display:inline;">
-        <button class="btn btn-secondary" type="submit">Reset DB</button>
-      </form>
-    {% elif step.type == 'leaderboard' %}
-      <form method="get" action="/reset" style="display:inline;">
-        <button class="btn btn-secondary" type="submit">Reset DB</button>
-      </form>
-    {% else %}
-      <button class="btn btn-primary" onclick="post('/api/next')">Next ▶️</button>
-    {% endif %}
-  </div>
 </div>
+{% if step.type == 'registration' or step.type == 'leaderboard' %}
+<form method="get" action="/reset" class="reset-form">
+  <button class="btn btn-secondary" type="submit">Reset DB</button>
+</form>
+{% endif %}
+{% if step.type != 'leaderboard' %}
+<button class="btn btn-primary next-btn" onclick="post('/api/next')">Next ▶️</button>
+{% endif %}
 
 <script>
   async function post(url){

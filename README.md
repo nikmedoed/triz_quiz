@@ -5,26 +5,20 @@
 This project implements a TRIZ-club quiz/presentation system with **Telegram + Web**:
 
 * **Telegram bot (aiogram 3)** for registration, open-form ideas, voting, and MCQ.
-* **Web app (FastAPI + WebSockets)** with:
-
-  * **Public screen** (projector) that updates live.
-  * **Moderator screen** to drive the show.
+* **Web app (FastAPI + WebSockets)** for a live projector screen controlled locally.
 * **SQLite** by default (switchable to Postgres). All state is persisted to survive restarts.
 * **Scenario loaded from JSON/YAML list of blocks** (simple), activated on startup.
 * **Scoring**: +`points` per correct MCQ; +1 per received vote on ideas; tie-breaker by total response time.
 
 ### Design decisions aligned with your requirements
 
-* **No admin password**. Everything runs locally. Moderator UI is open on `http://localhost:8000/moderator`.
+* **No admin password**. Everything runs locally at `http://localhost:8000/`.
 * **Mandatory Registration & Leaderboard** are **implicit** and **auto-inserted**: you **do not** specify them in the scenario.
-* **Blocks, not micro-steps**: Each content item is a **block** with **internal phases** and the **same Next/Prev controls**.
+* **Blocks, not micro-steps**: Each content item is a **block** with **internal phases** and a single **Next** control.
 
   * `open` block phases: **collect → vote (if ideas exist) → reveal**. Voting is skipped if there are no ideas.
   * `quiz` block phases: **ask → reveal**.
-* **Universal Next/Prev**:
-
-  * `Next` advances to the next **phase** inside the current block; if it was the last phase, it moves to the next block.
-  * `Prev` moves backward similarly.
+* **Next button** advances to the next **phase** inside the current block; if it was the last phase, it moves to the next block.
 * **Late join**: a participant who joins at any time is synced to the current block & phase.
 
 ---
@@ -61,10 +55,9 @@ pip install -r requirements.txt
 
 Open:
 
-* **Public screen**: `http://localhost:8000/`
-* **Moderator**: `http://localhost:8000/moderator`
+* `http://localhost:8000/`
 
-Invite participants to start the Telegram bot with `/start`. After they set a name, advancing phases from the moderator UI will push messages to all registered participants.
+Invite participants to start the Telegram bot with `/start`. After they set a name, advancing phases with the Next button will push messages to all registered participants.
 
 Messages are throttled with a small delay (configurable via `TELEGRAM_SEND_DELAY`) to avoid Telegram rate limits.
 
