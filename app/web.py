@@ -65,7 +65,7 @@ async def api_reset(session: AsyncSession = Depends(get_session)):
     await hub.broadcast({"type": "reload"})
     return {"ok": True}
 
-@router.get("/ws")
+@router.websocket("/ws")
 async def ws_endpoint(ws: WebSocket):
     await hub.connect(ws)
     try:
