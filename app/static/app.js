@@ -4,9 +4,13 @@ window.renderMcq = function() {
   if (!ctx || !window.__mcq) return;
   const data = window.__mcq;
   const container = ctx.parentNode;
+  const colors = data.labels.map((_, i) => i === data.correct ? '#4caf50' : '#888');
   const chart = new Chart(ctx, {
     type: 'bar',
-    data: { labels: data.labels, datasets: [{ label: 'Votes', data: data.counts }] },
+    data: {
+      labels: data.labels,
+      datasets: [{ label: 'Votes', data: data.counts, backgroundColor: colors, borderColor: colors }]
+    },
     options: {
       responsive: true,
       plugins: { legend: { display: false } },

@@ -47,12 +47,13 @@
 
   {% elif step.type == 'quiz' %}
     {% if phase == 0 %}
-      <div class="question">{{ step.text }}</div>
+      <div class="question">{{ step.title }}</div>
       <ol>
         {% for opt in options %}
           <li>{{ opt.text }}</li>
         {% endfor %}
       </ol>
+      <div class="progress">Ответов: <span id="answersCount">{{ answers_count }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} • последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} • последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
       <div class="hint">Участники выбирают вариант в боте.</div>
     {% else %}
       <div class="question">Результаты</div>
@@ -141,6 +142,11 @@
     const msg = JSON.parse(ev.data);
     if (msg.type === 'reload') location.reload();
     if (msg.type === 'idea_progress'){
+      const cnt = document.getElementById('answersCount');
+      if (cnt) cnt.textContent = msg.count;
+      if (lastAnswerEl && msg.last !== undefined){ lastAnswerSec = msg.last; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
+    }
+    if (msg.type === 'mcq_progress'){
       const cnt = document.getElementById('answersCount');
       if (cnt) cnt.textContent = msg.count;
       if (lastAnswerEl && msg.last !== undefined){ lastAnswerSec = msg.last; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }

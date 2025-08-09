@@ -50,13 +50,14 @@ async def get_ctx(tg_id: str):
 # Keyboards
 
 def mcq_kb(options: List[str], selected: Optional[int]) -> InlineKeyboardMarkup:
+    """Inline keyboard with options as button labels."""
     kb = InlineKeyboardBuilder()
-    for i, _ in enumerate(options):
-        label = f"{i+1}"
+    for i, text in enumerate(options):
+        label = text
         if selected == i:
             label = "✅ " + label
         kb.button(text=label, callback_data=f"mcq:{i}")
-    kb.adjust(2)
+    kb.adjust(1)
     return kb.as_markup()
 
 async def idea_vote_kb(session: AsyncSession, open_step: Step, voter: User):
@@ -157,6 +158,13 @@ async def cb_mcq(cb: CallbackQuery, bot: Bot):
         await cb.answer("Ответ сохранён.")
         options = [o.text for o in (await session.execute(select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx))).scalars().all()]
         await cb.message.edit_reply_markup(reply_markup=mcq_kb(options, selected=choice_idx))
+        count = await session.scalar(select(func.count(McqAnswer.id)).where(McqAnswer.step_id == step.id))
+        total = await session.scalar(select(func.count(User.id)).where(User.name != ""))
+        last_at = await session.scalar(select(func.max(McqAnswer.created_at)).where(McqAnswer.step_id == step.id))
+        last_ago = None
+        if last_at:
+            last_ago = int((datetime.utcnow() - last_at).total_seconds())
+        await hub.broadcast({"type": "mcq_progress", "count": int(count or 0), "total": int(total or 0), "last": last_ago})
     finally:
         await session.close()
 
@@ -229,8 +237,24 @@ async def send_prompt(bot: Bot, user: User, step: Step, phase: int):
     elif step.type == "quiz":
         if phase == 0:
             async with AsyncSessionLocal() as s:
-                options = [o.text for o in (await s.execute(select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx))).scalars().all()]
-            await bot.send_message(user.telegram_id, (step.text or "Выберите вариант ответа:") + "\n\n" + "\n".join([f"{i+1}. {t}" for i,t in enumerate(options)]), reply_markup=mcq_kb(options, selected=None))
+                options = [o.text for o in (await s.execute(
+                    select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx)
+                )).scalars().all()]
+            header = "Выберите один вариант ответа"
+            title = escape(step.title)
+            instr = (
+                "Выберите\n"
+                "- Наиболее подходящий вариант\n"
+                "- Быстро, пока есть время\n"
+                "- Можно изменить выбор"
+            )
+            text = f"<b>{header}</b>\n\n{title}\n\n<i>{instr}</i>"
+            await bot.send_message(
+                user.telegram_id,
+                text,
+                parse_mode="HTML",
+                reply_markup=mcq_kb(options, selected=None),
+            )
         else:
             await bot.send_message(user.telegram_id, "Ответы закрыты. Смотрите общий экран.")
     elif step.type == "leaderboard":
