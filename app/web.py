@@ -80,12 +80,6 @@ async def api_next(session: AsyncSession = Depends(get_session)):
     await hub.broadcast({"type": "reload"})
     return {"ok": True}
 
-@router.post("/api/prev")
-async def api_prev(session: AsyncSession = Depends(get_session)):
-    await advance(session, forward=False)
-    await hub.broadcast({"type": "reload"})
-    return {"ok": True}
-
 async def notify_all(session: AsyncSession):
     from app.bot import send_prompt
     gs = await session.get(GlobalState, 1)
@@ -163,7 +157,18 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
         users = (await session.execute(select(User).where(User.name != "").order_by(User.joined_at.asc()))).scalars().all()
         ctx.update(users=users)
     elif step.type == "open":
-        ideas = (await session.execute(select(Idea).where(Idea.step_id == step.id).order_by(Idea.submitted_at.asc()))).scalars().all()
+        rows = (
+            await session.execute(
+                select(Idea, User)
+                .join(User, User.id == Idea.user_id)
+                .where(Idea.step_id == step.id)
+                .order_by(Idea.submitted_at.asc())
+            )
+        ).all()
+        ideas = []
+        for idea, author in rows:
+            idea.author = author
+            ideas.append(idea)
         ctx.update(ideas=ideas)
         if gs.phase == 0:
             total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
@@ -183,7 +188,13 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             # map idea_id -> [User]
             voters_map = {}
             for idea in ideas:
-                rows = (await session.execute(select(User).join(IdeaVote, IdeaVote.voter_id == User.id).where(IdeaVote.step_id == step.id, IdeaVote.idea_id == idea.id))).scalars().all()
+                rows = (
+                    await session.execute(
+                        select(User)
+                        .join(IdeaVote, IdeaVote.voter_id == User.id)
+                        .where(IdeaVote.step_id == step.id, IdeaVote.idea_id == idea.id)
+                    )
+                ).scalars().all()
                 voters_map[idea.id] = rows
             ctx.update(voters_map=voters_map)
     elif step.type == "quiz":
@@ -191,10 +202,23 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
         ctx.update(options=options)
         if gs.phase == 1:
             counts = []
+            answers_map = []
             for opt in options:
-                n = await session.scalar(select(func.count(McqAnswer.id)).where(McqAnswer.step_id == step.id, McqAnswer.choice_idx == opt.idx))
+                n = await session.scalar(
+                    select(func.count(McqAnswer.id)).where(
+                        McqAnswer.step_id == step.id, McqAnswer.choice_idx == opt.idx
+                    )
+                )
                 counts.append(int(n or 0))
-            ctx.update(counts=counts, correct=step.correct_index)
+                users = (
+                    await session.execute(
+                        select(User)
+                        .join(McqAnswer, McqAnswer.user_id == User.id)
+                        .where(McqAnswer.step_id == step.id, McqAnswer.choice_idx == opt.idx)
+                    )
+                ).scalars().all()
+                answers_map.append(users)
+            ctx.update(counts=counts, correct=step.correct_index, answers_map=answers_map)
     elif step.type == "leaderboard":
         users = (await session.execute(select(User))).scalars().all()
         users.sort(key=lambda u: (-u.total_score, u.total_answer_ms, u.joined_at))

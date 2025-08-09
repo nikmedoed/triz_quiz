@@ -2,6 +2,7 @@
 from __future__ import annotations
 from datetime import datetime
 from typing import Optional, List
+from pathlib import Path
 
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import CommandStart, Command
@@ -16,8 +17,19 @@ from app.db import AsyncSessionLocal
 from app.models import User, GlobalState, Step, StepOption, Idea, IdeaVote, McqAnswer
 from app.scoring import add_mcq_points
 from app.web import hub
+from app.settings import settings
 
 router = Router()
+
+
+async def save_avatar(bot: Bot, user: User):
+    path = Path(settings.AVATAR_DIR)
+    path.mkdir(exist_ok=True)
+    photos = await bot.get_user_profile_photos(user.telegram_id, limit=1)
+    if photos.total_count:
+        file_id = photos.photos[0][-1].file_id
+        await bot.download(file_id, destination=path / f"{user.id}.jpg")
+        user.avatar_file_id = file_id
 
 async def get_ctx(tg_id: str):
     session = AsyncSessionLocal()
@@ -97,6 +109,8 @@ async def on_text(message: Message, bot: Bot):
                 return
             user.name = new_name
             user.waiting_for_name = False
+            await session.commit()
+            await save_avatar(bot, user)
             await session.commit()
             await hub.broadcast({"type": "reload"})  # появится на экране регистрации
             await message.answer("Имя сохранено. Готово к участию.")

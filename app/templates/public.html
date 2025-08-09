@@ -7,7 +7,7 @@
     <div class="grid">
       {% for u in users %}
         <div class="card">
-          <div class="avatar">👤</div>
+          <img class="avatar" src="/avatars/{{ u.id }}.jpg" />
           <div class="name">{{ u.name }}</div>
         </div>
       {% endfor %}
@@ -34,7 +34,12 @@
         {% for idea in ideas %}
         <li>
           <div class="idea">{{ idea.text }}</div>
-          <div class="votes">Голоса: {{ (voters_map.get(idea.id) or [])|length }}</div>
+          <div class="meta"><img class="avatar small" src="/avatars/{{ idea.author.id }}.jpg" /> {{ idea.author.name }}</div>
+          <div class="votes avatars">Голоса: {{ (voters_map.get(idea.id) or [])|length }}
+            {% for v in voters_map.get(idea.id) or [] %}
+              <img class="avatar small" src="/avatars/{{ v.id }}.jpg" />
+            {% endfor %}
+          </div>
         </li>
         {% endfor %}
       </ol>
@@ -52,6 +57,18 @@
     {% else %}
       <div class="question">Результаты</div>
       <canvas id="mcqChart"></canvas>
+      <div class="mcq-answers">
+        {% for opt in options %}
+          <div class="option-result">
+            <div class="opt-text">{{ opt.text }}</div>
+            <div class="avatars">
+              {% for u in answers_map[loop.index0] %}
+                <img class="avatar small" src="/avatars/{{ u.id }}.jpg" />
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
       <script>
         window.__mcq = {
           labels: [{% for opt in options %}'{{ opt.text|replace("'", "\'") }}',{% endfor %}],
@@ -79,9 +96,14 @@
   {% endif %}
 
   <div class="controls">
-    <button onclick="post('/api/prev')">◀️ Prev</button>
-    <button onclick="post('/api/next')">Next ▶️</button>
-    <button onclick="if(confirm('Reset DB?')) post('/api/reset')">Reset DB</button>
+    {% if step.type == 'registration' %}
+      <button onclick="post('/api/next')">Next ▶️</button>
+      <button onclick="if(confirm('Reset DB?')) post('/api/reset')">Reset DB</button>
+    {% elif step.type == 'leaderboard' %}
+      <button onclick="if(confirm('Reset DB?')) post('/api/reset')">Reset DB</button>
+    {% else %}
+      <button onclick="post('/api/next')">Next ▶️</button>
+    {% endif %}
   </div>
 </div>
 
