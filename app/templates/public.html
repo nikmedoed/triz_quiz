@@ -87,9 +87,18 @@
       </tbody>
     </table>
   {% endif %}
+
+  <div class="controls">
+    <button onclick="post('/api/prev')">◀️ Prev</button>
+    <button onclick="post('/api/next')">Next ▶️</button>
+    <button onclick="if(confirm('Reset DB?')) post('/api/reset')">Reset DB</button>
+  </div>
 </div>
 
 <script>
+  async function post(url){
+    await fetch(url, {method:'POST'});
+  }
   const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
   ws.onmessage = (ev) => { const msg = JSON.parse(ev.data); if (msg.type === 'reload') location.reload(); };
 </script>

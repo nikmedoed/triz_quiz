@@ -97,8 +97,8 @@ async def on_text(message: Message, bot: Bot):
             user.name = new_name
             user.waiting_for_name = False
             await session.commit()
-            await message.answer("Имя сохранено. Готово к участию.")
             await hub.broadcast({"type": "reload"})  # появится на экране регистрации
+            await message.answer("Имя сохранено. Готово к участию.")
             await send_prompt(bot, user, step, state.phase)
             return
 
