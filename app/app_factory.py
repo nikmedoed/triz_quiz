@@ -14,7 +14,7 @@ from app.web import router as web_router
 
 
 @asynccontextmanager
-def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):
     # Initialize database and load scenario
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
