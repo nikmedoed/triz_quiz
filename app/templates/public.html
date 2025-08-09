@@ -83,14 +83,15 @@
 
   {% elif step.type == 'leaderboard' %}
     <table class="board">
-      <thead><tr><th>#</th><th>Имя</th><th>Баллы</th><th>Время (с)</th></tr></thead>
+      <thead><tr><th>#</th><th>Имя</th><th>Баллы</th><th>Откр. ср. (с)</th><th>Выбор ср. (с)</th></tr></thead>
       <tbody>
         {% for u in users %}
           <tr>
             <td>{{ loop.index }}</td>
             <td>{{ u.name }}</td>
             <td>{{ u.total_score }}</td>
-            <td>{{ (u.total_answer_ms/1000)|round(1) }}</td>
+            <td>{{ (u.open_answer_ms / u.open_answer_count / 1000)|round(1) if u.open_answer_count else 0 }}</td>
+            <td>{{ (u.quiz_answer_ms / u.quiz_answer_count / 1000)|round(1) if u.quiz_answer_count else 0 }}</td>
           </tr>
         {% endfor %}
       </tbody>

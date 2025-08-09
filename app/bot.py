@@ -10,7 +10,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from html import escape
 
-from sqlalchemy import select, delete, func
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import AsyncSessionLocal
@@ -61,17 +61,39 @@ def mcq_kb(options: List[str], selected: Optional[int]) -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 async def idea_vote_kb(session: AsyncSession, open_step: Step, voter: User):
-    ideas = (await session.execute(select(Idea).where(Idea.step_id == open_step.id).order_by(Idea.submitted_at.asc()))).scalars().all()
-    voted_ids = set(x for (x,) in (await session.execute(select(IdeaVote.idea_id).where(IdeaVote.step_id == open_step.id, IdeaVote.voter_id == voter.id))).all())
+    ideas = (
+        await session.execute(
+            select(Idea)
+            .where(Idea.step_id == open_step.id)
+            .order_by(Idea.submitted_at.asc())
+        )
+    ).scalars().all()
+    voted_ids = set(
+        x
+        for (x,) in (
+            await session.execute(
+                select(IdeaVote.idea_id).where(
+                    IdeaVote.step_id == open_step.id,
+                    IdeaVote.voter_id == voter.id,
+                )
+            )
+        ).all()
+    )
     rows = []
     for idx, idea in enumerate(ideas, start=1):
         if idea.user_id == voter.id:
             continue
         text = idea.text[:40].replace("\n", " ")
         prefix = "✅ " if idea.id in voted_ids else ""
-        rows.append([InlineKeyboardButton(text=prefix + f"{idx}. {text}", callback_data=f"vote:{idea.id}")])
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=prefix + f"{idx}. {text}", callback_data=f"vote:{idea.id}"
+                )
+            ]
+        )
     if not rows:
-        rows = [[InlineKeyboardButton(text="Нет идей для голосования", callback_data="noop")]]
+        return None
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 @router.message(CommandStart())
@@ -118,14 +140,34 @@ async def on_text(message: Message, bot: Bot):
 
         # 2) обычные текстовые ответы принимаем только в open:collect
         if step.type == "open" and state.phase == 0:
-            await session.execute(delete(Idea).where(Idea.step_id == step.id, Idea.user_id == user.id))
-            session.add(Idea(step_id=step.id, user_id=user.id, text=message.text.strip()))
-            await session.commit()
-            delta_ms = int((datetime.utcnow() - state.step_started_at).total_seconds() * 1000)
+            existing = (
+                await session.execute(
+                    select(Idea).where(Idea.step_id == step.id, Idea.user_id == user.id)
+                )
+            ).scalar_one_or_none()
+            now = datetime.utcnow()
+            delta_ms = int((now - state.step_started_at).total_seconds() * 1000)
             delta_ms = max(0, delta_ms)
-            user.total_answer_ms += delta_ms
-            user.open_answer_ms += delta_ms
-            user.open_answer_count += 1
+            if existing:
+                old_delta = int(
+                    (existing.submitted_at - state.step_started_at).total_seconds() * 1000
+                )
+                existing.text = message.text.strip()
+                existing.submitted_at = now
+                user.total_answer_ms += delta_ms - old_delta
+                user.open_answer_ms += delta_ms - old_delta
+            else:
+                session.add(
+                    Idea(
+                        step_id=step.id,
+                        user_id=user.id,
+                        text=message.text.strip(),
+                        submitted_at=now,
+                    )
+                )
+                user.total_answer_ms += delta_ms
+                user.open_answer_ms += delta_ms
+                user.open_answer_count += 1
             await session.commit()
             await message.answer(
                 "Идея принята!\n\n<i>Вы можете изменить ответ, отправив новое сообщение.\nРедактирование сообщений не поддерживается, скопируйте, измените и пришлите новое.</i>",
@@ -133,11 +175,15 @@ async def on_text(message: Message, bot: Bot):
             )
             count = await session.scalar(select(func.count(Idea.id)).where(Idea.step_id == step.id))
             total = await session.scalar(select(func.count(User.id)).where(User.name != ""))
-            last_at = await session.scalar(select(func.max(Idea.submitted_at)).where(Idea.step_id == step.id))
+            last_at = await session.scalar(
+                select(func.max(Idea.submitted_at)).where(Idea.step_id == step.id)
+            )
             last_ago = None
             if last_at:
                 last_ago = int((datetime.utcnow() - last_at).total_seconds())
-            await hub.broadcast({"type": "idea_progress", "count": int(count or 0), "total": int(total or 0), "last": last_ago})
+            await hub.broadcast(
+                {"type": "idea_progress", "count": int(count or 0), "total": int(total or 0), "last": last_ago}
+            )
         else:
             await message.answer("Сейчас текстовые ответы не принимаются. Дождитесь команды модератора.\nЧтобы изменить имя: /start")
     finally:
@@ -151,17 +197,36 @@ async def cb_mcq(cb: CallbackQuery, bot: Bot):
         if step.type != "quiz" or state.phase != 0:
             await cb.answer("Сейчас не этап ответов.", show_alert=True)
             return
-        existing = (await session.execute(select(McqAnswer).where(McqAnswer.step_id == step.id, McqAnswer.user_id == user.id))).scalar_one_or_none()
+        existing = (
+            await session.execute(
+                select(McqAnswer).where(
+                    McqAnswer.step_id == step.id, McqAnswer.user_id == user.id
+                )
+            )
+        ).scalar_one_or_none()
+        now = datetime.utcnow()
+        delta_ms = int((now - state.step_started_at).total_seconds() * 1000)
+        delta_ms = max(0, delta_ms)
         if existing and existing.choice_idx == choice_idx:
             await cb.answer("Ответ не изменён.")
             return
         if existing:
+            old_delta = int(
+                (existing.answered_at - state.step_started_at).total_seconds() * 1000
+            )
             existing.choice_idx = choice_idx
-            existing.answered_at = datetime.utcnow()
+            existing.answered_at = now
+            user.total_answer_ms += delta_ms - old_delta
+            user.quiz_answer_ms += delta_ms - old_delta
         else:
-            session.add(McqAnswer(step_id=step.id, user_id=user.id, choice_idx=choice_idx))
-            delta_ms = int((datetime.utcnow() - state.step_started_at).total_seconds() * 1000)
-            delta_ms = max(0, delta_ms)
+            session.add(
+                McqAnswer(
+                    step_id=step.id,
+                    user_id=user.id,
+                    choice_idx=choice_idx,
+                    answered_at=now,
+                )
+            )
             user.total_answer_ms += delta_ms
             user.quiz_answer_ms += delta_ms
             user.quiz_answer_count += 1
@@ -243,9 +308,8 @@ async def build_prompt_messages(user: User, step: Step, phase: int):
             msgs.append((text, {"parse_mode": "HTML"}))
         elif phase == 1:
             async with AsyncSessionLocal() as s:
-                count = await s.scalar(select(func.count(Idea.id)).where(Idea.step_id == step.id))
-                if count:
-                    kb = await idea_vote_kb(s, step, user)
+                kb = await idea_vote_kb(s, step, user)
+                if kb:
                     text = (
                         "Ответы более не принимаются.\n\n"
                         "<b>Начато голосование за идеи.</b>\n\n"
