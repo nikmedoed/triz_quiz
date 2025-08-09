@@ -22,6 +22,11 @@ window.renderMcq = function() {
         }
       },
       scales: {
+        x: {
+          ticks: {
+            color: ctx => ctx.index === data.correct ? '#4caf50' : '#666'
+          }
+        },
         y: {
           ticks: { callback: value => value + '%' },
           suggestedMax: 100

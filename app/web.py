@@ -64,7 +64,9 @@ async def api_reset(session: AsyncSession = Depends(get_session)):
     first = await session.scalar(select(Step.id).order_by(Step.order_index.asc()))
     gs = await session.get(GlobalState, 1)
     gs.current_step_id = first
-    gs.step_started_at = datetime.utcnow()
+    now = datetime.utcnow()
+    gs.step_started_at = now
+    gs.phase_started_at = now
     gs.phase = 0
     await session.commit()
     await hub.broadcast({"type": "reload"})
@@ -113,7 +115,7 @@ async def advance(session: AsyncSession, forward: bool):
             total_phases = 3 if ideas_count else 2
             if gs.phase + 1 < total_phases:
                 gs.phase += 1
-                gs.step_started_at = datetime.utcnow()
+                gs.phase_started_at = datetime.utcnow()
                 if ideas_count and gs.phase == 2:
                     await add_vote_points(session, step.id)
                 await commit_and_notify()
@@ -123,7 +125,7 @@ async def advance(session: AsyncSession, forward: bool):
         elif step.type == "quiz":
             if gs.phase == 0:
                 gs.phase = 1
-                gs.step_started_at = datetime.utcnow()
+                gs.phase_started_at = datetime.utcnow()
                 await add_mcq_points(session, step)
                 await commit_and_notify()
             else:
@@ -135,7 +137,7 @@ async def advance(session: AsyncSession, forward: bool):
     else:
         if step.type in ("open", "quiz") and gs.phase > 0:
             gs.phase -= 1
-            gs.step_started_at = datetime.utcnow()
+            gs.phase_started_at = datetime.utcnow()
             await commit_and_notify()
         else:
             await move_to_block(session, step.order_index - 1, to_last_phase=True)
@@ -148,7 +150,9 @@ async def move_to_block(session: AsyncSession, target_order_index: int, to_last_
         return
     gs = await session.get(GlobalState, 1)
     gs.current_step_id = target.id
-    gs.step_started_at = datetime.utcnow()
+    now = datetime.utcnow()
+    gs.step_started_at = now
+    gs.phase_started_at = now
     # compute correct "last phase" depending on step type and existing data
     if to_last_phase and target.type == "open":
         ideas_count = await session.scalar(select(func.count(Idea.id)).where(Idea.step_id == target.id))
@@ -160,7 +164,7 @@ async def move_to_block(session: AsyncSession, target_order_index: int, to_last_
     await session.commit()
 
 async def build_public_context(session: AsyncSession, step: Step, gs: GlobalState):
-    ctx = {"step": step, "phase": gs.phase, "since": gs.step_started_at}
+    ctx = {"step": step, "phase": gs.phase, "since": gs.phase_started_at}
     if step.type == "registration":
         users = (await session.execute(select(User).where(User.name != "").order_by(User.joined_at.asc()))).scalars().all()
         ctx.update(users=users)
@@ -178,10 +182,9 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             idea.author = author
             ideas.append(idea)
         if ideas:
-            open_start = min(i.submitted_at for i in ideas)
             for i in ideas:
-                delta = int((i.submitted_at - open_start).total_seconds())
-                i.delay_text = humanize_seconds(delta)
+                delta = int((i.submitted_at - gs.step_started_at).total_seconds())
+                i.delay_text = humanize_seconds(max(0, delta))
         ctx.update(ideas=ideas)
         if gs.phase == 0:
             total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))

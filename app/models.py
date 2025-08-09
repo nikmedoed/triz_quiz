@@ -14,6 +14,11 @@ class User(Base):
     joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     total_score: Mapped[int] = mapped_column(Integer, default=0)
     total_answer_ms: Mapped[int] = mapped_column(Integer, default=0)
+    open_answer_ms: Mapped[int] = mapped_column(Integer, default=0)
+    open_answer_count: Mapped[int] = mapped_column(Integer, default=0)
+    quiz_answer_ms: Mapped[int] = mapped_column(Integer, default=0)
+    quiz_answer_count: Mapped[int] = mapped_column(Integer, default=0)
+    last_vote_msg_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     waiting_for_name: Mapped[bool] = mapped_column(Boolean, default=False)  # /start → True, до сохранения имени
 
 class Step(Base):
@@ -31,6 +36,7 @@ class GlobalState(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     current_step_id: Mapped[int] = mapped_column(ForeignKey("steps.id"))
     step_started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    phase_started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     phase: Mapped[int] = mapped_column(Integer, default=0)
 
 class StepOption(Base):
