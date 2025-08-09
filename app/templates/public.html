@@ -7,7 +7,7 @@
     <div class="grid">
       {% for u in users %}
         <div class="card">
-          <div class="avatar">👤</div>
+          <img class="avatar" src="/avatars/{{ u.telegram_id }}.jpg" />
           <div class="name">{{ u.name }}</div>
         </div>
       {% endfor %}
@@ -24,7 +24,7 @@
       <ol>
       {% for idea in ideas %}
         <li><div class="idea">{{ idea.text }}</div>
-            <div class="meta">ответ через {{ (idea.submitted_at - since).seconds }} секунд</div></li>
+            <div class="meta">ответ через {{ idea.delay_text }}</div></li>
       {% endfor %}
       </ol>
       <div class="progress">Проголосовало: <span id="votesCount">{{ voters_count }}</span>{% if last_vote_ago_s is not none %} • последний голос <span id="lastVoteAgo">{{ last_vote_ago_s }}</span>{% else %} • последний голос <span id="lastVoteAgo">-</span>{% endif %}</div>
@@ -34,7 +34,12 @@
         {% for idea in ideas %}
         <li>
           <div class="idea">{{ idea.text }}</div>
-          <div class="votes">Голоса: {{ (voters_map.get(idea.id) or [])|length }}</div>
+          <div class="meta"><img class="avatar small" src="/avatars/{{ idea.author.telegram_id }}.jpg" /> {{ idea.author.name }}</div>
+          <div class="votes avatars">Голоса: {{ (voters_map.get(idea.id) or [])|length }}
+            {% for v in voters_map.get(idea.id) or [] %}
+              <img class="avatar small" src="/avatars/{{ v.telegram_id }}.jpg" />
+            {% endfor %}
+          </div>
         </li>
         {% endfor %}
       </ol>
@@ -51,12 +56,17 @@
       <div class="hint">Участники выбирают вариант в боте.</div>
     {% else %}
       <div class="question">Результаты</div>
-      <canvas id="mcqChart"></canvas>
+      <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
       <script>
         window.__mcq = {
           labels: [{% for opt in options %}'{{ opt.text|replace("'", "\'") }}',{% endfor %}],
           counts: [{% for c in counts %}{{ c }},{% endfor %}],
-          correct: {{ correct }}
+          correct: {{ correct }},
+          avatars: [
+            {% for arr in avatars_map %}[
+              {% for id in arr %}'{{ id }}'{% if not loop.last %},{% endif %}{% endfor %}
+            ]{% if not loop.last %},{% endif %}{% endfor %}
+          ]
         };
         document.addEventListener('DOMContentLoaded', () => window.renderMcq());
       </script>
@@ -79,9 +89,14 @@
   {% endif %}
 
   <div class="controls">
-    <button onclick="post('/api/prev')">◀️ Prev</button>
-    <button onclick="post('/api/next')">Next ▶️</button>
-    <button onclick="if(confirm('Reset DB?')) post('/api/reset')">Reset DB</button>
+    {% if step.type == 'registration' %}
+      <button onclick="post('/api/next')">Next ▶️</button>
+      <button onclick="if(confirm('Reset DB?')) post('/api/reset')">Reset DB</button>
+    {% elif step.type == 'leaderboard' %}
+      <button onclick="if(confirm('Reset DB?')) post('/api/reset')">Reset DB</button>
+    {% else %}
+      <button onclick="post('/api/next')">Next ▶️</button>
+    {% endif %}
   </div>
 </div>
 

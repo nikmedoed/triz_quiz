@@ -33,6 +33,7 @@ async def run_web() -> None:
     app = FastAPI()
     app.include_router(web_router)
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
+    app.mount("/avatars", StaticFiles(directory=settings.AVATAR_DIR, check_dir=False), name="avatars")
 
     config = uvicorn.Config(app, host="0.0.0.0", port=8000)
     server = uvicorn.Server(config)

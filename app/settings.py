@@ -14,6 +14,7 @@ class Settings(BaseModel):
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
     BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./quiz.db")
+    AVATAR_DIR: str = os.getenv("AVATAR_DIR", "avatars")
 
 
 settings = Settings()

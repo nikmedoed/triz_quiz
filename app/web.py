@@ -19,6 +19,11 @@ from app.settings import settings
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
+
+def humanize_seconds(sec: int) -> str:
+    m, s = divmod(sec, 60)
+    return f"{m} мин {s} с" if m else f"{s} с"
+
 class Hub:
     def __init__(self):
         self.active: Set[WebSocket] = set()
@@ -80,12 +85,6 @@ async def api_next(session: AsyncSession = Depends(get_session)):
     await hub.broadcast({"type": "reload"})
     return {"ok": True}
 
-@router.post("/api/prev")
-async def api_prev(session: AsyncSession = Depends(get_session)):
-    await advance(session, forward=False)
-    await hub.broadcast({"type": "reload"})
-    return {"ok": True}
-
 async def notify_all(session: AsyncSession):
     from app.bot import send_prompt
     gs = await session.get(GlobalState, 1)
@@ -114,6 +113,7 @@ async def advance(session: AsyncSession, forward: bool):
             total_phases = 3 if ideas_count else 1
             if gs.phase + 1 < total_phases:
                 gs.phase += 1
+                gs.step_started_at = datetime.utcnow()
                 if ideas_count and gs.phase == 2:
                     await add_vote_points(session, step.id)
                 await commit_and_notify()
@@ -123,6 +123,7 @@ async def advance(session: AsyncSession, forward: bool):
         elif step.type == "quiz":
             if gs.phase == 0:
                 gs.phase = 1
+                gs.step_started_at = datetime.utcnow()
                 await add_mcq_points(session, step)
                 await commit_and_notify()
             else:
@@ -134,6 +135,7 @@ async def advance(session: AsyncSession, forward: bool):
     else:
         if step.type in ("open", "quiz") and gs.phase > 0:
             gs.phase -= 1
+            gs.step_started_at = datetime.utcnow()
             await commit_and_notify()
         else:
             await move_to_block(session, step.order_index - 1, to_last_phase=True)
@@ -163,7 +165,23 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
         users = (await session.execute(select(User).where(User.name != "").order_by(User.joined_at.asc()))).scalars().all()
         ctx.update(users=users)
     elif step.type == "open":
-        ideas = (await session.execute(select(Idea).where(Idea.step_id == step.id).order_by(Idea.submitted_at.asc()))).scalars().all()
+        rows = (
+            await session.execute(
+                select(Idea, User)
+                .join(User, User.id == Idea.user_id)
+                .where(Idea.step_id == step.id)
+                .order_by(Idea.submitted_at.asc())
+            )
+        ).all()
+        ideas = []
+        for idea, author in rows:
+            idea.author = author
+            ideas.append(idea)
+        if ideas:
+            open_start = min(i.submitted_at for i in ideas)
+            for i in ideas:
+                delta = int((i.submitted_at - open_start).total_seconds())
+                i.delay_text = humanize_seconds(delta)
         ctx.update(ideas=ideas)
         if gs.phase == 0:
             total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
@@ -183,7 +201,13 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             # map idea_id -> [User]
             voters_map = {}
             for idea in ideas:
-                rows = (await session.execute(select(User).join(IdeaVote, IdeaVote.voter_id == User.id).where(IdeaVote.step_id == step.id, IdeaVote.idea_id == idea.id))).scalars().all()
+                rows = (
+                    await session.execute(
+                        select(User)
+                        .join(IdeaVote, IdeaVote.voter_id == User.id)
+                        .where(IdeaVote.step_id == step.id, IdeaVote.idea_id == idea.id)
+                    )
+                ).scalars().all()
                 voters_map[idea.id] = rows
             ctx.update(voters_map=voters_map)
     elif step.type == "quiz":
@@ -191,10 +215,23 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
         ctx.update(options=options)
         if gs.phase == 1:
             counts = []
+            avatars_map = []
             for opt in options:
-                n = await session.scalar(select(func.count(McqAnswer.id)).where(McqAnswer.step_id == step.id, McqAnswer.choice_idx == opt.idx))
+                n = await session.scalar(
+                    select(func.count(McqAnswer.id)).where(
+                        McqAnswer.step_id == step.id, McqAnswer.choice_idx == opt.idx
+                    )
+                )
                 counts.append(int(n or 0))
-            ctx.update(counts=counts, correct=step.correct_index)
+                users = (
+                    await session.execute(
+                        select(User)
+                        .join(McqAnswer, McqAnswer.user_id == User.id)
+                        .where(McqAnswer.step_id == step.id, McqAnswer.choice_idx == opt.idx)
+                    )
+                ).scalars().all()
+                avatars_map.append([u.telegram_id for u in users])
+            ctx.update(counts=counts, correct=step.correct_index, avatars_map=avatars_map)
     elif step.type == "leaderboard":
         users = (await session.execute(select(User))).scalars().all()
         users.sort(key=lambda u: (-u.total_score, u.total_answer_ms, u.joined_at))
