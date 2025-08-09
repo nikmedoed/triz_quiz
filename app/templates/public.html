@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block body %}
+<div class="container">
+  <h1>{{ step.title }}</h1>
+
+  {% if step.type == 'registration' %}
+    <div class="grid">
+      {% for u in users %}
+        <div class="card">
+          <img class="avatar" src="/avatars/{{ u.telegram_id }}.jpg" title="{{ u.name }}" />
+          <div class="name">{{ u.name }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+  {% elif step.type == 'open' %}
+    {% if phase == 0 %}
+      <p class="question">{{ step.text }}</p>
+      <p class="hint">Отправляйте идеи боту. Здесь они пока не видны.</p>
+      <div class="progress">Ответов: <span id="answersCount">{{ ideas|length }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} • последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} • последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
+      <div class="timer" id="ideaTimer">05:00</div>
+      {% elif phase == 1 %}
+        {% if ideas %}
+        <p class="question">Голосование за идеи</p>
+        <ol>
+        {% for idea in ideas %}
+          <li><div class="idea">{{ idea.text }}</div>
+              <div class="meta">ответ через {{ idea.delay_text }}</div></li>
+        {% endfor %}
+        </ol>
+        <div class="progress">Проголосовало: <span id="votesCount">{{ voters_count }}</span>{% if last_vote_ago_s is not none %} • последний голос <span id="lastVoteAgo">{{ last_vote_ago_s }}</span>{% else %} • последний голос <span id="lastVoteAgo">-</span>{% endif %}</div>
+        <div class="timer" id="voteTimer">01:00</div>
+        {% else %}
+        <p class="hint">Ответов нет</p>
+        {% endif %}
+    {% elif phase == 2 %}
+        <ol>
+          {% for idea in ideas %}
+          <li>
+            <div class="idea">{{ idea.text }}</div>
+            <div class="meta"><img class="avatar small" src="/avatars/{{ idea.author.telegram_id }}.jpg" title="{{ idea.author.name }}" /> {{ idea.author.name }} • ответ через {{ idea.delay_text }}</div>
+            <div class="votes avatars">Голоса: {{ (voters_map.get(idea.id) or [])|length }}
+              {% for v in voters_map.get(idea.id) or [] %}
+                <img class="avatar small" src="/avatars/{{ v.telegram_id }}.jpg" title="{{ v.name }}" />
+              {% endfor %}
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+    {% endif %}
+
+  {% elif step.type == 'quiz' %}
+    {% if phase == 0 %}
+      <div class="question">{{ step.title }}</div>
+      <ol>
+        {% for opt in options %}
+          <li>{{ opt.text }}</li>
+        {% endfor %}
+      </ol>
+      <div class="progress">Ответов: <span id="answersCount">{{ answers_count }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} • последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} • последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
+      <div class="hint">Участники выбирают вариант в боте.</div>
+    {% else %}
+      <div class="question">Результаты</div>
+      <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
+        <script>
+          window.__mcq = {
+            labels: [{% for opt in options %}'{{ loop.index }}. {{ opt.text|replace("'", "\'") }}',{% endfor %}],
+            counts: [{% for c in counts %}{{ c }},{% endfor %}],
+            percents: [{% for p in percents %}{{ p }},{% endfor %}],
+            correct: {{ correct }},
+            avatars: [
+              {% for arr in avatars_map %}[
+                {% for id in arr %}'{{ id }}'{% if not loop.last %},{% endif %}{% endfor %}
+              ]{% if not loop.last %},{% endif %}{% endfor %}
+            ],
+            names: {
+              {% for id, name in names_map.items() %}'{{ id }}': '{{ name|replace("'", "\'") }}'{% if not loop.last %},{% endif %}{% endfor %}
+            }
+          };
+          document.addEventListener('DOMContentLoaded', () => window.renderMcq());
+        </script>
+    {% endif %}
+
+  {% elif step.type == 'leaderboard' %}
+    <table class="board">
+      <thead><tr><th>#</th><th>Имя</th><th>Баллы</th><th>Время (с)</th></tr></thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ u.name }}</td>
+            <td>{{ u.total_score }}</td>
+            <td>{{ (u.total_answer_ms/1000)|round(1) }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <div class="controls">
+    {% if step.type == 'registration' %}
+      <button onclick="post('/api/next')">Next ▶️</button>
+      <button onclick="if(confirm('Reset DB?')) post('/api/reset')">Reset DB</button>
+    {% elif step.type == 'leaderboard' %}
+      <button onclick="if(confirm('Reset DB?')) post('/api/reset')">Reset DB</button>
+    {% else %}
+      <button onclick="post('/api/next')">Next ▶️</button>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  async function post(url){
+    await fetch(url, {method:'POST'});
+  }
+  function formatAgo(sec){
+    if(sec==null || sec==='-' || sec==='') return '-';
+    sec = parseInt(sec);
+    if(isNaN(sec)) return '-';
+    if(sec >= 60){ const m=Math.floor(sec/60); const s=sec%60; return m+' мин '+s+' с'; }
+    return sec+' с';
+  }
+  const timerEl = document.getElementById('ideaTimer') || document.getElementById('voteTimer');
+  if (timerEl){
+    const start = new Date('{{ since.isoformat() }}Z').getTime();
+    const duration = timerEl.id === 'ideaTimer' ? 5*60*1000 : 60*1000;
+    function tick(){
+      let left = duration - (Date.now() - start);
+      if(left < 0) left = 0;
+      const m = String(Math.floor(left/60000)).padStart(2,'0');
+      const s = String(Math.floor((left%60000)/1000)).padStart(2,'0');
+      timerEl.textContent = m+':'+s;
+    }
+    setInterval(tick,1000); tick();
+  }
+  const lastAnswerEl = document.getElementById('lastAnswerAgo');
+  const lastVoteEl = document.getElementById('lastVoteAgo');
+  let lastAnswerSec = lastAnswerEl ? parseInt(lastAnswerEl.textContent) : null;
+  let lastVoteSec = lastVoteEl ? parseInt(lastVoteEl.textContent) : null;
+  if (isNaN(lastAnswerSec)) lastAnswerSec = null;
+  if (isNaN(lastVoteSec)) lastVoteSec = null;
+  if (lastAnswerEl) lastAnswerEl.textContent = formatAgo(lastAnswerSec);
+  if (lastVoteEl) lastVoteEl.textContent = formatAgo(lastVoteSec);
+  setInterval(() => {
+    if (lastAnswerSec !== null){ lastAnswerSec++; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
+    if (lastVoteSec !== null){ lastVoteSec++; lastVoteEl.textContent = formatAgo(lastVoteSec); }
+  }, 1000);
+  const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
+  ws.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === 'reload') location.reload();
+    if (msg.type === 'idea_progress'){
+      const cnt = document.getElementById('answersCount');
+      if (cnt) cnt.textContent = msg.count;
+      if (lastAnswerEl && msg.last !== undefined){ lastAnswerSec = msg.last; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
+    }
+    if (msg.type === 'mcq_progress'){
+      const cnt = document.getElementById('answersCount');
+      if (cnt) cnt.textContent = msg.count;
+      if (lastAnswerEl && msg.last !== undefined){ lastAnswerSec = msg.last; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
+    }
+    if (msg.type === 'vote_progress'){
+      const vcnt = document.getElementById('votesCount');
+      if (vcnt) vcnt.textContent = msg.count;
+      if (lastVoteEl && msg.last !== undefined){ lastVoteSec = msg.last; lastVoteEl.textContent = formatAgo(lastVoteSec); }
+    }
+  };
+</script>
+{% endblock %}

@@ -1,48 +1,135 @@
-# triz_quiz
+# README
 
-A telegram quiz for a presentation about inventive situations.
+> **Language note:** All code comments and this README are in **English** as requested.
 
-## Configuration
+This project implements a TRIZ-club quiz/presentation system with **Telegram + Web**:
 
-Settings are read from environment variables. Copy `.env.example` to `.env`
-and fill in your values before running. The application loads these settings via
-`config.py`, so both the bot and the projector server share the same
-configuration:
+* **Telegram bot (aiogram 3)** for registration, open-form ideas, voting, and MCQ.
+* **Web app (FastAPI + WebSockets)** with:
+
+  * **Public screen** (projector) that updates live.
+  * **Moderator screen** to drive the show.
+* **SQLite** by default (switchable to Postgres). All state is persisted to survive restarts.
+* **Scenario loaded from JSON/YAML list of blocks** (simple), activated on startup.
+* **Scoring**: +`points` per correct MCQ; +1 per received vote on ideas; tie-breaker by total response time.
+
+### Design decisions aligned with your requirements
+
+* **No admin password**. Everything runs locally. Moderator UI is open on `http://localhost:8000/moderator`.
+* **Mandatory Registration & Leaderboard** are **implicit** and **auto-inserted**: you **do not** specify them in the scenario.
+* **Blocks, not micro-steps**: Each content item is a **block** with **internal phases** and the **same Next/Prev controls**.
+
+  * `open` block phases: **collect → vote (if ideas exist) → reveal**. Voting is skipped if there are no ideas.
+  * `quiz` block phases: **ask → reveal**.
+* **Universal Next/Prev**:
+
+  * `Next` advances to the next **phase** inside the current block; if it was the last phase, it moves to the next block.
+  * `Prev` moves backward similarly.
+* **Late join**: a participant who joins at any time is synced to the current block & phase.
+
+---
+
+## Quick start (local)
+
+1. **Create `.env`** with:
 
 ```
-BOT_TOKEN=123456:ABCDEF
-ADMIN_ID=123456789
-PROJECTOR_URL=http://localhost:5000/update
-SERVER_HOST=0.0.0.0
-SERVER_PORT=5000
-DB_FILE=quiz.db
-AVATAR_DIR=avatars
+TELEGRAM_BOT_TOKEN=123456:ABCDEF...
+BASE_URL=http://localhost:8000
+DATABASE_URL=sqlite+aiosqlite:///./quiz.db
 ```
 
-`BOT_TOKEN` and `ADMIN_ID` are required for the bot to operate.
-
-`DB_FILE` points to a SQLite database where quiz progress, participant info,
-and their responses are persisted. User avatars are cached on disk in the
-`AVATAR_DIR` folder instead of the database. Schema migrations are applied
-automatically on startup so older databases upgrade in place. Admins can reset
-the state with `/reset`.
-
-## Running
-
-Start the quiz bot and projector server together with:
+2. **Install**:
 
 ```
-python run.py
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-The command launches the Flask web interface in the background and begins polling
-Telegram for bot updates.
+3. **Run**:
 
-## Registration
+```
+./run_local.sh
+```
 
-Participants join by messaging `/start` to the bot. It asks each user for a
-display name, caches their avatar on disk, and stores metadata in the SQLite
-database. Sending `/start` again later lets a participant change their name or
-avatar and the bot replies with the current quiz step. The projector page lists
-registered players in a shrinking grid and features a **Начать** button to move
-from registration to the quiz.
+Open:
+
+* **Public screen**: `http://localhost:8000/`
+* **Moderator**: `http://localhost:8000/moderator`
+
+Invite participants to start the Telegram bot with `/start`. After they set a name, advancing phases from the moderator UI will push messages to all registered participants.
+
+---
+
+## Docker
+
+```
+docker compose up --build
+```
+
+---
+
+## Scenario format (simple blocks)
+
+Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registration and final leaderboard are **implicit** and auto-added.
+
+**Supported blocks:**
+
+* `open`: free-form idea collection with built-in vote & reveal.
+* `quiz`: MCQ with built-in reveal.
+
+**Example (your sample, with vote steps tolerated but folded into the `open` block):**
+
+```json
+[
+  {
+    "type": "open",
+    "title": "Ситуация 1: как открыть банку с тугой крышкой?",
+    "description": "Домашний пример, крышка не поддаётся…"
+  },
+  { "type": "vote", "title": "Голосование идей" },
+  { "type": "vote_results", "title": "Результаты голосования" },
+  {
+    "type": "quiz",
+    "title": "Какой приём ТРИЗ был использован?",
+    "options": [
+      "Матрёшка",
+      "Динамичность",
+      "Применение локальных нагревов",
+      "Ещё какой-то вариант"
+    ],
+    "correct": "3",
+    "points": 2
+  }
+]
+```
+
+> Notes:
+>
+> * `vote` and `vote_results` lines are **optional** and ignored by the loader (the `open` block already includes voting and reveal). You can keep them for readability.
+> * `quiz.correct` accepts either a **1-based string/number** (e.g., `"3"`) or a **0-based index**.
+>
+> See `scenario.example.yaml` for a complete example scenario.
+
+---
+
+## Scoring rules
+
+* **MCQ**: each correct answer gives `points` (per-quiz configurable).
+* **Ideas**: **+1** to the author per received vote.
+* **Tie-breaker**: lower total response time across blocks where the participant answered/voted.
+
+---
+
+## PPT usage
+
+* Present your normal PowerPoint deck.
+* When you need live results, **Alt-Tab** to the browser tab with the **Public screen** (or add a hyperlink to `BASE_URL/`).
+
+---
+
+## Reliability
+
+* SQLite or Postgres (set `DATABASE_URL`).
+* All transitions are idempotent; late joiners are synced.
+

@@ -1,0 +1,9 @@
+aiogram
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]
+aiosqlite
+pydantic
+python-dotenv
+jinja2
+python-multipart
