@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% set active_page = 'public' %}
 {% block body %}
 <div class="container">
   <h1>{{ step.title }}</h1>
@@ -100,16 +101,16 @@
 
   <div class="controls">
     {% if step.type == 'registration' %}
-      <button onclick="post('/api/next')">Next ▶️</button>
+      <button class="btn btn-primary" onclick="post('/api/next')">Next ▶️</button>
       <form method="get" action="/reset" style="display:inline;">
-        <button type="submit">Reset DB</button>
+        <button class="btn btn-secondary" type="submit">Reset DB</button>
       </form>
     {% elif step.type == 'leaderboard' %}
       <form method="get" action="/reset" style="display:inline;">
-        <button type="submit">Reset DB</button>
+        <button class="btn btn-secondary" type="submit">Reset DB</button>
       </form>
     {% else %}
-      <button onclick="post('/api/next')">Next ▶️</button>
+      <button class="btn btn-primary" onclick="post('/api/next')">Next ▶️</button>
     {% endif %}
   </div>
 </div>

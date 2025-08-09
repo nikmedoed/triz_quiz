@@ -4,11 +4,23 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{{ step.title if step else 'TRIZ Quiz' }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/styles.css" />
   <script src="/static/app.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">TRIZ Quiz</a>
+      <nav class="nav-links">
+        <a href="/" class="{% if active_page == 'public' %}active{% endif %}">Public</a>
+        <a href="/moderator" class="{% if active_page == 'moderator' %}active{% endif %}">Moderator</a>
+      </nav>
+    </div>
+  </header>
   {% block body %}{% endblock %}
 </body>
 </html>

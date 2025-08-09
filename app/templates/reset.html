@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
+{% set active_page = 'reset' %}
 {% block body %}
 <div class="container">
   <h1>Reset confirmation</h1>
   <p>Are you sure you want to reset the database?</p>
   <form method="post">
-    <button type="submit">Reset DB</button>
+    <button class="btn btn-primary" type="submit">Reset DB</button>
   </form>
-  <button onclick="window.history.back()">Cancel</button>
+  <button class="btn btn-secondary" onclick="window.history.back()">Cancel</button>
 </div>
 {% endblock %}

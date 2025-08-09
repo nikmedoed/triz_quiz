@@ -142,3 +142,32 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
 * SQLite or Postgres (set `DATABASE_URL`).
 * All transitions are idempotent; late joiners are synced.
 
+---
+
+## Styling tokens
+
+Design tokens and component styles live in `app/static/styles.css`.
+
+### Tokens
+
+* Color palette `--color-primary-*`, `--color-slate-*`, `--color-dark`, `--color-light`, `--color-black`.
+* Typography: `--font-sans` (Roboto) with weights 300/400/500/900.
+* Spacing & radii: `--space-*` and `--radius-*` following an 8‑pt grid.
+
+### Updated components
+
+* Header/navigation bar with active link underline.
+* Primary and secondary buttons.
+* Registration cards and leaderboard table borders.
+* General typography for questions, hints and timers.
+
+### Roboto font
+
+Roboto weights are loaded from Google Fonts in `base.html`:
+
+```html
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;900&display=swap" rel="stylesheet" />
+```
+
+For offline usage, download these font files and serve them locally, adjusting the `<link>` accordingly.
+

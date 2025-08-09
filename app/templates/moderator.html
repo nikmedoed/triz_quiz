@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
+{% set active_page = 'moderator' %}
 {% block body %}
 <div class="container">
   <h1>Moderator</h1>
   <div class="controls">
-    <button onclick="post('/api/prev')">◀️ Prev</button>
-    <button onclick="post('/api/next')">Next ▶️</button>
+    <button class="btn btn-secondary" onclick="post('/api/prev')">◀️ Prev</button>
+    <button class="btn btn-primary" onclick="post('/api/next')">Next ▶️</button>
     <form method="get" action="/reset" style="display:inline;">
-      <button type="submit">Reset DB</button>
+      <button class="btn btn-secondary" type="submit">Reset DB</button>
     </form>
   </div>
   <div id="log"></div>
