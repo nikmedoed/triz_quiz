@@ -178,10 +178,9 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             idea.author = author
             ideas.append(idea)
         if ideas:
-            open_start = min(i.submitted_at for i in ideas)
             for i in ideas:
-                delta = int((i.submitted_at - open_start).total_seconds())
-                i.delay_text = humanize_seconds(delta)
+                delta = int((i.submitted_at - gs.step_started_at).total_seconds())
+                i.delay_text = humanize_seconds(max(0, delta))
         ctx.update(ideas=ideas)
         if gs.phase == 0:
             total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
