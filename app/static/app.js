@@ -52,6 +52,7 @@ window.renderMcq = function() {
         const img = document.createElement('img');
         img.className = 'avatar small';
         img.src = `/avatars/${id}.jpg`;
+        if (data.names) img.title = data.names[id] || '';
         div.appendChild(img);
       });
       container.appendChild(div);

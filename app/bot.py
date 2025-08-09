@@ -93,8 +93,11 @@ async def cmd_cancel(message: Message, bot: Bot):
     try:
         user.waiting_for_name = False
         await session.commit()
-        await message.answer("Ок, имя не меняем.")
-        await send_prompt(bot, user, step, state.phase)
+        if step.type == "registration":
+            await message.answer("Ок, имя не меняем.\nЖдём начала. Вы на экране регистрации.")
+        else:
+            await message.answer("Ок, имя не меняем.")
+            await send_prompt(bot, user, step, state.phase)
     finally:
         await session.close()
 
@@ -114,8 +117,11 @@ async def on_text(message: Message, bot: Bot):
             await save_avatar(bot, user)
             await session.commit()
             await hub.broadcast({"type": "reload"})  # появится на экране регистрации
-            await message.answer("Имя сохранено. Готово к участию.")
-            await send_prompt(bot, user, step, state.phase)
+            if step.type == "registration":
+                await message.answer("Имя сохранено. Готово к участию.\nЖдём начала. Вы на экране регистрации.")
+            else:
+                await message.answer("Имя сохранено. Готово к участию.")
+                await send_prompt(bot, user, step, state.phase)
             return
 
         # 2) обычные текстовые ответы принимаем только в open:collect
