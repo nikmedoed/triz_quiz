@@ -213,7 +213,7 @@ async def send_prompt(bot: Bot, user: User, step: Step, phase: int):
                 "- Укажите логику решения, использванные приёмы, методы, обоснуйте"
             )
             text = (
-                f"<b>{header}</b>\n"
+                f"<b>{header}</b>\n\n"
                 f"{title}\n\n"
                 f"{body}\n\n\n"
                 f"<i>{instr}</i>"
