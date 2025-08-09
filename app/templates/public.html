@@ -1,6 +1,20 @@
 {% extends 'base.html' %}
 {% block body %}
 <div class="container">
+  {% set STAGES = {'registration':'Регистрация','open':'Вопрос с открытым ответом','quiz':'Выбери верный','leaderboard':'Результаты'} %}
+  <div class="corner">
+    <div class="stage">{{ STAGES.get(step.type, '') }}</div>
+    {% if step.type == 'open' %}
+      {% if phase == 0 %}
+        <div class="progress">Ответов: <span id="answersCount">{{ ideas|length }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} • последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} • последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
+      {% elif phase == 1 and ideas %}
+        <div class="progress">Проголосовало: <span id="votesCount">{{ voters_count }}</span>{% if last_vote_ago_s is not none %} • последний голос <span id="lastVoteAgo">{{ last_vote_ago_s }}</span>{% else %} • последний голос <span id="lastVoteAgo">-</span>{% endif %}</div>
+      {% endif %}
+    {% elif step.type == 'quiz' and phase == 0 %}
+      <div class="progress">Ответов: <span id="answersCount">{{ answers_count }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} • последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} • последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
+    {% endif %}
+  </div>
+
   <h1>{{ step.title }}</h1>
 
   {% if step.type == 'registration' %}
@@ -15,12 +29,11 @@
 
   {% elif step.type == 'open' %}
     {% if phase == 0 %}
-      <p class="question">{{ step.text }}</p>
+      <p class="description">{{ step.text }}</p>
       <p class="hint">Отправляйте идеи боту. Здесь они пока не видны.</p>
-      <div class="progress">Ответов: <span id="answersCount">{{ ideas|length }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} • последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} • последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
       <div class="timer" id="ideaTimer">05:00</div>
-      {% elif phase == 1 %}
-        {% if ideas %}
+    {% elif phase == 1 %}
+      {% if ideas %}
         <p class="question">Голосование за идеи</p>
         <ol>
         {% for idea in ideas %}
@@ -28,11 +41,10 @@
               <div class="meta">ответ через {{ idea.delay_text }}</div></li>
         {% endfor %}
         </ol>
-        <div class="progress">Проголосовало: <span id="votesCount">{{ voters_count }}</span>{% if last_vote_ago_s is not none %} • последний голос <span id="lastVoteAgo">{{ last_vote_ago_s }}</span>{% else %} • последний голос <span id="lastVoteAgo">-</span>{% endif %}</div>
         <div class="timer" id="voteTimer">01:00</div>
-        {% else %}
+      {% else %}
         <p class="hint">Ответов нет</p>
-        {% endif %}
+      {% endif %}
     {% elif phase == 2 %}
         <ol>
           {% for idea in ideas %}
@@ -51,20 +63,21 @@
 
   {% elif step.type == 'quiz' %}
     {% if phase == 0 %}
-      <div class="question">{{ step.title }}</div>
-      <ol>
-        {% for opt in options %}
-          <li>{{ opt.text }}</li>
-        {% endfor %}
-      </ol>
-      <div class="progress">Ответов: <span id="answersCount">{{ answers_count }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} • последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} • последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
+      <div class="quiz-layout">
+        <div class="quiz-description">{{ step.text }}</div>
+        <ol class="quiz-options">
+          {% for opt in options %}
+            <li>{{ opt.text }}</li>
+          {% endfor %}
+        </ol>
+      </div>
       <div class="hint">Участники выбирают вариант в боте.</div>
     {% else %}
       <div class="question">Результаты</div>
       <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
         <script>
           window.__mcq = {
-            labels: [{% for opt in options %}'{{ loop.index }}. {{ opt.text|replace("'", "\'") }}',{% endfor %}],
+            labels: [{% for opt in options %}'{{ loop.index }}. {{ opt.text|replace("'", "\\'") }}',{% endfor %}],
             counts: [{% for c in counts %}{{ c }},{% endfor %}],
             percents: [{% for p in percents %}{{ p }},{% endfor %}],
             correct: {{ correct }},
@@ -74,7 +87,7 @@
               ]{% if not loop.last %},{% endif %}{% endfor %}
             ],
             names: {
-              {% for id, name in names_map.items() %}'{{ id }}': '{{ name|replace("'", "\'") }}'{% if not loop.last %},{% endif %}{% endfor %}
+              {% for id, name in names_map.items() %}'{{ id }}': '{{ name|replace("'", "\\'") }}'{% if not loop.last %},{% endif %}{% endfor %}
             }
           };
           document.addEventListener('DOMContentLoaded', () => window.renderMcq());
@@ -165,3 +178,4 @@
   };
 </script>
 {% endblock %}
+
