@@ -9,6 +9,7 @@ h1 { font-size: 28px; margin-bottom: 16px; }
 .avatars { display: flex; flex-wrap: wrap; gap: 4px; }
 .mcq-container { position: relative; }
 .mcq-avatar-col { position: absolute; display: flex; gap: 4px; transform: translateX(-50%); flex-wrap: wrap; justify-content: center; }
+.mcq-count { position: absolute; transform: translateX(-50%); font-weight: bold; color: #000; }
 .name { margin-top: 8px; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .question { font-size: 22px; margin: 12px 0; }
 .hint, .meta, .progress { opacity: 0.7; font-size: 14px; }

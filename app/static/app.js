@@ -1,19 +1,4 @@
 // Minimal Chart.js render for MCQ reveal (no custom colors per requirements)
-const mcqCountPlugin = {
-  id: 'mcqCounts',
-  afterDatasetsDraw(chart, args, opts) {
-    const {ctx} = chart;
-    ctx.save();
-    ctx.fillStyle = '#000';
-    ctx.textAlign = 'center';
-    const meta = chart.getDatasetMeta(0);
-    meta.data.forEach((bar, i) => {
-      ctx.fillText(`${opts.counts[i]} (${opts.percents[i]}%)`, bar.x, bar.y - 5);
-    });
-    ctx.restore();
-  }
-};
-
 window.renderMcq = function() {
   const ctx = document.getElementById('mcqChart');
   if (!ctx || !window.__mcq) return;
@@ -34,8 +19,7 @@ window.renderMcq = function() {
           callbacks: {
             label: ctx => `${data.counts[ctx.dataIndex]} (${data.percents[ctx.dataIndex]}%)`
           }
-        },
-        mcqCounts: { counts: data.counts, percents: data.percents }
+        }
       },
       scales: {
         y: {
@@ -43,16 +27,21 @@ window.renderMcq = function() {
           suggestedMax: 100
         }
       },
-      animation: { onComplete: () => { drawAvatars(); } }
+      animation: { onComplete: () => { drawOverlays(); } }
     },
-    plugins: [mcqCountPlugin]
   });
-
-  function drawAvatars(){
-    container.querySelectorAll('.mcq-avatar-col').forEach(e => e.remove());
+  function drawOverlays(){
+    container.querySelectorAll('.mcq-avatar-col, .mcq-count').forEach(e => e.remove());
     const meta = chart.getDatasetMeta(0);
     const xScale = chart.scales.x;
     meta.data.forEach((bar, i) => {
+      const label = document.createElement('div');
+      label.className = 'mcq-count';
+      label.textContent = `${data.counts[i]} (${data.percents[i]}%)`;
+      label.style.left = bar.x + 'px';
+      label.style.top = Math.max(bar.y - 16, 0) + 'px';
+      container.appendChild(label);
+
       const div = document.createElement('div');
       div.className = 'mcq-avatar-col';
       div.style.left = bar.x + 'px';
@@ -67,4 +56,4 @@ window.renderMcq = function() {
       container.appendChild(div);
     });
   }
-  };
+};
