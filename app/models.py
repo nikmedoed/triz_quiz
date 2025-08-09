@@ -36,6 +36,7 @@ class GlobalState(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     current_step_id: Mapped[int] = mapped_column(ForeignKey("steps.id"))
     step_started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    phase_started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     phase: Mapped[int] = mapped_column(Integer, default=0)
 
 class StepOption(Base):

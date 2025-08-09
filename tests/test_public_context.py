@@ -25,7 +25,7 @@ def test_idea_delay_uses_step_start():
             await session.flush()
 
             start = datetime(2025, 1, 1, 0, 0, 0)
-            gs = GlobalState(id=1, current_step_id=step.id, step_started_at=start, phase=0)
+            gs = GlobalState(id=1, current_step_id=step.id, step_started_at=start, phase_started_at=start, phase=0)
             session.add(gs)
 
             u1 = User(telegram_id="1", name="A")
@@ -51,6 +51,47 @@ def test_idea_delay_uses_step_start():
             ctx = await build_public_context(session, step, gs)
             delays = [idea.delay_text for idea in ctx["ideas"]]
             assert delays == ["5 с", "12 с"]
+
+    asyncio.run(run())
+
+
+def test_idea_delay_after_phase_change():
+    async def run():
+        engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+
+        AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        async with AsyncSessionLocal() as session:
+            step = Step(order_index=1, type="open", title="Q1")
+            session.add(step)
+            await session.flush()
+
+            start = datetime(2025, 1, 1, 0, 0, 0)
+            gs = GlobalState(
+                id=1,
+                current_step_id=step.id,
+                step_started_at=start,
+                phase_started_at=start + timedelta(seconds=20),
+                phase=1,
+            )
+            session.add(gs)
+
+            u1 = User(telegram_id="1", name="A")
+            session.add(u1)
+            await session.flush()
+
+            idea1 = Idea(
+                step_id=step.id,
+                user_id=u1.id,
+                text="a",
+                submitted_at=start + timedelta(seconds=5),
+            )
+            session.add(idea1)
+            await session.commit()
+
+            ctx = await build_public_context(session, step, gs)
+            assert ctx["ideas"][0].delay_text == "5 с"
 
     asyncio.run(run())
 
