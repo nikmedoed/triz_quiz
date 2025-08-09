@@ -28,7 +28,7 @@ async def save_avatar(bot: Bot, user: User):
     photos = await bot.get_user_profile_photos(user.telegram_id, limit=1)
     if photos.total_count:
         file_id = photos.photos[0][-1].file_id
-        await bot.download(file_id, destination=path / f"{user.id}.jpg")
+        await bot.download(file_id, destination=path / f"{user.telegram_id}.jpg")
         user.avatar_file_id = file_id
 
 async def get_ctx(tg_id: str):

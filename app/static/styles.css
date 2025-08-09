@@ -7,9 +7,8 @@ h1 { font-size: 28px; margin-bottom: 16px; }
 .avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
 .avatar.small { width: 32px; height: 32px; }
 .avatars { display: flex; flex-wrap: wrap; gap: 4px; }
-.option-result { margin-top: 12px; }
-.option-result .opt-text { margin-bottom: 4px; }
-.mcq-answers { margin-top: 16px; }
+.mcq-container { position: relative; }
+.mcq-avatar-col { position: absolute; display: flex; gap: 4px; transform: translateX(-50%); }
 .name { margin-top: 8px; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .question { font-size: 22px; margin: 12px 0; }
 .hint, .meta, .progress { opacity: 0.7; font-size: 14px; }

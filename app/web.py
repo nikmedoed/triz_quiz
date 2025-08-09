@@ -108,6 +108,7 @@ async def advance(session: AsyncSession, forward: bool):
             total_phases = 3 if ideas_count else 1
             if gs.phase + 1 < total_phases:
                 gs.phase += 1
+                gs.step_started_at = datetime.utcnow()
                 if ideas_count and gs.phase == 2:
                     await add_vote_points(session, step.id)
                 await commit_and_notify()
@@ -117,6 +118,7 @@ async def advance(session: AsyncSession, forward: bool):
         elif step.type == "quiz":
             if gs.phase == 0:
                 gs.phase = 1
+                gs.step_started_at = datetime.utcnow()
                 await add_mcq_points(session, step)
                 await commit_and_notify()
             else:
@@ -128,6 +130,7 @@ async def advance(session: AsyncSession, forward: bool):
     else:
         if step.type in ("open", "quiz") and gs.phase > 0:
             gs.phase -= 1
+            gs.step_started_at = datetime.utcnow()
             await commit_and_notify()
         else:
             await move_to_block(session, step.order_index - 1, to_last_phase=True)
@@ -202,7 +205,7 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
         ctx.update(options=options)
         if gs.phase == 1:
             counts = []
-            answers_map = []
+            avatars_map = []
             for opt in options:
                 n = await session.scalar(
                     select(func.count(McqAnswer.id)).where(
@@ -217,8 +220,8 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                         .where(McqAnswer.step_id == step.id, McqAnswer.choice_idx == opt.idx)
                     )
                 ).scalars().all()
-                answers_map.append(users)
-            ctx.update(counts=counts, correct=step.correct_index, answers_map=answers_map)
+                avatars_map.append([u.telegram_id for u in users])
+            ctx.update(counts=counts, correct=step.correct_index, avatars_map=avatars_map)
     elif step.type == "leaderboard":
         users = (await session.execute(select(User))).scalars().all()
         users.sort(key=lambda u: (-u.total_score, u.total_answer_ms, u.joined_at))

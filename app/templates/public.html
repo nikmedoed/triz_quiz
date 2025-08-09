@@ -7,7 +7,7 @@
     <div class="grid">
       {% for u in users %}
         <div class="card">
-          <img class="avatar" src="/avatars/{{ u.id }}.jpg" />
+          <img class="avatar" src="/avatars/{{ u.telegram_id }}.jpg" />
           <div class="name">{{ u.name }}</div>
         </div>
       {% endfor %}
@@ -34,10 +34,10 @@
         {% for idea in ideas %}
         <li>
           <div class="idea">{{ idea.text }}</div>
-          <div class="meta"><img class="avatar small" src="/avatars/{{ idea.author.id }}.jpg" /> {{ idea.author.name }}</div>
+          <div class="meta"><img class="avatar small" src="/avatars/{{ idea.author.telegram_id }}.jpg" /> {{ idea.author.name }}</div>
           <div class="votes avatars">Голоса: {{ (voters_map.get(idea.id) or [])|length }}
             {% for v in voters_map.get(idea.id) or [] %}
-              <img class="avatar small" src="/avatars/{{ v.id }}.jpg" />
+              <img class="avatar small" src="/avatars/{{ v.telegram_id }}.jpg" />
             {% endfor %}
           </div>
         </li>
@@ -56,24 +56,17 @@
       <div class="hint">Участники выбирают вариант в боте.</div>
     {% else %}
       <div class="question">Результаты</div>
-      <canvas id="mcqChart"></canvas>
-      <div class="mcq-answers">
-        {% for opt in options %}
-          <div class="option-result">
-            <div class="opt-text">{{ opt.text }}</div>
-            <div class="avatars">
-              {% for u in answers_map[loop.index0] %}
-                <img class="avatar small" src="/avatars/{{ u.id }}.jpg" />
-              {% endfor %}
-            </div>
-          </div>
-        {% endfor %}
-      </div>
+      <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
       <script>
         window.__mcq = {
           labels: [{% for opt in options %}'{{ opt.text|replace("'", "\'") }}',{% endfor %}],
           counts: [{% for c in counts %}{{ c }},{% endfor %}],
-          correct: {{ correct }}
+          correct: {{ correct }},
+          avatars: [
+            {% for arr in avatars_map %}[
+              {% for id in arr %}'{{ id }}'{% if not loop.last %},{% endif %}{% endfor %}
+            ]{% if not loop.last %},{% endif %}{% endfor %}
+          ]
         };
         document.addEventListener('DOMContentLoaded', () => window.renderMcq());
       </script>
