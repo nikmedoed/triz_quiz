@@ -104,21 +104,21 @@ h2 {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-4);
+  justify-items: center;
 }
 
 .card {
-  background: #ffffff;
-  border: 1px solid var(--color-light);
-  border-radius: var(--radius-none);
-  padding: var(--space-3);
+  background: transparent;
+  border: none;
+  padding: var(--space-4);
   text-align: center;
 }
 
 .avatar {
-  width: 64px;
-  height: 64px;
+  width: clamp(80px, 12vw, 128px);
+  height: clamp(80px, 12vw, 128px);
   border-radius: 50%;
   object-fit: cover;
 }
@@ -155,23 +155,16 @@ h2 {
 }
 
 .name {
-  margin-top: var(--space-2);
-  font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-top: var(--space-3);
+  font-size: clamp(18px, 2vw, 24px);
+  white-space: normal;
+  word-break: break-word;
 }
 
 .question {
   font-size: 24px;
   font-weight: var(--font-weight-medium);
   margin: var(--space-3) 0;
-}
-
-.meta {
-  opacity: 0.7;
-  font-size: 14px;
-  color: var(--color-slate-500);
 }
 
 .corner {
@@ -228,9 +221,71 @@ ol {
   margin-left: var(--space-4);
 }
 
-.idea {
+.idea-text {
+  font-size: clamp(18px, 2.5vw, 24px);
+  white-space: pre-line;
+  margin-bottom: var(--space-3);
+}
+
+.ideas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-4);
+  width: 100%;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: var(--space-4) 0;
+}
+
+.idea-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid var(--color-light);
+  padding: var(--space-6);
+  padding-bottom: calc(var(--space-6) + 40px);
+}
+
+.idea-meta {
+  font-size: clamp(16px, 2vw, 21px);
+  color: var(--color-slate-500);
+}
+
+.idea-author {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: clamp(16px, 2vw, 20px);
+  margin-bottom: var(--space-2);
+}
+
+.idea-vote-count {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
   font-size: 20px;
-  margin: var(--space-1) 0;
+  font-weight: var(--font-weight-medium);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.idea-voters {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  display: flex;
+}
+
+.idea-voters img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  margin-left: -8px;
+}
+
+.idea-voters img:first-child {
+  margin-left: 0;
 }
 
 .quiz-layout {

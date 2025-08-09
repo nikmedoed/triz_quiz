@@ -231,7 +231,8 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                     )
                 ).scalars().all()
                 voters_map[idea.id] = rows
-            ctx.update(voters_map=voters_map)
+            ideas.sort(key=lambda i: len(voters_map.get(i.id, [])), reverse=True)
+            ctx.update(voters_map=voters_map, ideas=ideas)
     elif step.type == "quiz":
         options = (
             await session.execute(
