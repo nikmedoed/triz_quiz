@@ -7,6 +7,7 @@ from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from html import escape
 
 from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -111,6 +112,13 @@ async def on_text(message: Message, bot: Bot):
             user.total_answer_ms += max(0, delta_ms)
             await session.commit()
             await message.answer("Идея принята. Можно отправить новое сообщение, чтобы заменить.")
+            count = await session.scalar(select(func.count(Idea.id)).where(Idea.step_id == step.id))
+            total = await session.scalar(select(func.count(User.id)).where(User.name != ""))
+            last_at = await session.scalar(select(func.max(Idea.submitted_at)).where(Idea.step_id == step.id))
+            last_ago = None
+            if last_at:
+                last_ago = int((datetime.utcnow() - last_at).total_seconds())
+            await hub.broadcast({"type": "idea_progress", "count": int(count or 0), "total": int(total or 0), "last": last_ago})
         else:
             await message.answer("Сейчас текстовые ответы не принимаются. Дождитесь команды модератора.\nЧтобы изменить имя: /start")
     finally:
@@ -143,7 +151,7 @@ async def cb_vote(cb: CallbackQuery, bot: Bot):
     idea_id = int(cb.data.split(":")[1])
     session, user, state, step = await get_ctx(str(cb.from_user.id))
     try:
-        if step.type != "open" or state.phase != 2:
+        if step.type != "open" or state.phase != 1:
             await cb.answer("Сейчас не этап голосования.", show_alert=True)
             return
         existing = (await session.execute(select(IdeaVote).where(IdeaVote.step_id == step.id, IdeaVote.idea_id == idea_id, IdeaVote.voter_id == user.id))).scalar_one_or_none()
@@ -167,15 +175,23 @@ async def send_prompt(bot: Bot, user: User, step: Step, phase: int):
         await bot.send_message(user.telegram_id, "Ждём начала. Вы на экране регистрации.")
     elif step.type == "open":
         if phase == 0:
-            await bot.send_message(user.telegram_id, (step.text or "Отправьте идею одним сообщением."))
+            title = escape(step.title)
+            body = escape(step.text or "")
+            instr = (
+                "Пришлите ваш ответ в этот чат.\n"
+                "- Учитывается один последний ответ\n"
+                "- В свободной форме\n"
+                "- Лаконично, важна скорость\n"
+                "- Укажите логику решения, использванные приёмы, методы, обоснуйте"
+            )
+            text = f"<b>{title}</b>\n\n{body}\n\n<i>{instr}</i>".strip()
+            await bot.send_message(user.telegram_id, text, parse_mode="HTML")
         elif phase == 1:
-            await bot.send_message(user.telegram_id, "Приём идей завершён. Смотрите общий экран.")
-        elif phase == 2:
             await bot.send_message(user.telegram_id, "Начато голосование за идеи. Можно выбрать несколько.")
             async with AsyncSessionLocal() as s:
                 kb = await idea_vote_kb(s, step, user)
             await bot.send_message(user.telegram_id, "Выберите идеи:", reply_markup=kb)
-        elif phase == 3:
+        elif phase == 2:
             await bot.send_message(user.telegram_id, "Голосование завершено. Смотрите общий экран.")
     elif step.type == "quiz":
         if phase == 0:
