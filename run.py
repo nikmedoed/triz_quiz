@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from app.bot import router as bot_router
-from app.db import Base, engine, AsyncSessionLocal
+from app.db import Base, engine, AsyncSessionLocal, apply_migrations
 from app.scenario_loader import load_if_empty
 from app.settings import settings
 from app.web import router as web_router
@@ -20,6 +20,7 @@ async def init_db_and_scenario() -> None:
     """Create tables and load scenario if database is empty."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await apply_migrations(conn)
     async with AsyncSessionLocal() as session:
         if os.path.exists("scenario.yaml"):
             await load_if_empty(session, path="scenario.yaml")

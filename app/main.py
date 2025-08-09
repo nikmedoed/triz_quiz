@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from aiogram import Bot, Dispatcher
 
-from app.db import Base, engine, AsyncSessionLocal
+from app.db import Base, engine, AsyncSessionLocal, apply_migrations
 from app.web import router
 from app.scenario_loader import load_if_empty
 from app.settings import settings
@@ -19,6 +19,7 @@ async def on_startup():
     # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await apply_migrations(conn)
     # Load scenario once
     async with AsyncSessionLocal() as s:
         try:
