@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, List
 
 from aiogram import Bot, Dispatcher, Router, F
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import AsyncSessionLocal
 from app.models import User, GlobalState, Step, StepOption, Idea, IdeaVote, McqAnswer
 from app.scoring import add_mcq_points
+from app.web import hub
 
 router = Router()
 
@@ -59,16 +60,26 @@ async def idea_vote_kb(session: AsyncSession, open_step: Step, voter: User):
         rows = [[InlineKeyboardButton(text="Нет идей для голосования", callback_data="noop")]]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
-# /start and name capture
-
 @router.message(CommandStart())
 async def cmd_start(message: Message, bot: Bot):
     session, user, state, step = await get_ctx(str(message.from_user.id))
     try:
-        if not user.name:
-            await message.answer("Введите имя для участия (отправьте одним сообщением).")
-            return
-        await message.answer(f"Текущее имя: {user.name}\nЕсли хотите изменить — отправьте новое сейчас.")
+        user.waiting_for_name = True
+        await session.commit()
+        if user.name:
+            await message.answer(f"Текущее имя: {user.name}\nОтправьте новое имя одним сообщением.\nИли /cancel — оставить как есть.")
+        else:
+            await message.answer("Введите имя для участия (одним сообщением).")
+    finally:
+        await session.close()
+
+@router.message(Command("cancel"))
+async def cmd_cancel(message: Message, bot: Bot):
+    session, user, state, step = await get_ctx(str(message.from_user.id))
+    try:
+        user.waiting_for_name = False
+        await session.commit()
+        await message.answer("Ок, имя не меняем.")
         await send_prompt(bot, user, step, state.phase)
     finally:
         await session.close()
@@ -77,24 +88,31 @@ async def cmd_start(message: Message, bot: Bot):
 async def on_text(message: Message, bot: Bot):
     session, user, state, step = await get_ctx(str(message.from_user.id))
     try:
-        if not user.name:
-            user.name = message.text.strip()[:120]
+        # 1) режим ввода имени работает ТОЛЬКО если он активирован /start
+        if user.waiting_for_name:
+            new_name = message.text.strip()[:120]
+            if not new_name:
+                await message.answer("Имя пустое. Введите заново или /cancel.")
+                return
+            user.name = new_name
+            user.waiting_for_name = False
             await session.commit()
+            await hub.broadcast({"type": "reload"})  # появится на экране регистрации
             await message.answer("Имя сохранено. Готово к участию.")
             await send_prompt(bot, user, step, state.phase)
             return
-        # Open ideas only in phase 0
+
+        # 2) обычные текстовые ответы принимаем только в open:collect
         if step.type == "open" and state.phase == 0:
             await session.execute(delete(Idea).where(Idea.step_id == step.id, Idea.user_id == user.id))
             session.add(Idea(step_id=step.id, user_id=user.id, text=message.text.strip()))
             await session.commit()
-            # time-to-first-answer is measured when MCQ pressed; for open we count at submission time
             delta_ms = int((datetime.utcnow() - state.step_started_at).total_seconds() * 1000)
             user.total_answer_ms += max(0, delta_ms)
             await session.commit()
             await message.answer("Идея принята. Можно отправить новое сообщение, чтобы заменить.")
         else:
-            await message.answer("Сейчас текстовые ответы не принимаются. Дождитесь команды модератора.")
+            await message.answer("Сейчас текстовые ответы не принимаются. Дождитесь команды модератора.\nЧтобы изменить имя: /start")
     finally:
         await session.close()
 
@@ -139,6 +157,8 @@ async def cb_vote(cb: CallbackQuery, bot: Bot):
             await cb.answer("Голос засчитан.")
         kb = await idea_vote_kb(session, step, user)
         await cb.message.edit_reply_markup(reply_markup=kb)
+        # обновить прогресс на общем экране (voters_count, last_vote_at)
+        await hub.broadcast({"type": "reload"})
     finally:
         await session.close()
 
