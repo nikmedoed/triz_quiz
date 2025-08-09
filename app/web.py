@@ -111,10 +111,10 @@ async def advance(session: AsyncSession, forward: bool):
     if forward:
         if step.type == "open":
             ideas_count = await session.scalar(select(func.count(Idea.id)).where(Idea.step_id == step.id))
-            total_phases = 4 if ideas_count else 2
+            total_phases = 3 if ideas_count else 1
             if gs.phase + 1 < total_phases:
                 gs.phase += 1
-                if ideas_count and gs.phase == 3:
+                if ideas_count and gs.phase == 2:
                     await add_vote_points(session, step.id)
                 await commit_and_notify()
             else:
@@ -150,7 +150,7 @@ async def move_to_block(session: AsyncSession, target_order_index: int, to_last_
     # compute correct "last phase" depending on step type and existing data
     if to_last_phase and target.type == "open":
         ideas_count = await session.scalar(select(func.count(Idea.id)).where(Idea.step_id == target.id))
-        gs.phase = 3 if ideas_count else 1
+        gs.phase = 2 if ideas_count else 0
     elif to_last_phase and target.type == "quiz":
         gs.phase = 1
     else:
@@ -165,14 +165,21 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
     elif step.type == "open":
         ideas = (await session.execute(select(Idea).where(Idea.step_id == step.id).order_by(Idea.submitted_at.asc()))).scalars().all()
         ctx.update(ideas=ideas)
-        if gs.phase == 2:  # vote
+        if gs.phase == 0:
+            total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
+            last_at = await session.scalar(select(func.max(Idea.submitted_at)).where(Idea.step_id == step.id))
+            last_ago_s = None
+            if last_at:
+                last_ago_s = int((datetime.utcnow() - last_at).total_seconds())
+            ctx.update(total_users=int(total_users or 0), last_answer_ago_s=last_ago_s)
+        if gs.phase == 1:  # vote
             voters = (await session.execute(select(IdeaVote.voter_id).where(IdeaVote.step_id == step.id).group_by(IdeaVote.voter_id))).all()
             last_vote_at = await session.scalar(select(func.max(IdeaVote.created_at)).where(IdeaVote.step_id == step.id))
             last_vote_ago_s = None
             if last_vote_at:
                 last_vote_ago_s = int((datetime.utcnow() - last_vote_at).total_seconds())
             ctx.update(voters_count=len(voters), last_vote_ago_s=last_vote_ago_s)
-        if gs.phase == 3:  # reveal
+        if gs.phase == 2:  # reveal
             # map idea_id -> [User]
             voters_map = {}
             for idea in ideas:

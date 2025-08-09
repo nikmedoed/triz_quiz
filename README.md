@@ -19,7 +19,7 @@ This project implements a TRIZ-club quiz/presentation system with **Telegram + W
 * **Mandatory Registration & Leaderboard** are **implicit** and **auto-inserted**: you **do not** specify them in the scenario.
 * **Blocks, not micro-steps**: Each content item is a **block** with **internal phases** and the **same Next/Prev controls**.
 
-  * `open` block phases: **collect → list (or none) → vote (if ideas exist) → reveal**. Voting is skipped if there are no ideas.
+  * `open` block phases: **collect → vote (if ideas exist) → reveal**. Voting is skipped if there are no ideas.
   * `quiz` block phases: **ask → reveal**.
 * **Universal Next/Prev**:
 

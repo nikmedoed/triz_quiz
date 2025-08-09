@@ -17,18 +17,9 @@
     {% if phase == 0 %}
       <p class="question">{{ step.text }}</p>
       <p class="hint">Отправляйте идеи боту. Здесь они пока не видны.</p>
+      <div class="progress">Ответов: <span id="answersCount">{{ ideas|length }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} • последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} • последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
+      <div class="timer" id="ideaTimer">05:00</div>
     {% elif phase == 1 %}
-      {% if ideas|length == 0 %}
-        <p class="hint">Ответов нет.</p>
-      {% else %}
-        <ol>
-        {% for idea in ideas %}
-          <li><div class="idea">{{ idea.text }}</div>
-              <div class="meta">ответ через {{ (idea.submitted_at - since).seconds }} секунд</div></li>
-        {% endfor %}
-        </ol>
-      {% endif %}
-    {% elif phase == 2 %}
       <p class="question">Голосование за идеи</p>
       <ol>
       {% for idea in ideas %}
@@ -36,10 +27,9 @@
             <div class="meta">ответ через {{ (idea.submitted_at - since).seconds }} секунд</div></li>
       {% endfor %}
       </ol>
-      <div class="progress">Проголосовало (≥1): {{ voters_count }}
-        {% if last_vote_ago_s is not none %} • последний голос {{ last_vote_ago_s }} с назад{% endif %}
-      </div>
-    {% elif phase == 3 %}
+      <div class="progress">Проголосовало: <span id="votesCount">{{ voters_count }}</span>{% if last_vote_ago_s is not none %} • последний голос <span id="lastVoteAgo">{{ last_vote_ago_s }}</span>{% else %} • последний голос <span id="lastVoteAgo">-</span>{% endif %}</div>
+      <div class="timer" id="voteTimer">01:00</div>
+    {% elif phase == 2 %}
       <ol>
         {% for idea in ideas %}
         <li>
@@ -99,7 +89,52 @@
   async function post(url){
     await fetch(url, {method:'POST'});
   }
+  function formatAgo(sec){
+    if(sec==null || sec==='-' || sec==='') return '-';
+    sec = parseInt(sec);
+    if(isNaN(sec)) return '-';
+    if(sec >= 60){ const m=Math.floor(sec/60); const s=sec%60; return m+' мин '+s+' с'; }
+    return sec+' с';
+  }
+  const timerEl = document.getElementById('ideaTimer') || document.getElementById('voteTimer');
+  if (timerEl){
+    const start = new Date('{{ since.isoformat() }}Z').getTime();
+    const duration = timerEl.id === 'ideaTimer' ? 5*60*1000 : 60*1000;
+    function tick(){
+      let left = duration - (Date.now() - start);
+      if(left < 0) left = 0;
+      const m = String(Math.floor(left/60000)).padStart(2,'0');
+      const s = String(Math.floor((left%60000)/1000)).padStart(2,'0');
+      timerEl.textContent = m+':'+s;
+    }
+    setInterval(tick,1000); tick();
+  }
+  const lastAnswerEl = document.getElementById('lastAnswerAgo');
+  const lastVoteEl = document.getElementById('lastVoteAgo');
+  let lastAnswerSec = lastAnswerEl ? parseInt(lastAnswerEl.textContent) : null;
+  let lastVoteSec = lastVoteEl ? parseInt(lastVoteEl.textContent) : null;
+  if (isNaN(lastAnswerSec)) lastAnswerSec = null;
+  if (isNaN(lastVoteSec)) lastVoteSec = null;
+  if (lastAnswerEl) lastAnswerEl.textContent = formatAgo(lastAnswerSec);
+  if (lastVoteEl) lastVoteEl.textContent = formatAgo(lastVoteSec);
+  setInterval(() => {
+    if (lastAnswerSec !== null){ lastAnswerSec++; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
+    if (lastVoteSec !== null){ lastVoteSec++; lastVoteEl.textContent = formatAgo(lastVoteSec); }
+  }, 1000);
   const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
-  ws.onmessage = (ev) => { const msg = JSON.parse(ev.data); if (msg.type === 'reload') location.reload(); };
+  ws.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === 'reload') location.reload();
+    if (msg.type === 'idea_progress'){
+      const cnt = document.getElementById('answersCount');
+      if (cnt) cnt.textContent = msg.count;
+      if (lastAnswerEl && msg.last !== undefined){ lastAnswerSec = msg.last; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
+    }
+    if (msg.type === 'vote_progress'){
+      const vcnt = document.getElementById('votesCount');
+      if (vcnt) vcnt.textContent = msg.count;
+      if (lastVoteEl && msg.last !== undefined){ lastVoteSec = msg.last; lastVoteEl.textContent = formatAgo(lastVoteSec); }
+    }
+  };
 </script>
 {% endblock %}
