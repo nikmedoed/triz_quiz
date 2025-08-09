@@ -223,7 +223,7 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 select(func.count(McqAnswer.id)).where(McqAnswer.step_id == step.id)
             )
             last_at = await session.scalar(
-                select(func.max(McqAnswer.created_at)).where(McqAnswer.step_id == step.id)
+                select(func.max(McqAnswer.answered_at)).where(McqAnswer.step_id == step.id)
             )
             last_answer_ago_s = None
             if last_at:

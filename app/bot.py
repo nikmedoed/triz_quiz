@@ -160,7 +160,9 @@ async def cb_mcq(cb: CallbackQuery, bot: Bot):
         await cb.message.edit_reply_markup(reply_markup=mcq_kb(options, selected=choice_idx))
         count = await session.scalar(select(func.count(McqAnswer.id)).where(McqAnswer.step_id == step.id))
         total = await session.scalar(select(func.count(User.id)).where(User.name != ""))
-        last_at = await session.scalar(select(func.max(McqAnswer.created_at)).where(McqAnswer.step_id == step.id))
+        last_at = await session.scalar(
+            select(func.max(McqAnswer.answered_at)).where(McqAnswer.step_id == step.id)
+        )
         last_ago = None
         if last_at:
             last_ago = int((datetime.utcnow() - last_at).total_seconds())
