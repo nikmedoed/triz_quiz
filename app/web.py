@@ -3,8 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Dict, Set
 
+import logging
+
 from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from sqlalchemy import select, delete, func
@@ -54,6 +56,18 @@ async def public(request: Request, session: AsyncSession = Depends(get_session))
 @router.get("/moderator", response_class=HTMLResponse)
 async def moderator(request: Request):
     return templates.TemplateResponse("moderator.html", {"request": request})
+
+
+@router.get("/reset", response_class=HTMLResponse)
+async def reset_page(request: Request):
+    logging.info("Reset link: /reset")
+    return templates.TemplateResponse("reset.html", {"request": request})
+
+
+@router.post("/reset")
+async def reset_confirm(request: Request, session: AsyncSession = Depends(get_session)):
+    await api_reset(session)
+    return RedirectResponse("/", status_code=302)
 
 @router.post("/api/reset")
 async def api_reset(session: AsyncSession = Depends(get_session)):

@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block body %}
+<div class="container">
+  <h1>Reset confirmation</h1>
+  <p>Are you sure you want to reset the database?</p>
+  <form method="post">
+    <button type="submit">Reset DB</button>
+  </form>
+  <button onclick="window.history.back()">Cancel</button>
+</div>
+{% endblock %}

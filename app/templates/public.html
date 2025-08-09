@@ -101,9 +101,13 @@
   <div class="controls">
     {% if step.type == 'registration' %}
       <button onclick="post('/api/next')">Next ▶️</button>
-      <button onclick="if(confirm('Reset DB?')) post('/api/reset')">Reset DB</button>
+      <form method="get" action="/reset" style="display:inline;">
+        <button type="submit">Reset DB</button>
+      </form>
     {% elif step.type == 'leaderboard' %}
-      <button onclick="if(confirm('Reset DB?')) post('/api/reset')">Reset DB</button>
+      <form method="get" action="/reset" style="display:inline;">
+        <button type="submit">Reset DB</button>
+      </form>
     {% else %}
       <button onclick="post('/api/next')">Next ▶️</button>
     {% endif %}

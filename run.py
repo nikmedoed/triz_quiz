@@ -3,6 +3,7 @@
 
 import asyncio
 import os
+import logging
 
 from aiogram import Bot, Dispatcher
 from fastapi import FastAPI
@@ -14,6 +15,8 @@ from app.db import Base, engine, AsyncSessionLocal, apply_migrations
 from app.scenario_loader import load_if_empty
 from app.settings import settings
 from app.web import router as web_router
+
+logging.basicConfig(level=logging.INFO)
 
 
 async def init_db_and_scenario() -> None:
@@ -35,7 +38,9 @@ async def run_web() -> None:
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
     app.mount("/avatars", StaticFiles(directory=settings.AVATAR_DIR, check_dir=False), name="avatars")
 
-    config = uvicorn.Config(app, host="0.0.0.0", port=8000)
+    host, port = "0.0.0.0", 8000
+    logging.info("Reset link: http://localhost:%s/reset", port)
+    config = uvicorn.Config(app, host=host, port=port)
     server = uvicorn.Server(config)
     await server.serve()
 
