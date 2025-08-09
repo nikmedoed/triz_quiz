@@ -211,8 +211,28 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 voters_map[idea.id] = rows
             ctx.update(voters_map=voters_map)
     elif step.type == "quiz":
-        options = (await session.execute(select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx))).scalars().all()
+        options = (
+            await session.execute(
+                select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx)
+            )
+        ).scalars().all()
         ctx.update(options=options)
+        if gs.phase == 0:
+            total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
+            answers_count = await session.scalar(
+                select(func.count(McqAnswer.id)).where(McqAnswer.step_id == step.id)
+            )
+            last_at = await session.scalar(
+                select(func.max(McqAnswer.answered_at)).where(McqAnswer.step_id == step.id)
+            )
+            last_answer_ago_s = None
+            if last_at:
+                last_answer_ago_s = int((datetime.utcnow() - last_at).total_seconds())
+            ctx.update(
+                total_users=int(total_users or 0),
+                answers_count=int(answers_count or 0),
+                last_answer_ago_s=last_answer_ago_s,
+            )
         if gs.phase == 1:
             counts = []
             avatars_map = []
@@ -231,7 +251,14 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                     )
                 ).scalars().all()
                 avatars_map.append([u.telegram_id for u in users])
-            ctx.update(counts=counts, correct=step.correct_index, avatars_map=avatars_map)
+            total = sum(counts)
+            percents = [round((c / total) * 100) if total else 0 for c in counts]
+            ctx.update(
+                counts=counts,
+                percents=percents,
+                correct=step.correct_index,
+                avatars_map=avatars_map,
+            )
     elif step.type == "leaderboard":
         users = (await session.execute(select(User))).scalars().all()
         users.sort(key=lambda u: (-u.total_score, u.total_answer_ms, u.joined_at))
