@@ -1,5 +1,6 @@
 # FastAPI web (public & moderator), WebSockets broadcasting, block/phase transitions
 from __future__ import annotations
+import asyncio
 from datetime import datetime
 from typing import Dict, Set
 
@@ -110,6 +111,7 @@ async def notify_all(session: AsyncSession):
     for u in users:
         try:
             await send_prompt(bot, u, step, gs.phase)
+            await asyncio.sleep(settings.TELEGRAM_SEND_DELAY)
         except Exception:
             pass
     await bot.session.close()

@@ -37,6 +37,7 @@ This project implements a TRIZ-club quiz/presentation system with **Telegram + W
 TELEGRAM_BOT_TOKEN=123456:ABCDEF...
 BASE_URL=http://localhost:8000
 DATABASE_URL=sqlite+aiosqlite:///./quiz.db
+TELEGRAM_SEND_DELAY=0.05
 ```
 
 2. **Install**:
@@ -58,6 +59,8 @@ Open:
 * **Moderator**: `http://localhost:8000/moderator`
 
 Invite participants to start the Telegram bot with `/start`. After they set a name, advancing phases from the moderator UI will push messages to all registered participants.
+
+Messages are throttled with a small delay (configurable via `TELEGRAM_SEND_DELAY`) to avoid Telegram rate limits.
 
 ---
 
