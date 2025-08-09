@@ -39,7 +39,7 @@ window.renderMcq = function() {
       label.className = 'mcq-count';
       label.textContent = `${data.counts[i]} (${data.percents[i]}%)`;
       label.style.left = bar.x + 'px';
-      label.style.top = Math.max(bar.y - 16, 0) + 'px';
+      label.style.top = Math.max(bar.y - 24, 0) + 'px';
       container.appendChild(label);
 
       const div = document.createElement('div');
