@@ -93,8 +93,7 @@ async def cmd_cancel(message: Message, bot: Bot):
     try:
         user.waiting_for_name = False
         await session.commit()
-        await message.answer("Ок, имя не меняем.")
-        await send_prompt(bot, user, step, state.phase)
+        await send_prompt(bot, user, step, state.phase, prefix="Ок, имя не меняем.")
     finally:
         await session.close()
 
@@ -114,8 +113,7 @@ async def on_text(message: Message, bot: Bot):
             await save_avatar(bot, user)
             await session.commit()
             await hub.broadcast({"type": "reload"})  # появится на экране регистрации
-            await message.answer("Имя сохранено. Готово к участию.")
-            await send_prompt(bot, user, step, state.phase)
+            await send_prompt(bot, user, step, state.phase, prefix="Имя сохранено. Готово к участию.")
             return
 
         # 2) обычные текстовые ответы принимаем только в open:collect
@@ -148,6 +146,9 @@ async def cb_mcq(cb: CallbackQuery, bot: Bot):
             await cb.answer("Сейчас не этап ответов.", show_alert=True)
             return
         existing = (await session.execute(select(McqAnswer).where(McqAnswer.step_id == step.id, McqAnswer.user_id == user.id))).scalar_one_or_none()
+        if existing and existing.choice_idx == choice_idx:
+            await cb.answer("Ответ не изменён.")
+            return
         if existing:
             existing.choice_idx = choice_idx
             existing.answered_at = datetime.utcnow()
@@ -208,9 +209,10 @@ async def cb_vote(cb: CallbackQuery, bot: Bot):
     finally:
         await session.close()
 
-async def send_prompt(bot: Bot, user: User, step: Step, phase: int):
+async def build_prompt_messages(user: User, step: Step, phase: int):
+    msgs = []
     if step.type == "registration":
-        await bot.send_message(user.telegram_id, "Ждём начала. Вы на экране регистрации.")
+        msgs.append(("Ждём начала. Вы на экране регистрации.", {}))
     elif step.type == "open":
         if phase == 0:
             header = "Предложите идею решения проблемной ситуации (открытый ответ)"
@@ -229,20 +231,31 @@ async def send_prompt(bot: Bot, user: User, step: Step, phase: int):
                 f"{body}\n\n\n"
                 f"<i>{instr}</i>"
             ).strip()
-            await bot.send_message(user.telegram_id, text, parse_mode="HTML")
+            msgs.append((text, {"parse_mode": "HTML"}))
         elif phase == 1:
-            await bot.send_message(user.telegram_id, "Начато голосование за идеи. Можно выбрать несколько.")
             async with AsyncSessionLocal() as s:
-                kb = await idea_vote_kb(s, step, user)
-            await bot.send_message(user.telegram_id, "Выберите идеи:", reply_markup=kb)
+                count = await s.scalar(select(func.count(Idea.id)).where(Idea.step_id == step.id))
+                if count:
+                    msgs.append(("Начато голосование за идеи. Можно выбрать несколько.", {}))
+                    kb = await idea_vote_kb(s, step, user)
+                    msgs.append(("Выберите идеи:", {"reply_markup": kb}))
+                else:
+                    msgs.append(("Ответов нет. Смотрите общий экран.", {}))
         elif phase == 2:
-            await bot.send_message(user.telegram_id, "Голосование завершено. Смотрите общий экран.")
+            msgs.append(("Голосование завершено. Смотрите общий экран.", {}))
     elif step.type == "quiz":
         if phase == 0:
             async with AsyncSessionLocal() as s:
-                options = [o.text for o in (await s.execute(
-                    select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx)
-                )).scalars().all()]
+                options = [
+                    o.text
+                    for o in (
+                        await s.execute(
+                            select(StepOption)
+                            .where(StepOption.step_id == step.id)
+                            .order_by(StepOption.idx)
+                        )
+                    ).scalars().all()
+                ]
             header = "Выберите один вариант ответа"
             title = escape(step.title)
             instr = (
@@ -252,13 +265,22 @@ async def send_prompt(bot: Bot, user: User, step: Step, phase: int):
                 "- Можно изменить выбор"
             )
             text = f"<b>{header}</b>\n\n{title}\n\n<i>{instr}</i>"
-            await bot.send_message(
-                user.telegram_id,
-                text,
-                parse_mode="HTML",
-                reply_markup=mcq_kb(options, selected=None),
-            )
+            msgs.append((text, {"parse_mode": "HTML", "reply_markup": mcq_kb(options, selected=None)}))
         else:
-            await bot.send_message(user.telegram_id, "Ответы закрыты. Смотрите общий экран.")
+            msgs.append(("Ответы закрыты. Смотрите общий экран.", {}))
     elif step.type == "leaderboard":
-        await bot.send_message(user.telegram_id, "Финальные результаты на общем экране.")
+        msgs.append(("Финальные результаты на общем экране.", {}))
+    return msgs
+
+
+async def send_prompt(bot: Bot, user: User, step: Step, phase: int, prefix: str | None = None):
+    msgs = await build_prompt_messages(user, step, phase)
+    if prefix:
+        if msgs:
+            text, kwargs = msgs[0]
+            sep = "\n\n" if text else ""
+            msgs[0] = (f"{prefix}{sep}{text}", kwargs)
+        else:
+            msgs.insert(0, (prefix, {}))
+    for text, kwargs in msgs:
+        await bot.send_message(user.telegram_id, text, **kwargs)

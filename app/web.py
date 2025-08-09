@@ -110,7 +110,7 @@ async def advance(session: AsyncSession, forward: bool):
     if forward:
         if step.type == "open":
             ideas_count = await session.scalar(select(func.count(Idea.id)).where(Idea.step_id == step.id))
-            total_phases = 3 if ideas_count else 1
+            total_phases = 3 if ideas_count else 2
             if gs.phase + 1 < total_phases:
                 gs.phase += 1
                 gs.step_started_at = datetime.utcnow()
@@ -152,7 +152,7 @@ async def move_to_block(session: AsyncSession, target_order_index: int, to_last_
     # compute correct "last phase" depending on step type and existing data
     if to_last_phase and target.type == "open":
         ideas_count = await session.scalar(select(func.count(Idea.id)).where(Idea.step_id == target.id))
-        gs.phase = 2 if ideas_count else 0
+        gs.phase = 2 if ideas_count else 1
     elif to_last_phase and target.type == "quiz":
         gs.phase = 1
     else:
@@ -190,9 +190,17 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             if last_at:
                 last_ago_s = int((datetime.utcnow() - last_at).total_seconds())
             ctx.update(total_users=int(total_users or 0), last_answer_ago_s=last_ago_s)
-        if gs.phase == 1:  # vote
-            voters = (await session.execute(select(IdeaVote.voter_id).where(IdeaVote.step_id == step.id).group_by(IdeaVote.voter_id))).all()
-            last_vote_at = await session.scalar(select(func.max(IdeaVote.created_at)).where(IdeaVote.step_id == step.id))
+        if gs.phase == 1 and ideas:  # vote
+            voters = (
+                await session.execute(
+                    select(IdeaVote.voter_id)
+                    .where(IdeaVote.step_id == step.id)
+                    .group_by(IdeaVote.voter_id)
+                )
+            ).all()
+            last_vote_at = await session.scalar(
+                select(func.max(IdeaVote.created_at)).where(IdeaVote.step_id == step.id)
+            )
             last_vote_ago_s = None
             if last_vote_at:
                 last_vote_ago_s = int((datetime.utcnow() - last_vote_at).total_seconds())
@@ -236,6 +244,7 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
         if gs.phase == 1:
             counts = []
             avatars_map = []
+            names_map = {}
             for opt in options:
                 n = await session.scalar(
                     select(func.count(McqAnswer.id)).where(
@@ -251,6 +260,8 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                     )
                 ).scalars().all()
                 avatars_map.append([u.telegram_id for u in users])
+                for u in users:
+                    names_map[str(u.telegram_id)] = u.name
             total = sum(counts)
             percents = [round((c / total) * 100) if total else 0 for c in counts]
             ctx.update(
@@ -258,6 +269,7 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 percents=percents,
                 correct=step.correct_index,
                 avatars_map=avatars_map,
+                names_map=names_map,
             )
     elif step.type == "leaderboard":
         users = (await session.execute(select(User))).scalars().all()

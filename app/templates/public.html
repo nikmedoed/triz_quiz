@@ -7,7 +7,7 @@
     <div class="grid">
       {% for u in users %}
         <div class="card">
-          <img class="avatar" src="/avatars/{{ u.telegram_id }}.jpg" />
+          <img class="avatar" src="/avatars/{{ u.telegram_id }}.jpg" title="{{ u.name }}" />
           <div class="name">{{ u.name }}</div>
         </div>
       {% endfor %}
@@ -19,30 +19,34 @@
       <p class="hint">Отправляйте идеи боту. Здесь они пока не видны.</p>
       <div class="progress">Ответов: <span id="answersCount">{{ ideas|length }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} • последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} • последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
       <div class="timer" id="ideaTimer">05:00</div>
-    {% elif phase == 1 %}
-      <p class="question">Голосование за идеи</p>
-      <ol>
-      {% for idea in ideas %}
-        <li><div class="idea">{{ idea.text }}</div>
-            <div class="meta">ответ через {{ idea.delay_text }}</div></li>
-      {% endfor %}
-      </ol>
-      <div class="progress">Проголосовало: <span id="votesCount">{{ voters_count }}</span>{% if last_vote_ago_s is not none %} • последний голос <span id="lastVoteAgo">{{ last_vote_ago_s }}</span>{% else %} • последний голос <span id="lastVoteAgo">-</span>{% endif %}</div>
-      <div class="timer" id="voteTimer">01:00</div>
-    {% elif phase == 2 %}
-      <ol>
+      {% elif phase == 1 %}
+        {% if ideas %}
+        <p class="question">Голосование за идеи</p>
+        <ol>
         {% for idea in ideas %}
-        <li>
-          <div class="idea">{{ idea.text }}</div>
-          <div class="meta"><img class="avatar small" src="/avatars/{{ idea.author.telegram_id }}.jpg" /> {{ idea.author.name }}</div>
-          <div class="votes avatars">Голоса: {{ (voters_map.get(idea.id) or [])|length }}
-            {% for v in voters_map.get(idea.id) or [] %}
-              <img class="avatar small" src="/avatars/{{ v.telegram_id }}.jpg" />
-            {% endfor %}
-          </div>
-        </li>
+          <li><div class="idea">{{ idea.text }}</div>
+              <div class="meta">ответ через {{ idea.delay_text }}</div></li>
         {% endfor %}
-      </ol>
+        </ol>
+        <div class="progress">Проголосовало: <span id="votesCount">{{ voters_count }}</span>{% if last_vote_ago_s is not none %} • последний голос <span id="lastVoteAgo">{{ last_vote_ago_s }}</span>{% else %} • последний голос <span id="lastVoteAgo">-</span>{% endif %}</div>
+        <div class="timer" id="voteTimer">01:00</div>
+        {% else %}
+        <p class="hint">Ответов нет</p>
+        {% endif %}
+    {% elif phase == 2 %}
+        <ol>
+          {% for idea in ideas %}
+          <li>
+            <div class="idea">{{ idea.text }}</div>
+            <div class="meta"><img class="avatar small" src="/avatars/{{ idea.author.telegram_id }}.jpg" title="{{ idea.author.name }}" /> {{ idea.author.name }} • ответ через {{ idea.delay_text }}</div>
+            <div class="votes avatars">Голоса: {{ (voters_map.get(idea.id) or [])|length }}
+              {% for v in voters_map.get(idea.id) or [] %}
+                <img class="avatar small" src="/avatars/{{ v.telegram_id }}.jpg" title="{{ v.name }}" />
+              {% endfor %}
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
     {% endif %}
 
   {% elif step.type == 'quiz' %}
@@ -58,20 +62,23 @@
     {% else %}
       <div class="question">Результаты</div>
       <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
-      <script>
-        window.__mcq = {
-          labels: [{% for opt in options %}'{{ loop.index }}. {{ opt.text|replace("'", "\'") }}',{% endfor %}],
-          counts: [{% for c in counts %}{{ c }},{% endfor %}],
-          percents: [{% for p in percents %}{{ p }},{% endfor %}],
-          correct: {{ correct }},
-          avatars: [
-            {% for arr in avatars_map %}[
-              {% for id in arr %}'{{ id }}'{% if not loop.last %},{% endif %}{% endfor %}
-            ]{% if not loop.last %},{% endif %}{% endfor %}
-          ]
-        };
-        document.addEventListener('DOMContentLoaded', () => window.renderMcq());
-      </script>
+        <script>
+          window.__mcq = {
+            labels: [{% for opt in options %}'{{ loop.index }}. {{ opt.text|replace("'", "\'") }}',{% endfor %}],
+            counts: [{% for c in counts %}{{ c }},{% endfor %}],
+            percents: [{% for p in percents %}{{ p }},{% endfor %}],
+            correct: {{ correct }},
+            avatars: [
+              {% for arr in avatars_map %}[
+                {% for id in arr %}'{{ id }}'{% if not loop.last %},{% endif %}{% endfor %}
+              ]{% if not loop.last %},{% endif %}{% endfor %}
+            ],
+            names: {
+              {% for id, name in names_map.items() %}'{{ id }}': '{{ name|replace("'", "\'") }}'{% if not loop.last %},{% endif %}{% endfor %}
+            }
+          };
+          document.addEventListener('DOMContentLoaded', () => window.renderMcq());
+        </script>
     {% endif %}
 
   {% elif step.type == 'leaderboard' %}
