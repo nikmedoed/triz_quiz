@@ -100,11 +100,11 @@
 </div>
 {% if step.type == 'registration' or step.type == 'leaderboard' %}
 <form method="get" action="/reset" class="reset-form">
-  <button class="btn btn-secondary" type="submit">Reset DB</button>
+  <button class="btn btn-secondary" type="submit">Сброс БД</button>
 </form>
 {% endif %}
 {% if step.type != 'leaderboard' %}
-<button class="btn btn-primary next-btn" onclick="post('/api/next')">Next ▶️</button>
+<button class="btn btn-primary next-btn" onclick="post('/api/next')">Далее</button>
 {% endif %}
 
 <script>

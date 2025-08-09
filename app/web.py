@@ -56,7 +56,7 @@ async def public(request: Request, session: AsyncSession = Depends(get_session))
 
 @router.get("/reset", response_class=HTMLResponse)
 async def reset_page(request: Request):
-    logging.info("Reset link: /reset")
+    logging.info("Ссылка сброса: /reset")
     return templates.TemplateResponse("reset.html", {"request": request})
 
 

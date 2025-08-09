@@ -2,11 +2,11 @@
 {% set active_page = 'reset' %}
 {% block body %}
 <div class="container">
-  <h1>Reset confirmation</h1>
-  <p>Are you sure you want to reset the database?</p>
+  <h1>Подтверждение сброса</h1>
+  <p>Вы уверены, что хотите сбросить базу данных?</p>
   <form method="post">
-    <button class="btn btn-primary" type="submit">Reset DB</button>
+    <button class="btn btn-primary" type="submit">Сброс БД</button>
   </form>
-  <button class="btn btn-secondary" onclick="window.history.back()">Cancel</button>
+  <button class="btn btn-secondary" onclick="window.history.back()">Отмена</button>
 </div>
 {% endblock %}
