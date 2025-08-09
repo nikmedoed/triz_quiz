@@ -166,7 +166,20 @@ async def cb_vote(cb: CallbackQuery, bot: Bot):
         kb = await idea_vote_kb(session, step, user)
         await cb.message.edit_reply_markup(reply_markup=kb)
         # обновить прогресс на общем экране (voters_count, last_vote_at)
-        await hub.broadcast({"type": "reload"})
+        voters = (await session.execute(
+            select(IdeaVote.voter_id)
+            .where(IdeaVote.step_id == step.id)
+            .group_by(IdeaVote.voter_id)
+        )).all()
+        last_vote_at = await session.scalar(
+            select(func.max(IdeaVote.created_at)).where(IdeaVote.step_id == step.id)
+        )
+        last_ago = None
+        if last_vote_at:
+            last_ago = int((datetime.utcnow() - last_vote_at).total_seconds())
+        await hub.broadcast(
+            {"type": "vote_progress", "count": len(voters), "last": last_ago}
+        )
     finally:
         await session.close()
 
@@ -175,6 +188,7 @@ async def send_prompt(bot: Bot, user: User, step: Step, phase: int):
         await bot.send_message(user.telegram_id, "Ждём начала. Вы на экране регистрации.")
     elif step.type == "open":
         if phase == 0:
+            header = "Предложите идею решения проблемной ситуации (открытый ответ)"
             title = escape(step.title)
             body = escape(step.text or "")
             instr = (
@@ -184,7 +198,12 @@ async def send_prompt(bot: Bot, user: User, step: Step, phase: int):
                 "- Лаконично, важна скорость\n"
                 "- Укажите логику решения, использванные приёмы, методы, обоснуйте"
             )
-            text = f"<b>{title}</b>\n\n{body}\n\n<i>{instr}</i>".strip()
+            text = (
+                f"<b>{header}</b>\n"
+                f"{title}\n\n"
+                f"{body}\n\n\n"
+                f"<i>{instr}</i>"
+            ).strip()
             await bot.send_message(user.telegram_id, text, parse_mode="HTML")
         elif phase == 1:
             await bot.send_message(user.telegram_id, "Начато голосование за идеи. Можно выбрать несколько.")

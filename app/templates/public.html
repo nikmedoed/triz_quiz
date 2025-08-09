@@ -27,9 +27,8 @@
             <div class="meta">ответ через {{ (idea.submitted_at - since).seconds }} секунд</div></li>
       {% endfor %}
       </ol>
-      <div class="progress">Проголосовало (≥1): {{ voters_count }}
-        {% if last_vote_ago_s is not none %} • последний голос {{ last_vote_ago_s }} с назад{% endif %}
-      </div>
+      <div class="progress">Проголосовало: <span id="votesCount">{{ voters_count }}</span>{% if last_vote_ago_s is not none %} • последний голос <span id="lastVoteAgo">{{ last_vote_ago_s }}</span>{% else %} • последний голос <span id="lastVoteAgo">-</span>{% endif %}</div>
+      <div class="timer" id="voteTimer">01:00</div>
     {% elif phase == 2 %}
       <ol>
         {% for idea in ideas %}
@@ -97,10 +96,10 @@
     if(sec >= 60){ const m=Math.floor(sec/60); const s=sec%60; return m+' мин '+s+' с'; }
     return sec+' с';
   }
-  const timerEl = document.getElementById('ideaTimer');
+  const timerEl = document.getElementById('ideaTimer') || document.getElementById('voteTimer');
   if (timerEl){
     const start = new Date('{{ since.isoformat() }}Z').getTime();
-    const duration = 5*60*1000;
+    const duration = timerEl.id === 'ideaTimer' ? 5*60*1000 : 60*1000;
     function tick(){
       let left = duration - (Date.now() - start);
       if(left < 0) left = 0;
@@ -110,8 +109,18 @@
     }
     setInterval(tick,1000); tick();
   }
-  const lastEl = document.getElementById('lastAnswerAgo');
-  if (lastEl) lastEl.textContent = formatAgo(lastEl.textContent);
+  const lastAnswerEl = document.getElementById('lastAnswerAgo');
+  const lastVoteEl = document.getElementById('lastVoteAgo');
+  let lastAnswerSec = lastAnswerEl ? parseInt(lastAnswerEl.textContent) : null;
+  let lastVoteSec = lastVoteEl ? parseInt(lastVoteEl.textContent) : null;
+  if (isNaN(lastAnswerSec)) lastAnswerSec = null;
+  if (isNaN(lastVoteSec)) lastVoteSec = null;
+  if (lastAnswerEl) lastAnswerEl.textContent = formatAgo(lastAnswerSec);
+  if (lastVoteEl) lastVoteEl.textContent = formatAgo(lastVoteSec);
+  setInterval(() => {
+    if (lastAnswerSec !== null){ lastAnswerSec++; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
+    if (lastVoteSec !== null){ lastVoteSec++; lastVoteEl.textContent = formatAgo(lastVoteSec); }
+  }, 1000);
   const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
@@ -119,7 +128,12 @@
     if (msg.type === 'idea_progress'){
       const cnt = document.getElementById('answersCount');
       if (cnt) cnt.textContent = msg.count;
-      if (lastEl && msg.last !== undefined){ lastEl.textContent = formatAgo(msg.last); }
+      if (lastAnswerEl && msg.last !== undefined){ lastAnswerSec = msg.last; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
+    }
+    if (msg.type === 'vote_progress'){
+      const vcnt = document.getElementById('votesCount');
+      if (vcnt) vcnt.textContent = msg.count;
+      if (lastVoteEl && msg.last !== undefined){ lastVoteSec = msg.last; lastVoteEl.textContent = formatAgo(lastVoteSec); }
     }
   };
 </script>
