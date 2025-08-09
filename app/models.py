@@ -14,6 +14,11 @@ class User(Base):
     joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     total_score: Mapped[int] = mapped_column(Integer, default=0)
     total_answer_ms: Mapped[int] = mapped_column(Integer, default=0)
+    open_answer_ms: Mapped[int] = mapped_column(Integer, default=0)
+    open_answer_count: Mapped[int] = mapped_column(Integer, default=0)
+    quiz_answer_ms: Mapped[int] = mapped_column(Integer, default=0)
+    quiz_answer_count: Mapped[int] = mapped_column(Integer, default=0)
+    last_vote_msg_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     waiting_for_name: Mapped[bool] = mapped_column(Boolean, default=False)  # /start → True, до сохранения имени
 
 class Step(Base):
