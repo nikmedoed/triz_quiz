@@ -53,7 +53,7 @@ def mcq_kb(options: List[str], selected: Optional[int]) -> InlineKeyboardMarkup:
     """Inline keyboard with options as button labels."""
     kb = InlineKeyboardBuilder()
     for i, text in enumerate(options):
-        label = text
+        label = f"{i + 1}. {text}"
         if selected == i:
             label = "✅ " + label
         kb.button(text=label, callback_data=f"mcq:{i}")
@@ -150,6 +150,7 @@ async def cb_mcq(cb: CallbackQuery, bot: Bot):
         existing = (await session.execute(select(McqAnswer).where(McqAnswer.step_id == step.id, McqAnswer.user_id == user.id))).scalar_one_or_none()
         if existing:
             existing.choice_idx = choice_idx
+            existing.answered_at = datetime.utcnow()
         else:
             session.add(McqAnswer(step_id=step.id, user_id=user.id, choice_idx=choice_idx))
             delta_ms = int((datetime.utcnow() - state.step_started_at).total_seconds() * 1000)

@@ -60,8 +60,9 @@
       <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
       <script>
         window.__mcq = {
-          labels: [{% for opt in options %}'{{ opt.text|replace("'", "\'") }}',{% endfor %}],
+          labels: [{% for opt in options %}'{{ loop.index }}. {{ opt.text|replace("'", "\'") }}',{% endfor %}],
           counts: [{% for c in counts %}{{ c }},{% endfor %}],
+          percents: [{% for p in percents %}{{ p }},{% endfor %}],
           correct: {{ correct }},
           avatars: [
             {% for arr in avatars_map %}[

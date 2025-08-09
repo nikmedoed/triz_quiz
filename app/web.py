@@ -251,7 +251,14 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                     )
                 ).scalars().all()
                 avatars_map.append([u.telegram_id for u in users])
-            ctx.update(counts=counts, correct=step.correct_index, avatars_map=avatars_map)
+            total = sum(counts)
+            percents = [round((c / total) * 100) if total else 0 for c in counts]
+            ctx.update(
+                counts=counts,
+                percents=percents,
+                correct=step.correct_index,
+                avatars_map=avatars_map,
+            )
     elif step.type == "leaderboard":
         users = (await session.execute(select(User))).scalars().all()
         users.sort(key=lambda u: (-u.total_score, u.total_answer_ms, u.joined_at))

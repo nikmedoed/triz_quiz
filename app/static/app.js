@@ -5,18 +5,44 @@ window.renderMcq = function() {
   const data = window.__mcq;
   const container = ctx.parentNode;
   const colors = data.labels.map((_, i) => i === data.correct ? '#4caf50' : '#888');
+  const counts = data.counts;
   const chart = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: data.labels,
-      datasets: [{ label: 'Votes', data: data.counts, backgroundColor: colors, borderColor: colors }]
+      datasets: [{ label: 'Votes (%)', data: data.percents, backgroundColor: colors, borderColor: colors }]
     },
     options: {
       responsive: true,
-      plugins: { legend: { display: false } },
-      animation: { onComplete: drawAvatars }
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${counts[ctx.dataIndex]} (${data.percents[ctx.dataIndex]}%)`
+          }
+        }
+      },
+      scales: {
+        y: {
+          ticks: { callback: value => value + '%' },
+          suggestedMax: 100
+        }
+      },
+      animation: { onComplete: () => { drawAvatars(); drawCounts(); } }
     }
   });
+
+  function drawCounts(){
+    const meta = chart.getDatasetMeta(0);
+    const ctx2 = chart.ctx;
+    ctx2.save();
+    ctx2.fillStyle = '#000';
+    ctx2.textAlign = 'center';
+    meta.data.forEach((bar, i) => {
+      ctx2.fillText(`${counts[i]} (${data.percents[i]}%)`, bar.x, bar.y - 5);
+    });
+    ctx2.restore();
+  }
 
   function drawAvatars(){
     container.querySelectorAll('.mcq-avatar-col').forEach(e => e.remove());
