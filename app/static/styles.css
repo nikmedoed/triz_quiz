@@ -78,6 +78,8 @@ a:focus {
   display: flex;
   flex-direction: column;
   padding: 0 var(--space-4);
+  min-height: 0;
+  overflow: hidden;
 }
 
 .content {
@@ -87,6 +89,8 @@ a:focus {
   align-items: center;
   justify-content: flex-start;
   overflow: auto;
+  width: 100%;
+  min-height: 0;
 }
 
 h1 {
