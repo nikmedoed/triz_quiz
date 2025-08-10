@@ -181,7 +181,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-frontend/index.html 
+frontend/index.jinja2
 /uploads
 uv.lock
 state.json

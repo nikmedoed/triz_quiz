@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base.jinja2' %}
 
 {% block top_center %}
   {% if phase == 0 %}
@@ -10,7 +10,7 @@
 
 {% block top_right %}
   {% if phase == 0 %}
-    <div class="status">Ответы: <span id="answersCount">{{ ideas|length }}</span> / {{ total_users }} Последний: <span id="lastAnswerAgo">{{ last_answer_ago_s if last_answer_ago_s is not none else '-' }}</span></div>
+    <div class="status">Ответы: <span id="answersCount">{{ ideas|length }}</span> / {{ total_users }} | последний: <span id="lastAnswerAgo">{{ last_answer_ago_s if last_answer_ago_s is not none else '-' }}</span></div>
   {% elif phase == 1 and ideas %}
     <div class="status">Проголосовало: <span id="votesCount">{{ voters_count }}</span> Последний: <span id="lastVoteAgo">{{ last_vote_ago_s if last_vote_ago_s is not none else '-' }}</span></div>
   {% endif %}
