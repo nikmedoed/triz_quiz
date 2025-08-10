@@ -58,7 +58,7 @@ async def public(request: Request, session: AsyncSession = Depends(get_session))
 @router.get("/reset", response_class=HTMLResponse)
 async def reset_page(request: Request):
     logging.info("Ссылка сброса: /reset")
-    return templates.TemplateResponse("reset.jinja2", {"request": request})
+    return templates.TemplateResponse("reset.jinja2", {"request": request, "stage_title": "Сброс"})
 
 
 @router.post("/reset")
@@ -179,10 +179,24 @@ async def move_to_block(session: AsyncSession, target_order_index: int, to_last_
     await session.commit()
 
 async def build_public_context(session: AsyncSession, step: Step, gs: GlobalState):
-    ctx = {"step": step, "phase": gs.phase, "since": gs.phase_started_at}
+    ctx = {
+        "step": step,
+        "phase": gs.phase,
+        "since": gs.phase_started_at,
+        "stage_title": "",
+        "instruction": "",
+        "timer_id": None,
+        "timer_text": "",
+        "status_mode": "",
+        "status_current": 0,
+        "status_total": 0,
+        "status_last": "-",
+        "show_reset": False,
+        "content_class": "",
+    }
     if step.type == "registration":
         users = (await session.execute(select(User).where(User.name != "").order_by(User.joined_at.asc()))).scalars().all()
-        ctx.update(users=users)
+        ctx.update(users=users, stage_title="Регистрация", show_reset=True)
     elif step.type == "open":
         rows = (
             await session.execute(
@@ -200,14 +214,24 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             for i in ideas:
                 delta = int((i.submitted_at - gs.step_started_at).total_seconds())
                 i.delay_text = humanize_seconds(max(0, delta))
-        ctx.update(ideas=ideas)
+        ctx.update(ideas=ideas, stage_title="Вопрос с открытым ответом")
         if gs.phase == 0:
             total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
             last_at = await session.scalar(select(func.max(Idea.submitted_at)).where(Idea.step_id == step.id))
             last_ago_s = None
             if last_at:
                 last_ago_s = int((datetime.utcnow() - last_at).total_seconds())
-            ctx.update(total_users=int(total_users or 0), last_answer_ago_s=last_ago_s)
+            ctx.update(
+                total_users=int(total_users or 0),
+                last_answer_ago_s=last_ago_s,
+                timer_id="ideaTimer",
+                timer_text="05:00",
+                status_mode="answers",
+                status_current=len(ideas),
+                status_total=int(total_users or 0),
+                status_last=last_ago_s if last_ago_s is not None else "-",
+                instruction="Отправляйте идеи боту. Здесь они пока не видны.",
+            )
         if gs.phase == 1 and ideas:  # vote
             voters = (
                 await session.execute(
@@ -222,7 +246,15 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             last_vote_ago_s = None
             if last_vote_at:
                 last_vote_ago_s = int((datetime.utcnow() - last_vote_at).total_seconds())
-            ctx.update(voters_count=len(voters), last_vote_ago_s=last_vote_ago_s)
+            ctx.update(
+                voters_count=len(voters),
+                last_vote_ago_s=last_vote_ago_s,
+                timer_id="voteTimer",
+                timer_text="01:00",
+                status_mode="votes",
+                status_current=len(voters),
+                status_last=last_vote_ago_s if last_vote_ago_s is not None else "-",
+            )
         if gs.phase == 2:  # reveal
             # map idea_id -> [User]
             voters_map = {}
@@ -243,7 +275,7 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx)
             )
         ).scalars().all()
-        ctx.update(options=options)
+        ctx.update(options=options, stage_title="Выбери верный" if gs.phase == 0 else "Выбери верный — результаты")
         if gs.phase == 0:
             total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
             answers_count = await session.scalar(
@@ -259,6 +291,11 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 total_users=int(total_users or 0),
                 answers_count=int(answers_count or 0),
                 last_answer_ago_s=last_answer_ago_s,
+                status_mode="answers",
+                status_current=int(answers_count or 0),
+                status_total=int(total_users or 0),
+                status_last=last_answer_ago_s if last_answer_ago_s is not None else "-",
+                instruction="Участники выбирают вариант в боте.",
             )
         if gs.phase == 1:
             counts = []
@@ -289,8 +326,9 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 correct=step.correct_index,
                 avatars_map=avatars_map,
                 names_map=names_map,
+                content_class="mcq-results",
             )
     elif step.type == "leaderboard":
         users = await get_leaderboard_users(session)
-        ctx.update(users=users)
+        ctx.update(users=users, stage_title="Результаты", show_reset=True)
     return ctx

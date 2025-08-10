@@ -14,24 +14,43 @@
 <body>
   <header class="topbar">
     <div class="top-left">
-      <a href="/" class="brand">ТРИЗ КВИЗ</a>
+      <div class="brand">{{ stage_title }}</div>
     </div>
     <div class="top-center">
-      {% block top_center %}{% endblock %}
+      {% if timer_id %}
+      <div class="timer" id="{{ timer_id }}">{{ timer_text }}</div>
+      {% endif %}
     </div>
     <div class="top-right">
-      {% block top_right %}{% endblock %}
+      {% if status_mode == 'answers' %}
+      <div class="status" id="answersStatus" data-total="{{ status_total }}">
+        <div>Ответы: <span id="answersCount">{{ status_current }}</span> / {{ status_total }}</div>
+        <div>Последний: <span id="lastAnswerAgo">{{ status_last }}</span></div>
+      </div>
+      {% elif status_mode == 'votes' %}
+      <div class="status">
+        <div>Проголосовало: <span id="votesCount">{{ status_current }}</span></div>
+        <div>Последний: <span id="lastVoteAgo">{{ status_last }}</span></div>
+      </div>
+      {% endif %}
+      {% if show_reset %}
+      <form method="get" action="/reset" class="reset-form">
+        <button class="btn btn-secondary" type="submit">Сброс БД</button>
+      </form>
+      {% endif %}
     </div>
   </header>
   <main class="main">
-    {% block body %}{% endblock %}
+    <div class="content{% if content_class %} {{ content_class }}{% endif %}">
+      {% block content %}{% endblock %}
+    </div>
   </main>
   <footer class="bottombar">
     <div class="footer-center">
-      {% block footer_center %}{% endblock %}
+      {{ instruction }}
     </div>
     <div class="footer-right">
-      {% block footer_right %}{% endblock %}
+      <button class="btn btn-primary" onclick="post('/api/next')">Далее</button>
     </div>
   </footer>
   <script>
