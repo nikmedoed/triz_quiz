@@ -3,6 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional, List
 from pathlib import Path
+import hashlib
+import random
+
+from PIL import Image, ImageDraw, ImageFont
 
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import CommandStart, Command
@@ -23,21 +27,56 @@ import app.texts as texts
 router = Router()
 
 
+EMOJIS = [
+    "😀",
+    "😎",
+    "🤖",
+    "🐱",
+    "🐶",
+    "🐼",
+    "🦊",
+    "🐯",
+    "🐸",
+    "🐧",
+]
+
+
+def _placeholder_avatar(path: Path, user: User) -> None:
+    """Generate a placeholder avatar with emoji and first letter."""
+    seed = int(hashlib.sha256(user.id.encode()).hexdigest(), 16)
+    emoji = EMOJIS[seed % len(EMOJIS)]
+    random.seed(seed)
+    bg_color = tuple(random.randint(150, 230) for _ in range(3))
+    size = 256
+    img = Image.new("RGB", (size, size), color=bg_color)
+    draw = ImageDraw.Draw(img)
+    try:
+        font_emoji = ImageFont.truetype("DejaVuSans.ttf", 160)
+        font_text = ImageFont.truetype("DejaVuSans.ttf", 80)
+    except Exception:
+        font_emoji = font_text = ImageFont.load_default()
+    draw.text((size / 2, size / 2 - 20), emoji, font=font_emoji, anchor="mm")
+    initial = (user.name[:1] or "?").upper()
+    draw.text((size / 2, size - 60), initial, font=font_text, anchor="mm", fill=(0, 0, 0))
+    img.save(path / f"{user.id}.jpg")
+
+
 async def save_avatar(bot: Bot, user: User):
     path = Path(settings.AVATAR_DIR)
     path.mkdir(exist_ok=True)
-    photos = await bot.get_user_profile_photos(user.telegram_id, limit=1)
+    photos = await bot.get_user_profile_photos(user.id, limit=1)
     if photos.total_count:
         file_id = photos.photos[0][-1].file_id
-        await bot.download(file_id, destination=path / f"{user.telegram_id}.jpg")
-        user.avatar_file_id = file_id
+        await bot.download(file_id, destination=path / f"{user.id}.jpg")
+    else:
+        _placeholder_avatar(path, user)
 
 async def get_ctx(tg_id: str):
     session = AsyncSessionLocal()
     try:
-        user = (await session.execute(select(User).where(User.telegram_id == tg_id))).scalar_one_or_none()
+        user = (await session.execute(select(User).where(User.id == tg_id))).scalar_one_or_none()
         if not user:
-            user = User(telegram_id=tg_id, name="")
+            user = User(id=tg_id, name="")
             session.add(user)
             await session.commit()
             await session.refresh(user)
@@ -376,7 +415,7 @@ async def build_prompt_messages(user: User, step: Step, phase: int):
 async def send_prompt(bot: Bot, user: User, step: Step, phase: int, prefix: str | None = None):
     if step.type == "open" and phase == 2 and user.last_vote_msg_id:
         try:
-            await bot.edit_message_reply_markup(user.telegram_id, user.last_vote_msg_id, reply_markup=None)
+            await bot.edit_message_reply_markup(user.id, user.last_vote_msg_id, reply_markup=None)
         except Exception:
             pass
         async with AsyncSessionLocal() as s:
@@ -393,7 +432,7 @@ async def send_prompt(bot: Bot, user: User, step: Step, phase: int, prefix: str 
         else:
             msgs.insert(0, (prefix, {}))
     for text, kwargs in msgs:
-        msg = await bot.send_message(user.telegram_id, text, **kwargs)
+        msg = await bot.send_message(user.id, text, **kwargs)
         if step.type == "open" and phase == 1 and kwargs.get("reply_markup"):
             async with AsyncSessionLocal() as s:
                 u = await s.get(User, user.id)

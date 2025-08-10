@@ -7,10 +7,8 @@ from app.db import Base
 
 class User(Base):
     __tablename__ = "users"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    telegram_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
     name: Mapped[str] = mapped_column(String(128))
-    avatar_file_id: Mapped[str | None] = mapped_column(String(256), nullable=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     total_score: Mapped[int] = mapped_column(Integer, default=0)
     total_answer_ms: Mapped[int] = mapped_column(Integer, default=0)
@@ -52,7 +50,7 @@ class Idea(Base):
     __table_args__ = (UniqueConstraint("step_id", "user_id"),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     step_id: Mapped[int] = mapped_column(ForeignKey("steps.id"), index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     text: Mapped[str] = mapped_column(Text)
     submitted_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -62,7 +60,7 @@ class IdeaVote(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     step_id: Mapped[int] = mapped_column(ForeignKey("steps.id"), index=True)
     idea_id: Mapped[int] = mapped_column(ForeignKey("ideas.id"), index=True)
-    voter_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    voter_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 class McqAnswer(Base):
@@ -70,6 +68,6 @@ class McqAnswer(Base):
     __table_args__ = (UniqueConstraint("step_id", "user_id"),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     step_id: Mapped[int] = mapped_column(ForeignKey("steps.id"), index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     choice_idx: Mapped[int] = mapped_column(Integer)
     answered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
