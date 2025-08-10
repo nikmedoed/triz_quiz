@@ -111,18 +111,21 @@ h2 {
 .grid {
   --base-card: 192px;
   --scale: 1;
-  --card-size: clamp(96px, calc(var(--base-card) * var(--scale)), var(--base-card));
+  --card-size: calc(var(--base-card) * var(--scale));
+  --slot-size: calc(var(--card-size) + var(--space-4) * 2 * var(--scale));
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--card-size), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(var(--slot-size), 1fr));
   justify-content: center;
-  gap: var(--space-4);
+  gap: calc(var(--space-4) * var(--scale));
   width: 100%;
 }
 
 .card {
-  width: var(--card-size);
-  max-width: 100%;
-  padding: var(--space-4);
+  width: var(--slot-size);
+  padding: calc(var(--space-4) * var(--scale));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
 }
 
@@ -179,8 +182,8 @@ h2 {
 }
 
 .name {
-  margin-top: var(--space-3);
-  font-size: clamp(14px, 1.5vw, 20px);
+  margin-top: calc(var(--space-3) * var(--scale));
+  font-size: clamp(8px, calc(20px * var(--scale)), 20px);
   white-space: normal;
   word-break: keep-all;
   overflow-wrap: anywhere;
