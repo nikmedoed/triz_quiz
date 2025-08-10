@@ -4,15 +4,30 @@ window.renderMcq = function() {
   if (!ctx || !window.__mcq) return;
   const data = window.__mcq;
   const container = ctx.parentNode;
-  const colors = data.labels.map((_, i) => i === data.correct ? '#4caf50' : '#888');
+  const labels = data.labels.map(l => {
+    const words = l.split(' ');
+    const lines = [];
+    let current = words.shift();
+    words.forEach(w => {
+      if ((current + ' ' + w).length > 20) { lines.push(current); current = w; }
+      else { current += ' ' + w; }
+    });
+    lines.push(current);
+    return lines;
+  });
+  const styles = getComputedStyle(document.documentElement);
+  const primary = styles.getPropertyValue('--color-primary-500').trim() || '#e5231b';
+  const neutral = styles.getPropertyValue('--color-slate-400').trim() || '#8c929c';
+  const colors = labels.map((_, i) => i === data.correct ? primary : neutral);
   const chart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: data.labels,
+      labels: labels,
       datasets: [{ label: 'Votes (%)', data: data.percents, backgroundColor: colors, borderColor: colors }]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -24,7 +39,7 @@ window.renderMcq = function() {
       scales: {
         x: {
           ticks: {
-            color: ctx => ctx.index === data.correct ? '#4caf50' : '#666'
+            color: ctx => ctx.index === data.correct ? primary : neutral,
           }
         },
         y: {

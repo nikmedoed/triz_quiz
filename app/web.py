@@ -1,4 +1,4 @@
-# FastAPI web (public & moderator), WebSockets broadcasting, block/phase transitions
+# FastAPI web (public screen), WebSockets broadcasting, block/phase transitions
 from __future__ import annotations
 import asyncio
 from datetime import datetime
@@ -54,14 +54,9 @@ async def public(request: Request, session: AsyncSession = Depends(get_session))
     ctx = await build_public_context(session, step, gs)
     return templates.TemplateResponse("public.html", {"request": request, **ctx})
 
-@router.get("/moderator", response_class=HTMLResponse)
-async def moderator(request: Request):
-    return templates.TemplateResponse("moderator.html", {"request": request})
-
-
 @router.get("/reset", response_class=HTMLResponse)
 async def reset_page(request: Request):
-    logging.info("Reset link: /reset")
+    logging.info("Ссылка сброса: /reset")
     return templates.TemplateResponse("reset.html", {"request": request})
 
 
@@ -236,7 +231,8 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                     )
                 ).scalars().all()
                 voters_map[idea.id] = rows
-            ctx.update(voters_map=voters_map)
+            ideas.sort(key=lambda i: len(voters_map.get(i.id, [])), reverse=True)
+            ctx.update(voters_map=voters_map, ideas=ideas)
     elif step.type == "quiz":
         options = (
             await session.execute(
