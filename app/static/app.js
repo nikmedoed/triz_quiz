@@ -72,7 +72,7 @@ window.renderMcq = function() {
       (data.avatars[i] || []).forEach(id => {
         const img = document.createElement('img');
         img.className = 'avatar small';
-        img.src = `/avatars/${id}.jpg`;
+        img.src = `/avatars/${id}.png`;
         if (data.names) img.title = data.names[id] || '';
         div.appendChild(img);
       });

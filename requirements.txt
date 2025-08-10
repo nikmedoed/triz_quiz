@@ -8,3 +8,4 @@ python-dotenv
 jinja2
 python-multipart
 Pillow
+requests
