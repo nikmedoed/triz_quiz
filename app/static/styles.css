@@ -190,8 +190,8 @@ h2 {
 }
 
 .status {
-  font-size: 18px;
-  line-height: 1.2;
+  font-size: 17px;
+  line-height: 1;
   color: var(--color-dark);
   white-space: nowrap;
   display: flex;
@@ -483,6 +483,7 @@ ol {
 .top-right {
   display: flex;
   align-items: center;
+  height: 100%;
 }
 
 .top-left {
