@@ -138,20 +138,18 @@ h2 {
 
 .mcq-results {
   justify-content: flex-start;
-  align-items: stretch;
 }
 
 .mcq-container {
   position: relative;
   width: 100%;
   flex: 1;
-  height: 100%;
   margin: 0 auto;
 }
 
 .mcq-container canvas {
   width: 100% !important;
-  height: 100% !important;
+  height: auto !important;
 }
 
 .mcq-avatar-col {
