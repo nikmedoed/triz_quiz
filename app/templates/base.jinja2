@@ -14,7 +14,7 @@
 <body>
   <header class="topbar">
     <div class="top-left">
-      <a href="/" class="brand">ТРИЗ КВИЗ</a>
+      <div class="brand">{{ stage_title }}</div>
     </div>
     <div class="top-center">
       {% if timer_id %}
@@ -24,11 +24,13 @@
     <div class="top-right">
       {% if status_mode == 'answers' %}
       <div class="status" id="answersStatus" data-total="{{ status_total }}">
-        Ответы: <span id="answersCount">{{ status_current }}</span> / {{ status_total }} | последний: <span id="lastAnswerAgo">{{ status_last }}</span>
+        <div>Ответы: <span id="answersCount">{{ status_current }}</span> / {{ status_total }}</div>
+        <div>Последний: <span id="lastAnswerAgo">{{ status_last }}</span></div>
       </div>
       {% elif status_mode == 'votes' %}
       <div class="status">
-        Проголосовало: <span id="votesCount">{{ status_current }}</span> Последний: <span id="lastVoteAgo">{{ status_last }}</span>
+        <div>Проголосовало: <span id="votesCount">{{ status_current }}</span></div>
+        <div>Последний: <span id="lastVoteAgo">{{ status_last }}</span></div>
       </div>
       {% endif %}
       {% if show_reset %}
@@ -39,7 +41,6 @@
     </div>
   </header>
   <main class="main">
-    <div class="stage">{{ stage_title }}</div>
     <div class="content{% if content_class %} {{ content_class }}{% endif %}">
       {% block content %}{% endblock %}
     </div>

@@ -58,7 +58,7 @@ async def public(request: Request, session: AsyncSession = Depends(get_session))
 @router.get("/reset", response_class=HTMLResponse)
 async def reset_page(request: Request):
     logging.info("Ссылка сброса: /reset")
-    return templates.TemplateResponse("reset.jinja2", {"request": request})
+    return templates.TemplateResponse("reset.jinja2", {"request": request, "stage_title": "Сброс"})
 
 
 @router.post("/reset")
