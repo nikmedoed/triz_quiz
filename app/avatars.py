@@ -11,7 +11,6 @@ from io import BytesIO
 from pathlib import Path
 
 import requests
-from cairosvg import svg2png
 from PIL import (
     Image,
     ImageChops,
@@ -182,6 +181,10 @@ def _render_tgs_with_python_lottie_cli(
     tgs_gz_bytes: bytes, target_max: int, oversample: int = 4
 ) -> Image.Image | None:
     """Render one crisp frame from a .tgs using python-lottie's CLI."""
+    try:
+        from cairosvg import svg2png
+    except Exception:
+        return None
     frame_index = 0
     try:
         data = gzip.decompress(tgs_gz_bytes).decode("utf-8")
