@@ -40,7 +40,6 @@ window.renderMcq = function() {
         x: {
           ticks: {
             color: ctx => ctx.index === data.correct ? primary : neutral,
-            font: { size: 18 }
           }
         },
         y: {
