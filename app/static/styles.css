@@ -79,13 +79,19 @@ a:focus {
 .container {
   max-width: 1200px;
   width: 100%;
-  padding: 0 var(--space-6);
   height: 100%;
+  padding: var(--space-8) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.content {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  position: relative;
 }
 
 h1 {
@@ -184,14 +190,6 @@ h2 {
   margin: var(--space-3) 0;
 }
 
-.corner {
-  position: absolute;
-  top: var(--space-4);
-  right: var(--space-4);
-  text-align: right;
-  z-index: 1;
-}
-
 .stage {
   align-self: flex-start;
   font-size: 28px;
@@ -201,10 +199,10 @@ h2 {
   margin-bottom: var(--space-4);
 }
 
-.progress {
-  font-size: 14px;
-  color: var(--color-slate-500);
-  opacity: 0.7;
+.status {
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--color-dark);
 }
 
 .description {
@@ -425,7 +423,7 @@ ol {
 
 .timer {
   position: absolute;
-  top: var(--space-4);
+  top: var(--space-8);
   left: 50%;
   transform: translateX(-50%);
   font-size: 32px;
@@ -475,10 +473,32 @@ ol {
   background: var(--color-slate-50);
 }
 
-.brand {
+
+.topbar {
   position: absolute;
-  top: var(--space-4);
-  left: var(--space-4);
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--space-4);
+  z-index: 2;
+}
+
+.top-left {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+}
+
+.top-right {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.brand {
   font-weight: var(--font-weight-black);
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -487,9 +507,7 @@ ol {
 }
 
 .reset-form {
-  position: absolute;
-  top: var(--space-4);
-  right: var(--space-4);
+  margin: 0;
 }
 
 .next-btn {

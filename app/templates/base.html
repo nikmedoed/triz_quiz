@@ -12,7 +12,15 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <a href="/" class="brand">ТРИЗ квиз</a>
+  <header class="topbar">
+    <div class="top-left">
+      <a href="/" class="brand">ТРИЗ квиз</a>
+      {% block top_left %}{% endblock %}
+    </div>
+    <div class="top-right">
+      {% block top_right %}{% endblock %}
+    </div>
+  </header>
   {% block body %}{% endblock %}
 </body>
 </html>
