@@ -94,6 +94,7 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
   {
     "type": "quiz",
     "title": "Какой приём ТРИЗ был использован?",
+    "description": "Уточнение вопроса перед вариантами",
     "options": [
       "Матрёшка",
       "Динамичность",
