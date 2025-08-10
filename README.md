@@ -156,7 +156,7 @@ Design tokens and component styles live in `app/static/styles.css`.
 
 ### Roboto font
 
-Roboto weights are loaded from Google Fonts in `base.html`:
+Roboto weights are loaded from Google Fonts in `base.jinja2`:
 
 ```html
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;900&display=swap" rel="stylesheet" />
