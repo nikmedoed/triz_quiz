@@ -5,7 +5,7 @@ from io import BytesIO
 
 from PIL import Image
 
-from app.bot import _sticker_avatar, AVATAR_SIZE
+from app.avatars import _sticker_avatar, AVATAR_SIZE
 from app.settings import settings
 
 

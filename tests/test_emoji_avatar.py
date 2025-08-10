@@ -5,7 +5,7 @@ from io import BytesIO
 import pytest
 from PIL import Image
 
-from app.bot import _emoji_avatar, AVATAR_SIZE, cairosvg
+from app.avatars import _emoji_avatar, AVATAR_SIZE, cairosvg
 from app.settings import settings
 
 
@@ -33,7 +33,7 @@ def test_emoji_avatar_uses_svg(tmp_path, monkeypatch):
         )
         return DummyResponse(svg.encode(), url_holder)
 
-    monkeypatch.setattr("app.bot.requests.get", fake_get)
+    monkeypatch.setattr("app.avatars.requests.get", fake_get)
 
     user = SimpleNamespace(id=1)
     _emoji_avatar(tmp_path, user, "🔥")
@@ -60,8 +60,8 @@ def test_emoji_avatar_png_fallback(tmp_path, monkeypatch):
         url_holder["url"] = url
         return DummyResponse(png_data, url_holder)
 
-    monkeypatch.setattr("app.bot.requests.get", fake_get)
-    monkeypatch.setattr("app.bot.cairosvg", None)
+    monkeypatch.setattr("app.avatars.requests.get", fake_get)
+    monkeypatch.setattr("app.avatars.cairosvg", None)
 
     user = SimpleNamespace(id=1)
     _emoji_avatar(tmp_path, user, "🔥")
@@ -82,8 +82,8 @@ def test_emoji_avatar_font_fallback(tmp_path, monkeypatch):
     def fake_get(url, timeout=10):
         raise Exception("network down")
 
-    monkeypatch.setattr("app.bot.requests.get", fake_get)
-    monkeypatch.setattr("app.bot.cairosvg", None)
+    monkeypatch.setattr("app.avatars.requests.get", fake_get)
+    monkeypatch.setattr("app.avatars.cairosvg", None)
 
     user = SimpleNamespace(id=1)
     _emoji_avatar(tmp_path, user, "🔥")
