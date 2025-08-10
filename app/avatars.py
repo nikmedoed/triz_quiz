@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import random
+import gzip
 from io import BytesIO
 from pathlib import Path
 
 import requests
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from rlottie_python import LottieAnimation
 
 from aiogram import Bot
 from aiogram.types import Sticker
@@ -84,26 +86,38 @@ async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker) -> None:
     buf = BytesIO()
     await bot.download(sticker.file_id, destination=buf)
     buf.seek(0)
+    size = AVATAR_SIZE
+    max_size = int(size * 0.8)
     try:
         img = Image.open(buf).convert("RGBA")
     except Exception:
-        if sticker.thumbnail:
-            buf = BytesIO()
-            await bot.download(sticker.thumbnail.file_id, destination=buf)
-            buf.seek(0)
-            img = Image.open(buf).convert("RGBA")
-        else:
-            raise
+        img = None
+        if sticker.is_animated and not sticker.is_video:
+            try:
+                buf.seek(0)
+                data = gzip.decompress(buf.read()).decode("utf-8")
+                anim = LottieAnimation(data=data)
+                width, height = anim.lottie_animation_get_size()
+                scale = max_size / max(width, height)
+                img = anim.render_pillow_frame(
+                    width=int(width * scale), height=int(height * scale)
+                ).convert("RGBA")
+            except Exception:
+                img = None
+        if img is None:
+            if sticker.thumbnail:
+                buf = BytesIO()
+                await bot.download(sticker.thumbnail.file_id, destination=buf)
+                buf.seek(0)
+                img = Image.open(buf).convert("RGBA")
+            else:
+                raise
     bbox = img.getbbox()
     if bbox:
         img = img.crop(bbox)
-    size = AVATAR_SIZE
-    max_size = int(size * 0.8)
     if sticker.is_animated or sticker.is_video:
         scale = max_size / max(img.width, img.height)
-        img = img.resize(
-            (int(img.width * scale), int(img.height * scale)), Image.LANCZOS
-        )
+        img = img.resize((int(img.width * scale), int(img.height * scale)), Image.LANCZOS)
     else:
         img.thumbnail((max_size, max_size), Image.LANCZOS)
     background = _gradient(size)
