@@ -5,13 +5,14 @@
   {% if phase == 0 %}
     <p class="description">{{ step.text }}</p>
   {% elif phase == 1 %}
+    <p class="description">{{ step.text }}</p>
     {% if ideas %}
       <p class="question">Голосование за идеи</p>
       <div class="ideas-grid">
         {% for idea in ideas %}
         <div class="idea-card">
-          <div class="idea-text">{{ idea.text }}</div>
           <div class="idea-meta">ответ занял {{ idea.delay_text }}</div>
+          <div class="idea-text">{{ idea.text }}</div>
         </div>
         {% endfor %}
       </div>
@@ -19,14 +20,15 @@
       <p class="question">Ответов нет</p>
     {% endif %}
   {% elif phase == 2 %}
+    <p class="description">{{ step.text }}</p>
     <div class="ideas-grid">
       {% for idea in ideas %}
       {% set voters = voters_map.get(idea.id) or [] %}
       <div class="idea-card">
+        <div class="idea-meta">ответ занял {{ idea.delay_text }}</div>
         <div class="idea-vote-count">★ {{ voters|length }}</div>
         <div class="idea-text">{{ idea.text }}</div>
         <div class="idea-author"><img class="avatar small" src="/avatars/{{ idea.author.id }}.png" title="{{ idea.author.name }}" /> <span class="author-name">{{ idea.author.name }}</span></div>
-        <div class="idea-meta">ответ занял {{ idea.delay_text }}</div>
         <div class="idea-voters">
           {% for v in voters %}
             <img src="/avatars/{{ v.id }}.png" title="{{ v.name }}" />

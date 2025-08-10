@@ -214,7 +214,11 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             for i in ideas:
                 delta = int((i.submitted_at - gs.step_started_at).total_seconds())
                 i.delay_text = humanize_seconds(max(0, delta))
-        ctx.update(ideas=ideas, stage_title="Вопрос с открытым ответом")
+        ctx.update(
+            ideas=ideas,
+            stage_title="Вопрос с открытым ответом",
+            content_class="ideas-layout",
+        )
         if gs.phase == 0:
             total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
             last_at = await session.scalar(select(func.max(Idea.submitted_at)).where(Idea.step_id == step.id))
