@@ -104,16 +104,17 @@ h2 {
 
 
 .grid {
-  --count: 1;
+  --columns: 1;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--space-4);
   width: 100%;
+  max-width: calc(var(--columns) * 192px + (var(--columns) - 1) * var(--space-4));
 }
 
 .card {
-  flex: 0 1 min(192px, calc((100% - (var(--count) - 1) * var(--space-4)) / var(--count)));
+  flex: 0 1 min(192px, calc((100% - (var(--columns) - 1) * var(--space-4)) / var(--columns)));
   padding: var(--space-4);
   text-align: center;
 }

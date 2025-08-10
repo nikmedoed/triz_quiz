@@ -9,7 +9,15 @@
 {% block body %}
   <div class="stage">Регистрация</div>
   <div class="content">
-    <div class="grid" style="--count: {{ users|length }};">
+    {% set count = users|length %}
+    {% if count <= 5 %}
+      {% set columns = count %}
+    {% elif count <= 14 %}
+      {% set columns = (count + 1) // 2 %}
+    {% else %}
+      {% set columns = 7 %}
+    {% endif %}
+    <div class="grid" style="--columns: {{ columns }};">
       {% for u in users %}
       <div class="card">
         <img class="avatar" src="/avatars/{{ u.id }}.jpg" title="{{ u.name }}" />
