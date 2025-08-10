@@ -15,12 +15,81 @@
   <header class="topbar">
     <div class="top-left">
       <a href="/" class="brand">ТРИЗ квиз</a>
-      {% block top_left %}{% endblock %}
+    </div>
+    <div class="top-center">
+      {% block top_center %}{% endblock %}
     </div>
     <div class="top-right">
       {% block top_right %}{% endblock %}
     </div>
   </header>
-  {% block body %}{% endblock %}
+  <main class="main">
+    {% block body %}{% endblock %}
+  </main>
+  <footer class="bottombar">
+    <div class="footer-center">
+      {% block footer_center %}{% endblock %}
+    </div>
+    <div class="footer-right">
+      {% block footer_right %}{% endblock %}
+    </div>
+  </footer>
+  <script>
+    async function post(url){
+      await fetch(url, {method:'POST'});
+    }
+    function formatAgo(sec){
+      if(sec==null || sec==='-' || sec==='') return '-';
+      sec = parseInt(sec);
+      if(isNaN(sec)) return '-';
+      if(sec >= 60){ const m=Math.floor(sec/60); const s=sec%60; return m+' мин '+s+' с'; }
+      return sec+' с';
+    }
+    const timerEl = document.getElementById('ideaTimer') || document.getElementById('voteTimer');
+    if (timerEl){
+      const start = new Date('{{ since.isoformat() }}Z').getTime();
+      const duration = timerEl.id === 'ideaTimer' ? 5*60*1000 : 60*1000;
+      function tick(){
+        let left = duration - (Date.now() - start);
+        if(left < 0) left = 0;
+        const m = String(Math.floor(left/60000)).padStart(2,'0');
+        const s = String(Math.floor((left%60000)/1000)).padStart(2,'0');
+        timerEl.textContent = m+':'+s;
+      }
+      setInterval(tick,1000); tick();
+    }
+    const lastAnswerEl = document.getElementById('lastAnswerAgo');
+    const lastVoteEl = document.getElementById('lastVoteAgo');
+    let lastAnswerSec = lastAnswerEl ? parseInt(lastAnswerEl.textContent) : null;
+    let lastVoteSec = lastVoteEl ? parseInt(lastVoteEl.textContent) : null;
+    if (isNaN(lastAnswerSec)) lastAnswerSec = null;
+    if (isNaN(lastVoteSec)) lastVoteSec = null;
+    if (lastAnswerEl) lastAnswerEl.textContent = formatAgo(lastAnswerSec);
+    if (lastVoteEl) lastVoteEl.textContent = formatAgo(lastVoteSec);
+    setInterval(() => {
+      if (lastAnswerSec !== null){ lastAnswerSec++; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
+      if (lastVoteSec !== null){ lastVoteSec++; lastVoteEl.textContent = formatAgo(lastVoteSec); }
+    }, 1000);
+    const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
+    ws.onmessage = (ev) => {
+      const msg = JSON.parse(ev.data);
+      if (msg.type === 'reload') location.reload();
+      if (msg.type === 'idea_progress'){
+        const cnt = document.getElementById('answersCount');
+        if (cnt) cnt.textContent = msg.count;
+        if (lastAnswerEl && msg.last !== undefined){ lastAnswerSec = msg.last; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
+      }
+      if (msg.type === 'mcq_progress'){
+        const cnt = document.getElementById('answersCount');
+        if (cnt) cnt.textContent = msg.count;
+        if (lastAnswerEl && msg.last !== undefined){ lastAnswerSec = msg.last; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
+      }
+      if (msg.type === 'vote_progress'){
+        const vcnt = document.getElementById('votesCount');
+        if (vcnt) vcnt.textContent = msg.count;
+        if (lastVoteEl && msg.last !== undefined){ lastVoteSec = msg.last; lastVoteEl.textContent = formatAgo(lastVoteSec); }
+      }
+    };
+  </script>
 </body>
 </html>

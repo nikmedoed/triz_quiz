@@ -492,6 +492,13 @@ ol {
   gap: var(--space-6);
 }
 
+.top-center {
+  position: absolute;
+  top: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .top-right {
   display: flex;
   align-items: flex-start;
@@ -510,9 +517,28 @@ ol {
   margin: 0;
 }
 
-.next-btn {
+
+.bottombar {
   position: absolute;
-  bottom: var(--space-4);
-  right: var(--space-4);
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4);
+}
+
+.footer-center {
+  flex: 1;
+  text-align: center;
+  font-size: 28px;
+  color: var(--color-slate-500);
+}
+
+.footer-right {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 auto;
 }
 

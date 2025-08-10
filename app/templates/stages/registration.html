@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container">
+  <div class="stage">Регистрация</div>
+  <div class="content">
+    <h1>{{ step.title }}</h1>
+    <div class="grid" style="--count: {{ users|length }};">
+      {% for u in users %}
+      <div class="card">
+        <img class="avatar" src="/avatars/{{ u.telegram_id }}.jpg" title="{{ u.name }}" />
+        <div class="name">{{ u.name }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block footer_right %}
+<button class="btn btn-primary" onclick="post('/api/next')">Далее</button>
+{% endblock %}

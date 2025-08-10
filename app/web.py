@@ -52,7 +52,8 @@ async def public(request: Request, session: AsyncSession = Depends(get_session))
     gs = await session.get(GlobalState, 1)
     step = await session.get(Step, gs.current_step_id)
     ctx = await build_public_context(session, step, gs)
-    return templates.TemplateResponse("public.html", {"request": request, **ctx})
+    template = f"stages/{step.type}.html"
+    return templates.TemplateResponse(template, {"request": request, **ctx})
 
 @router.get("/reset", response_class=HTMLResponse)
 async def reset_page(request: Request):
