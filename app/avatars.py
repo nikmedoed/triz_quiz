@@ -9,7 +9,15 @@ from io import BytesIO
 from pathlib import Path
 
 import requests
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageStat
+from PIL import (
+    Image,
+    ImageChops,
+    ImageDraw,
+    ImageFont,
+    ImageFilter,
+    ImageMath,
+    ImageStat,
+)
 try:
     from rlottie_python import LottieAnimation
 except Exception:  # pragma: no cover - optional dependency
@@ -124,19 +132,32 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
 
 
 def _downscale_high_quality(img: Image.Image, target_max: int) -> Image.Image:
-    """Downscale with LANCZOS only (no upscaling)."""
-    if max(img.width, img.height) <= target_max:
+    """High-quality downscale for RGBA using premultiplied alpha."""
+    w, h = img.width, img.height
+    if max(w, h) <= target_max:
         return img
-    scale = target_max / max(img.width, img.height)
-    return img.resize((int(img.width * scale), int(img.height * scale)), Image.LANCZOS)
 
+    scale = target_max / max(w, h)
+    new_size = (max(1, int(w * scale)), max(1, int(h * scale)))
 
-def _resize_to_max(img: Image.Image, target_max: int) -> Image.Image:
-    """Resize so the largest side equals ``target_max`` using LANCZOS."""
-    scale = target_max / max(img.width, img.height)
-    if scale == 1:
-        return img
-    return img.resize((int(img.width * scale), int(img.height * scale)), Image.LANCZOS)
+    if img.mode != "RGBA":
+        img = img.convert("RGBA")
+
+    r, g, b, a = img.split()
+    r = ImageChops.multiply(r, a)
+    g = ImageChops.multiply(g, a)
+    b = ImageChops.multiply(b, a)
+
+    r = r.resize(new_size, Image.LANCZOS)
+    g = g.resize(new_size, Image.LANCZOS)
+    b = b.resize(new_size, Image.LANCZOS)
+    a = a.resize(new_size, Image.LANCZOS)
+
+    r = ImageMath.eval("convert(r*255/(a+(a==0)), 'L')", r=r, a=a)
+    g = ImageMath.eval("convert(g*255/(a+(a==0)), 'L')", g=g, a=a)
+    b = ImageMath.eval("convert(b*255/(a+(a==0)), 'L')", b=b, a=a)
+
+    return Image.merge("RGBA", (r, g, b, a))
 
 
 def _pick_nice_frame_index(total_frames: int) -> int:
@@ -179,7 +200,7 @@ def _render_tgs_high_quality(tgs_bytes: bytes, target_max: int, oversample: int 
 
 
 def _extract_webm_frame_rgba(webm_bytes: bytes, sec: float = 0.5) -> Image.Image | None:
-    """Use ffmpeg to grab a single RGBA PNG frame."""
+    """Use ffmpeg to grab a single RGBA PNG frame with alpha preserved."""
     cmd = [
         "ffmpeg",
         "-loglevel",
@@ -190,6 +211,8 @@ def _extract_webm_frame_rgba(webm_bytes: bytes, sec: float = 0.5) -> Image.Image
         "pipe:0",
         "-frames:v",
         "1",
+        "-pix_fmt",
+        "rgba",
         "-f",
         "image2",
         "-vcodec",
@@ -220,11 +243,11 @@ def _auto_crop(img: Image.Image) -> Image.Image:
 
 
 def _post_sharpen(img: Image.Image) -> Image.Image:
-    """Light sharpening after downscale."""
+    """Very mild sharpening after downscale."""
     edge_var = ImageStat.Stat(img.filter(ImageFilter.FIND_EDGES).convert("L")).var[0]
-    if edge_var < 5:
+    if edge_var < 8:
         return img
-    return img.filter(ImageFilter.UnsharpMask(radius=1.0, percent=80, threshold=3))
+    return img.filter(ImageFilter.UnsharpMask(radius=0.8, percent=40, threshold=4))
 
 
 async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker, target_size: int = AVATAR_SIZE) -> None:
@@ -265,8 +288,9 @@ async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker, target_size: i
         raise RuntimeError("Failed to decode sticker to an image")
 
     img = _auto_crop(img)
-    img = _resize_to_max(img, max_size)
-    img = _post_sharpen(img)
+    img = _downscale_high_quality(img, max_size)
+    if not (sticker.is_animated or sticker.is_video):
+        img = _post_sharpen(img)
 
     background = _gradient(size)
     x = (size - img.width) // 2
