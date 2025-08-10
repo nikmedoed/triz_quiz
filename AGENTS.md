@@ -84,7 +84,10 @@ Keep changes minimal, safe, and production-ready.
 ### Avatars
 
 * Primary source: Telegram profile photo.
-* Fallback: ask user for emoji or sticker, save to `/avatars/{user.id}.jpg`.
+* Fallback: ask user for emoji or sticker.
+  * Emoji: fetch a 512px image from `emojiapi.dev` and center it on a 640×640 gradient background; fall back to drawing the glyph with a system font if the download fails.
+  * Stickers: try the original file for best resolution; fall back to the provided thumbnail if it can't be decoded.
+* Save result to `/avatars/{user.id}.png` as a PNG file.
 
 ---
 
