@@ -28,7 +28,7 @@
         </ol>
       {% endif %}
     {% else %}
-      <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
+      <div class="mcq-container" id="mcqChart"></div>
       <script>
         window.__mcq = {
           labels: [{% for opt in options %}'{{ loop.index }}. {{ opt.text|replace("'", "\\'") }}',{% endfor %}],
