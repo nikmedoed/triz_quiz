@@ -11,20 +11,25 @@ function layoutCards() {
   const n = grid.children.length;
   const gap = parseFloat(getComputedStyle(grid).gap) || 0;
   const width = content.clientWidth;
-  const height = window.innerHeight - (header ? header.offsetHeight : 0) - (footer ? footer.offsetHeight : 0);
+  const height =
+    window.innerHeight - (header ? header.offsetHeight : 0) - (footer ? footer.offsetHeight : 0);
 
   let bestCols = 1;
   let bestSize = 0;
+  let bestCover = 0;
 
   for (let cols = 1; cols <= n; cols++) {
     const rows = Math.ceil(n / cols);
     const maxW = (width - gap * (cols - 1)) / cols;
-    const maxH = (height - gap * (rows - 1)) / rows / RATIO;
+    const maxH = ((height - gap * (rows - 1)) - gap) / rows / RATIO;
     const size = Math.min(maxW, maxH, MAX_SIZE);
     if (size <= 0) break;
-    if (size > bestSize) {
+    const totalW = size * cols + gap * (cols - 1);
+    const cover = totalW / width;
+    if (size > bestSize || (bestSize - size <= 16 && cover > bestCover)) {
       bestSize = size;
       bestCols = cols;
+      bestCover = cover;
     }
   }
 
@@ -33,7 +38,7 @@ function layoutCards() {
     const rows = Math.ceil(n / bestCols);
     const size = Math.min(
       (width - gap * (bestCols - 1)) / bestCols,
-      (height - gap * (rows - 1)) / rows / RATIO,
+      ((height - gap * (rows - 1)) - gap) / rows / RATIO,
       MAX_SIZE
     );
     bestSize = Math.max(16, size);
@@ -41,6 +46,17 @@ function layoutCards() {
 
   grid.style.setProperty('--cols', bestCols);
   grid.style.setProperty('--card-w', `${bestSize}px`);
+
+  // center the last row by offsetting its first card
+  Array.from(grid.children).forEach((child) => child.style.removeProperty('grid-column-start'));
+  const rows = Math.ceil(n / bestCols);
+  const remaining = n % bestCols;
+  if (remaining > 0) {
+    const offset = Math.floor((bestCols - remaining) / 2);
+    const index = bestCols * (rows - 1);
+    const first = grid.children[index];
+    if (first) first.style.gridColumnStart = offset + 1;
+  }
 }
 
 window.addEventListener('DOMContentLoaded', layoutCards);
