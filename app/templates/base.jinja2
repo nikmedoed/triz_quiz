@@ -67,6 +67,21 @@
     if (isNaN(lastVoteSec)) lastVoteSec = null;
     if (lastAnswerEl) lastAnswerEl.textContent = formatAgo(lastAnswerSec);
     if (lastVoteEl) lastVoteEl.textContent = formatAgo(lastVoteSec);
+
+    const answersStatusEl = document.getElementById('answersStatus');
+    const answersCountEl = document.getElementById('answersCount');
+    const totalAnswers = answersStatusEl ? parseInt(answersStatusEl.dataset.total) : null;
+    function updateAnswersStatus(){
+      if (answersStatusEl && answersCountEl && totalAnswers !== null){
+        const current = parseInt(answersCountEl.textContent);
+        if (!isNaN(current) && current >= totalAnswers){
+          answersStatusEl.classList.add('complete');
+        } else {
+          answersStatusEl.classList.remove('complete');
+        }
+      }
+    }
+    updateAnswersStatus();
     setInterval(() => {
       if (lastAnswerSec !== null){ lastAnswerSec++; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
       if (lastVoteSec !== null){ lastVoteSec++; lastVoteEl.textContent = formatAgo(lastVoteSec); }
@@ -77,12 +92,12 @@
       if (msg.type === 'reload') location.reload();
       if (msg.type === 'idea_progress'){
         const cnt = document.getElementById('answersCount');
-        if (cnt) cnt.textContent = msg.count;
+        if (cnt) { cnt.textContent = msg.count; updateAnswersStatus(); }
         if (lastAnswerEl && msg.last !== undefined){ lastAnswerSec = msg.last; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
       }
       if (msg.type === 'mcq_progress'){
         const cnt = document.getElementById('answersCount');
-        if (cnt) cnt.textContent = msg.count;
+        if (cnt) { cnt.textContent = msg.count; updateAnswersStatus(); }
         if (lastAnswerEl && msg.last !== undefined){ lastAnswerSec = msg.last; lastAnswerEl.textContent = formatAgo(lastAnswerSec); }
       }
       if (msg.type === 'vote_progress'){

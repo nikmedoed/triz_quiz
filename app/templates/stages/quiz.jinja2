@@ -2,13 +2,13 @@
 
 {% block top_right %}
   {% if phase == 0 %}
-    <div class="status">Ответы: <span id="answersCount">{{ answers_count }}</span> / {{ total_users }} Последний: <span id="lastAnswerAgo">{{ last_answer_ago_s if last_answer_ago_s is not none else '-' }}</span></div>
+    <div class="status" id="answersStatus" data-total="{{ total_users }}">Ответы: <span id="answersCount">{{ answers_count }}</span> / {{ total_users }} Последний: <span id="lastAnswerAgo">{{ last_answer_ago_s if last_answer_ago_s is not none else '-' }}</span></div>
   {% endif %}
 {% endblock %}
 
 {% block body %}
-  <div class="stage">Выбери верный</div>
-  <div class="content">
+  <div class="stage">Выбери верный{% if phase != 0 %} — результаты{% endif %}</div>
+  <div class="content{% if phase != 0 %} mcq-results{% endif %}">
     <h1>{{ step.title }}</h1>
     {% if phase == 0 %}
       {% if step.text %}
@@ -28,7 +28,6 @@
         </ol>
       {% endif %}
     {% else %}
-      <div class="question">Результаты</div>
       <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
       <script>
         window.__mcq = {
