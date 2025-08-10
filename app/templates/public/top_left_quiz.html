@@ -1,0 +1,6 @@
+{% if phase == 0 %}
+  <div class="status">
+    <div>Ответы: <span id="answersCount">{{ answers_count }}</span> / {{ total_users }}</div>
+    <div>Последний: <span id="lastAnswerAgo">{{ last_answer_ago_s if last_answer_ago_s is not none else '-' }}</span></div>
+  </div>
+{% endif %}

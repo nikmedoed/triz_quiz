@@ -1,172 +1,18 @@
 {% extends 'base.html' %}
 
 {% block top_left %}
-  {% if step.type == 'open' %}
-    {% if phase == 0 %}
-      <div class="status">
-        <div>Ответы: <span id="answersCount">{{ ideas|length }}</span> / {{ total_users }}</div>
-        <div>Последний: <span id="lastAnswerAgo">{{ last_answer_ago_s if last_answer_ago_s is not none else '-' }}</span></div>
-      </div>
-    {% elif phase == 1 and ideas %}
-      <div class="status">
-        <div>Проголосовало: <span id="votesCount">{{ voters_count }}</span></div>
-        <div>Последний: <span id="lastVoteAgo">{{ last_vote_ago_s if last_vote_ago_s is not none else '-' }}</span></div>
-      </div>
-    {% endif %}
-  {% elif step.type == 'quiz' and phase == 0 %}
-    <div class="status">
-      <div>Ответы: <span id="answersCount">{{ answers_count }}</span> / {{ total_users }}</div>
-      <div>Последний: <span id="lastAnswerAgo">{{ last_answer_ago_s if last_answer_ago_s is not none else '-' }}</span></div>
-    </div>
-  {% endif %}
+  {% include 'public/top_left_' ~ step.type ~ '.html' ignore missing %}
 {% endblock %}
 
 {% block top_right %}
-  {% if step.type == 'registration' or step.type == 'leaderboard' %}
-  <form method="get" action="/reset" class="reset-form">
-    <button class="btn btn-secondary" type="submit">Сброс БД</button>
-  </form>
-  {% endif %}
+  {% include 'public/top_right_' ~ step.type ~ '.html' ignore missing %}
 {% endblock %}
 
 {% block body %}
 <div class="container">
   {% set STAGES = {'registration':'Регистрация','open':'Вопрос с открытым ответом','quiz':'Выбери верный','leaderboard':'Результаты'} %}
   <div class="stage">{{ STAGES.get(step.type, '') }}</div>
-  {% if step.type == 'open' %}
-    {% if phase == 0 %}
-      <div class="timer" id="ideaTimer">05:00</div>
-    {% elif phase == 1 and ideas %}
-      <div class="timer" id="voteTimer">01:00</div>
-    {% endif %}
-  {% endif %}
-  <div class="content">
-    <h1>{{ step.title }}</h1>
-
-    {% if step.type == 'registration' %}
-      <div class="grid" style="--count: {{ users|length }};">
-        {% for u in users %}
-          <div class="card">
-            <img class="avatar" src="/avatars/{{ u.telegram_id }}.jpg" title="{{ u.name }}" />
-            <div class="name">{{ u.name }}</div>
-          </div>
-        {% endfor %}
-      </div>
-
-    {% elif step.type == 'open' %}
-      {% if phase == 0 %}
-        <p class="description">{{ step.text }}</p>
-      {% elif phase == 1 %}
-        {% if ideas %}
-          <p class="question">Голосование за идеи</p>
-          <div class="ideas-grid">
-          {% for idea in ideas %}
-            <div class="idea-card">
-              <div class="idea-text">{{ idea.text }}</div>
-              <div class="idea-meta">ответ занял {{ idea.delay_text }}</div>
-            </div>
-          {% endfor %}
-          </div>
-        {% else %}
-          <p class="question">Ответов нет</p>
-        {% endif %}
-      {% elif phase == 2 %}
-          <div class="ideas-grid">
-            {% for idea in ideas %}
-            {% set voters = voters_map.get(idea.id) or [] %}
-            <div class="idea-card">
-              <div class="idea-vote-count">★ {{ voters|length }}</div>
-              <div class="idea-text">{{ idea.text }}</div>
-              <div class="idea-author"><img class="avatar small" src="/avatars/{{ idea.author.telegram_id }}.jpg" title="{{ idea.author.name }}" /> <span class="author-name">{{ idea.author.name }}</span></div>
-              <div class="idea-meta">ответ занял {{ idea.delay_text }}</div>
-              <div class="idea-voters">
-                {% for v in voters %}
-                  <img src="/avatars/{{ v.telegram_id }}.jpg" title="{{ v.name }}" />
-                {% endfor %}
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-      {% endif %}
-
-    {% elif step.type == 'quiz' %}
-      {% if phase == 0 %}
-        {% if step.text %}
-        <div class="quiz-layout">
-          <div class="quiz-description">{{ step.text }}</div>
-          <ol class="quiz-options">
-            {% for opt in options %}
-              <li>{{ opt.text }}</li>
-            {% endfor %}
-          </ol>
-        </div>
-        {% else %}
-        <ol class="quiz-options quiz-options-alone">
-          {% for opt in options %}
-            <li>{{ opt.text }}</li>
-          {% endfor %}
-        </ol>
-        {% endif %}
-      {% else %}
-        <div class="question">Результаты</div>
-        <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
-          <script>
-            window.__mcq = {
-              labels: [{% for opt in options %}'{{ loop.index }}. {{ opt.text|replace("'", "\\'") }}',{% endfor %}],
-              counts: [{% for c in counts %}{{ c }},{% endfor %}],
-              percents: [{% for p in percents %}{{ p }},{% endfor %}],
-              correct: {{ correct }},
-              avatars: [
-                {% for arr in avatars_map %}[
-                  {% for id in arr %}'{{ id }}'{% if not loop.last %},{% endif %}{% endfor %}
-                ]{% if not loop.last %},{% endif %}{% endfor %}
-              ],
-              names: {
-                {% for id, name in names_map.items() %}'{{ id }}': '{{ name|replace("'", "\\'") }}'{% if not loop.last %},{% endif %}{% endfor %}
-              }
-            };
-            document.addEventListener('DOMContentLoaded', () => window.renderMcq());
-          </script>
-      {% endif %}
-
-    {% elif step.type == 'leaderboard' %}
-      <div class="leaderboard">
-        <div class="leader-top">
-          {% for u in users[:3] %}
-          <div class="leader-card">
-            <img class="avatar" src="/avatars/{{ u.telegram_id }}.jpg" alt="{{ u.name }}" />
-            <div class="leader-info">
-              <div class="leader-name">{{ u.name }}</div>
-              <div class="leader-score">{{ u.total_score }}</div>
-              <div class="leader-times">Откр.: {{ (u.open_answer_ms / u.open_answer_count / 1000)|round(1) if u.open_answer_count else 0 }} с • Выбор: {{ (u.quiz_answer_ms / u.quiz_answer_count / 1000)|round(1) if u.quiz_answer_count else 0 }} с</div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-        <table class="board">
-          <thead><tr><th>#</th><th></th><th>Имя</th><th>Баллы</th><th>Откр. ср. (с)</th><th>Выбор ср. (с)</th></tr></thead>
-          <tbody>
-            {% for u in users[3:] %}
-            <tr>
-              <td>{{ loop.index + 3 }}</td>
-              <td><img class="avatar small" src="/avatars/{{ u.telegram_id }}.jpg" alt="{{ u.name }}" /></td>
-              <td class="align-left">{{ u.name }}</td>
-              <td class="align-center">{{ u.total_score }}</td>
-              <td class="align-center">{{ (u.open_answer_ms / u.open_answer_count / 1000)|round(1) if u.open_answer_count else 0 }}</td>
-              <td class="align-center">{{ (u.quiz_answer_ms / u.quiz_answer_count / 1000)|round(1) if u.quiz_answer_count else 0 }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% endif %}
-  </div>
-
-  {% if step.type == 'open' and phase == 0 %}
-    <p class="hint">Отправляйте идеи боту. Здесь они пока не видны.</p>
-  {% elif step.type == 'quiz' and phase == 0 %}
-    <p class="hint">Участники выбирают вариант в боте.</p>
-  {% endif %}
+  {% include 'public/body_' ~ step.type ~ '.html' %}
 </div>
 {% if step.type != 'leaderboard' %}
 <button class="btn btn-primary next-btn" onclick="post('/api/next')">Далее</button>
@@ -230,4 +76,3 @@
   };
 </script>
 {% endblock %}
-
