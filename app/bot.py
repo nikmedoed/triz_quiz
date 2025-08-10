@@ -31,28 +31,25 @@ router = Router()
 def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
     """Generate avatar with given emoji on colorful gradient background."""
     size = 256
-    # pick sufficiently different colors
-    while True:
-        start = tuple(random.randint(0, 255) for _ in range(3))
-        end = tuple(random.randint(0, 255) for _ in range(3))
-        if sum(abs(s - e) for s, e in zip(start, end)) > 200:
-            break
-    direction = random.choice(["vertical", "horizontal", "diag1", "diag2"])
+    # choose four corner colors for a lively gradient
+    corners = [
+        tuple(random.randint(0, 255) for _ in range(3)) for _ in range(4)
+    ]  # tl, tr, bl, br
     img = Image.new("RGB", (size, size))
     draw = ImageDraw.Draw(img)
     for x in range(size):
+        rx = x / (size - 1)
         for y in range(size):
-            if direction == "vertical":
-                ratio = y / (size - 1)
-            elif direction == "horizontal":
-                ratio = x / (size - 1)
-            elif direction == "diag1":
-                ratio = (x + y) / (2 * (size - 1))
-            else:  # diag2
-                ratio = (size - 1 - x + y) / (2 * (size - 1))
-            r = int(start[0] * (1 - ratio) + end[0] * ratio)
-            g = int(start[1] * (1 - ratio) + end[1] * ratio)
-            b = int(start[2] * (1 - ratio) + end[2] * ratio)
+            ry = y / (size - 1)
+            top = [
+                int(corners[0][i] * (1 - rx) + corners[1][i] * rx) for i in range(3)
+            ]
+            bottom = [
+                int(corners[2][i] * (1 - rx) + corners[3][i] * rx) for i in range(3)
+            ]
+            r = int(top[0] * (1 - ry) + bottom[0] * ry)
+            g = int(top[1] * (1 - ry) + bottom[1] * ry)
+            b = int(top[2] * (1 - ry) + bottom[2] * ry)
             draw.point((x, y), fill=(r, g, b))
 
     codepoints = "-".join(f"{ord(c):x}" for c in emoji)
@@ -93,10 +90,9 @@ async def _sticker_avatar(bot: Bot, user: User, file_id: str) -> None:
 async def save_avatar(bot: Bot, user: User) -> bool:
     path = Path(settings.AVATAR_DIR)
     path.mkdir(exist_ok=True)
-    photos = await bot.get_user_profile_photos(user.id, limit=1)
-    if photos.total_count:
-        file_id = photos.photos[0][-1].file_id
-        await bot.download(file_id, destination=path / f"{user.id}.jpg")
+    chat = await bot.get_chat(user.id)
+    if chat.photo:
+        await bot.download(chat.photo.big_file_id, destination=path / f"{user.id}.jpg")
         return True
     return False
 
