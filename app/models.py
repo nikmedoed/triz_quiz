@@ -18,6 +18,7 @@ class User(Base):
     quiz_answer_count: Mapped[int] = mapped_column(Integer, default=0)
     last_vote_msg_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     waiting_for_name: Mapped[bool] = mapped_column(Boolean, default=False)  # /start → True, до сохранения имени
+    waiting_for_avatar: Mapped[bool] = mapped_column(Boolean, default=False)
 
 class Step(Base):
     __tablename__ = "steps"
