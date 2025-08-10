@@ -7,6 +7,7 @@ import random
 from io import BytesIO
 
 import requests
+import cairosvg
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 from aiogram import Bot, Dispatcher, Router, F
@@ -61,14 +62,17 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
     draw = ImageDraw.Draw(img)
 
     codepoints = "-".join(f"{ord(c):x}" for c in emoji)
-    url = f"https://twemoji.maxcdn.com/v/latest/72x72/{codepoints}.png"
+    url = f"https://twemoji.maxcdn.com/v/latest/svg/{codepoints}.svg"
     try:
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
-        emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
         emoji_size = int(size * 0.7)
-        emoji_img = emoji_img.resize((emoji_size, emoji_size), Image.LANCZOS)
-        # drop shadow
+        png_bytes = cairosvg.svg2png(
+            bytestring=resp.content,
+            output_width=emoji_size,
+            output_height=emoji_size,
+        )
+        emoji_img = Image.open(BytesIO(png_bytes)).convert("RGBA")
         shadow = Image.new("RGBA", emoji_img.size, (0, 0, 0, 0))
         shadow.paste((0, 0, 0, 80), mask=emoji_img.split()[3])
         shadow = shadow.filter(ImageFilter.GaussianBlur(4))

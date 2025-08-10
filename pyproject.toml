@@ -15,6 +15,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "python-multipart>=0.0.9",
     "requests>=2.31",
+    "cairosvg>=2.7",
     "sqlalchemy[asyncio]>=2.0",
     "uvicorn[standard]>=0.29",
 ]
