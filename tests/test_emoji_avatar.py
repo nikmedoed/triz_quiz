@@ -44,6 +44,12 @@ def test_emoji_avatar_downloads_image(tmp_path, monkeypatch):
     assert img.size == (AVATAR_SIZE, AVATAR_SIZE)
     center = img.getpixel((AVATAR_SIZE // 2, AVATAR_SIZE // 2))
     assert center[:3] == (255, 0, 0)
+    left = (AVATAR_SIZE - int(AVATAR_SIZE * 0.8)) // 2
+    right = left + int(AVATAR_SIZE * 0.8) - 1
+    assert img.getpixel((left - 1, AVATAR_SIZE // 2))[:3] != (255, 0, 0)
+    assert img.getpixel((left, AVATAR_SIZE // 2))[:3] == (255, 0, 0)
+    assert img.getpixel((right, AVATAR_SIZE // 2))[:3] == (255, 0, 0)
+    assert img.getpixel((right + 1, AVATAR_SIZE // 2))[:3] != (255, 0, 0)
 
 
 def test_emoji_avatar_font_fallback(tmp_path, monkeypatch):
@@ -61,6 +67,7 @@ def test_emoji_avatar_font_fallback(tmp_path, monkeypatch):
 
     def fake_render(emoji, target):
         called["emoji"] = emoji
+        called["target"] = target
         return Image.new("RGBA", (target, target), (0, 255, 0, 255))
 
     monkeypatch.setattr(avatars, "_render_emoji_from_font", fake_render)
@@ -69,9 +76,16 @@ def test_emoji_avatar_font_fallback(tmp_path, monkeypatch):
     avatars._emoji_avatar(tmp_path, user, "🔥")
 
     assert called["emoji"] == "🔥"
+    assert called["target"] == int(AVATAR_SIZE * 0.8)
     file = tmp_path / "2.png"
     assert file.exists()
     img = Image.open(file)
     assert img.size == (AVATAR_SIZE, AVATAR_SIZE)
     center = img.getpixel((AVATAR_SIZE // 2, AVATAR_SIZE // 2))
     assert center[:3] == (0, 255, 0)
+    left = (AVATAR_SIZE - int(AVATAR_SIZE * 0.8)) // 2
+    right = left + int(AVATAR_SIZE * 0.8) - 1
+    assert img.getpixel((left - 1, AVATAR_SIZE // 2))[:3] != (0, 255, 0)
+    assert img.getpixel((left, AVATAR_SIZE // 2))[:3] == (0, 255, 0)
+    assert img.getpixel((right, AVATAR_SIZE // 2))[:3] == (0, 255, 0)
+    assert img.getpixel((right + 1, AVATAR_SIZE // 2))[:3] != (0, 255, 0)

@@ -10,7 +10,10 @@ from pathlib import Path
 
 import requests
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageStat
-from rlottie_python import LottieAnimation
+try:
+    from rlottie_python import LottieAnimation
+except Exception:  # pragma: no cover - optional dependency
+    LottieAnimation = None  # type: ignore
 
 from aiogram import Bot
 from aiogram.types import Sticker
@@ -100,7 +103,7 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
     """Generate avatar from emoji image with a colorful gradient background."""
     size = AVATAR_SIZE
     img = _gradient(size)
-    emoji_size = int(size * 0.7)
+    emoji_size = int(size * 0.8)
     try:
         codepoints = "-".join(f"{ord(c):x}" for c in emoji)
         url = f"https://emojiapi.dev/api/v1/{codepoints}/512.png"
@@ -128,6 +131,14 @@ def _downscale_high_quality(img: Image.Image, target_max: int) -> Image.Image:
     return img.resize((int(img.width * scale), int(img.height * scale)), Image.LANCZOS)
 
 
+def _resize_to_max(img: Image.Image, target_max: int) -> Image.Image:
+    """Resize so the largest side equals ``target_max`` using LANCZOS."""
+    scale = target_max / max(img.width, img.height)
+    if scale == 1:
+        return img
+    return img.resize((int(img.width * scale), int(img.height * scale)), Image.LANCZOS)
+
+
 def _pick_nice_frame_index(total_frames: int) -> int:
     """Heuristic: take ~30% into the animation."""
     if total_frames <= 1:
@@ -152,6 +163,8 @@ def _render_tgs_high_quality(tgs_bytes: bytes, target_max: int, oversample: int 
     except Exception:
         pass
     try:
+        if LottieAnimation is None:
+            raise ImportError("LottieAnimation unavailable")
         data = tgs_bytes.decode("utf-8")
         anim = LottieAnimation(data=data)
         w, h = anim.lottie_animation_get_size()
@@ -224,7 +237,7 @@ async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker, target_size: i
     data_bytes = buf.getvalue()
 
     size = target_size
-    max_size = int(size * 0.8)
+    max_size = int(size * 0.9)
     img = None
 
     try:
@@ -252,7 +265,7 @@ async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker, target_size: i
         raise RuntimeError("Failed to decode sticker to an image")
 
     img = _auto_crop(img)
-    img = _downscale_high_quality(img, max_size)
+    img = _resize_to_max(img, max_size)
     img = _post_sharpen(img)
 
     background = _gradient(size)
