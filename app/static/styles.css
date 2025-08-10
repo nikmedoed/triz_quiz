@@ -136,6 +136,15 @@ h2 {
 
 .mcq-container {
   position: relative;
+  width: 100%;
+  max-width: 900px;
+  height: 400px;
+  margin: 0 auto;
+}
+
+.mcq-container canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .mcq-avatar-col {
@@ -196,7 +205,7 @@ h2 {
 
 .hint {
   position: absolute;
-  bottom: var(--space-4);
+  bottom: var(--space-8);
   left: 50%;
   transform: translateX(-50%);
   font-size: 28px;
@@ -209,12 +218,91 @@ h2 {
 .board {
   width: 100%;
   border-collapse: collapse;
+  margin-top: var(--space-4);
 }
 
 .board th,
 .board td {
-  border-bottom: 1px solid var(--color-light);
+  border: 1px solid var(--color-light);
   padding: var(--space-2);
+}
+
+.board th {
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+}
+
+.board td {
+  font-size: 16px;
+}
+
+.board td.align-center {
+  text-align: center;
+}
+
+.board td.align-left {
+  text-align: left;
+}
+
+.board td:first-child {
+  width: 40px;
+}
+
+.board td:nth-child(2) {
+  width: 40px;
+}
+
+.board thead {
+  background: var(--color-slate-50);
+}
+
+.leaderboard {
+  display: flex;
+  gap: var(--space-8);
+  width: 100%;
+}
+
+.leader-top {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.leader-card {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--color-light);
+  padding: var(--space-4);
+}
+
+.leader-card .avatar {
+  width: 64px;
+  height: 64px;
+  margin-right: var(--space-4);
+}
+
+.leader-info {
+  flex: 1;
+}
+
+.leader-name {
+  font-size: 24px;
+  font-weight: var(--font-weight-medium);
+}
+
+.leader-score {
+  font-size: 20px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary-500);
+  margin-top: var(--space-2);
+}
+
+.leader-times {
+  font-size: 14px;
+  color: var(--color-slate-500);
+  margin-top: var(--space-1);
 }
 
 ol {
@@ -298,6 +386,7 @@ ol {
 .quiz-description {
   flex: 1;
   font-size: 24px;
+  font-weight: var(--font-weight-light);
 }
 
 .quiz-options {
@@ -309,7 +398,17 @@ ol {
 
 .quiz-options li {
   font-size: 24px;
+  font-weight: var(--font-weight-medium);
   margin-bottom: var(--space-2);
+  border: 1px solid var(--color-light);
+  padding: var(--space-4);
+  background: #ffffff;
+  word-break: break-word;
+}
+
+.quiz-options-alone {
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .timer {

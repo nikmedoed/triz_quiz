@@ -68,6 +68,7 @@
 
   {% elif step.type == 'quiz' %}
     {% if phase == 0 %}
+      {% if step.text %}
       <div class="quiz-layout">
         <div class="quiz-description">{{ step.text }}</div>
         <ol class="quiz-options">
@@ -76,6 +77,13 @@
           {% endfor %}
         </ol>
       </div>
+      {% else %}
+      <ol class="quiz-options quiz-options-alone">
+        {% for opt in options %}
+          <li>{{ opt.text }}</li>
+        {% endfor %}
+      </ol>
+      {% endif %}
       <div class="hint">Участники выбирают вариант в боте.</div>
     {% else %}
       <div class="question">Результаты</div>
@@ -100,20 +108,35 @@
     {% endif %}
 
   {% elif step.type == 'leaderboard' %}
-    <table class="board">
-      <thead><tr><th>#</th><th>Имя</th><th>Баллы</th><th>Откр. ср. (с)</th><th>Выбор ср. (с)</th></tr></thead>
-      <tbody>
-        {% for u in users %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ u.name }}</td>
-            <td>{{ u.total_score }}</td>
-            <td>{{ (u.open_answer_ms / u.open_answer_count / 1000)|round(1) if u.open_answer_count else 0 }}</td>
-            <td>{{ (u.quiz_answer_ms / u.quiz_answer_count / 1000)|round(1) if u.quiz_answer_count else 0 }}</td>
-          </tr>
+    <div class="leaderboard">
+      <div class="leader-top">
+        {% for u in users[:3] %}
+        <div class="leader-card">
+          <img class="avatar" src="/avatars/{{ u.telegram_id }}.jpg" alt="{{ u.name }}" />
+          <div class="leader-info">
+            <div class="leader-name">{{ u.name }}</div>
+            <div class="leader-score">{{ u.total_score }}</div>
+            <div class="leader-times">Откр.: {{ (u.open_answer_ms / u.open_answer_count / 1000)|round(1) if u.open_answer_count else 0 }} с • Выбор: {{ (u.quiz_answer_ms / u.quiz_answer_count / 1000)|round(1) if u.quiz_answer_count else 0 }} с</div>
+          </div>
+        </div>
         {% endfor %}
-      </tbody>
-    </table>
+      </div>
+      <table class="board">
+        <thead><tr><th>#</th><th></th><th>Имя</th><th>Баллы</th><th>Откр. ср. (с)</th><th>Выбор ср. (с)</th></tr></thead>
+        <tbody>
+          {% for u in users[3:] %}
+          <tr>
+            <td>{{ loop.index + 3 }}</td>
+            <td><img class="avatar small" src="/avatars/{{ u.telegram_id }}.jpg" alt="{{ u.name }}" /></td>
+            <td class="align-left">{{ u.name }}</td>
+            <td class="align-center">{{ u.total_score }}</td>
+            <td class="align-center">{{ (u.open_answer_ms / u.open_answer_count / 1000)|round(1) if u.open_answer_count else 0 }}</td>
+            <td class="align-center">{{ (u.quiz_answer_ms / u.quiz_answer_count / 1000)|round(1) if u.quiz_answer_count else 0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% endif %}
 </div>
 {% if step.type == 'registration' or step.type == 'leaderboard' %}
