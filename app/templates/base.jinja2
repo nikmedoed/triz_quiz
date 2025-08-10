@@ -17,21 +17,45 @@
       <a href="/" class="brand">ТРИЗ КВИЗ</a>
     </div>
     <div class="top-center">
-      {% block top_center %}{% endblock %}
+      {% if timer %}
+        <div class="timer" id="{{ timer.id }}">{{ timer.text }}</div>
+      {% endif %}
     </div>
     <div class="top-right">
-      {% block top_right %}{% endblock %}
+      {% if show_reset %}
+        <form method="get" action="/reset" class="reset-form">
+          <button class="btn btn-secondary" type="submit">Сброс БД</button>
+        </form>
+      {% elif answers_status %}
+        <div class="status" id="answersStatus" data-total="{{ answers_status.total }}">
+          Ответы: <span id="answersCount">{{ answers_status.count }}</span>
+          {% if answers_status.total is not none %}/ {{ answers_status.total }}{% endif %}
+          | последний: <span id="lastAnswerAgo">{{ answers_status.last if answers_status.last is not none else '-' }}</span>
+        </div>
+      {% elif vote_status %}
+        <div class="status">
+          Проголосовало: <span id="votesCount">{{ vote_status.count }}</span>
+          Последний: <span id="lastVoteAgo">{{ vote_status.last if vote_status.last is not none else '-' }}</span>
+        </div>
+      {% endif %}
     </div>
   </header>
   <main class="main">
-    {% block body %}{% endblock %}
+    {% if stage_name %}
+    <div class="stage">{{ stage_name }}</div>
+    {% endif %}
+    <div class="content{% if content_class %} {{ content_class }}{% endif %}">
+      {% block content %}{% endblock %}
+    </div>
   </main>
   <footer class="bottombar">
     <div class="footer-center">
-      {% block footer_center %}{% endblock %}
+      {{ instruction if instruction is defined and instruction }}
     </div>
     <div class="footer-right">
-      {% block footer_right %}{% endblock %}
+      {% if show_next %}
+      <button class="btn btn-primary" onclick="post('/api/next')">Далее</button>
+      {% endif %}
     </div>
   </footer>
   <script>
