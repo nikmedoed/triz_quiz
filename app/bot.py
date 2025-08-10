@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, Sticker
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from html import escape
 
@@ -78,10 +78,13 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
     img.save(path / f"{user.id}.jpg")
 
 
-async def _sticker_avatar(bot: Bot, user: User, file_id: str) -> None:
+async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker) -> None:
     path = Path(settings.AVATAR_DIR)
     path.mkdir(exist_ok=True)
     buf = BytesIO()
+    file_id = sticker.file_id
+    if (sticker.is_animated or sticker.is_video) and sticker.thumbnail:
+        file_id = sticker.thumbnail.file_id
     await bot.download(file_id, destination=buf)
     buf.seek(0)
     Image.open(buf).convert("RGB").save(path / f"{user.id}.jpg")
@@ -282,7 +285,7 @@ async def on_sticker(message: Message, bot: Bot):
     session, user, state, step = await get_ctx(str(message.from_user.id))
     try:
         if user.waiting_for_avatar:
-            await _sticker_avatar(bot, user, message.sticker.file_id)
+            await _sticker_avatar(bot, user, message.sticker)
             user.waiting_for_avatar = False
             await session.commit()
             await message.answer(texts.AVATAR_SAVED)
