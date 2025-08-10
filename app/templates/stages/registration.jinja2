@@ -10,14 +10,11 @@
   <div class="stage">Регистрация</div>
   <div class="content">
     {% set count = users|length %}
-    {% if count <= 5 %}
-      {% set columns = count %}
-    {% elif count <= 14 %}
-      {% set columns = (count + 1) // 2 %}
-    {% else %}
-      {% set columns = 7 %}
+    {% set scale = 1 %}
+    {% if count > 30 %}
+      {% set scale = 30 / count %}
     {% endif %}
-    <div class="grid" style="--columns: {{ columns }};">
+    <div class="grid" style="--scale: {{ '%.4f'|format(scale) }};">
       {% for u in users %}
       <div class="card">
         <img class="avatar" src="/avatars/{{ u.id }}.jpg" title="{{ u.name }}" />
