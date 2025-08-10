@@ -46,8 +46,9 @@
       return sec+' с';
     }
     const timerEl = document.getElementById('ideaTimer') || document.getElementById('voteTimer');
-    if (timerEl){
-      const start = new Date('{{ since.isoformat() }}Z').getTime();
+    const sinceVal = '{{ since.isoformat() if since is defined else "" }}';
+    if (timerEl && sinceVal){
+      const start = new Date(sinceVal + 'Z').getTime();
       const duration = timerEl.id === 'ideaTimer' ? 5*60*1000 : 60*1000;
       function tick(){
         let left = duration - (Date.now() - start);
