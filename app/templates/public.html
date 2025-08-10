@@ -3,17 +3,18 @@
 <div class="container">
   {% set STAGES = {'registration':'Регистрация','open':'Вопрос с открытым ответом','quiz':'Выбери верный','leaderboard':'Результаты'} %}
   <div class="corner">
-    <div class="stage">{{ STAGES.get(step.type, '') }}</div>
     {% if step.type == 'open' %}
       {% if phase == 0 %}
-        <div class="progress">Ответов: <span id="answersCount">{{ ideas|length }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} • последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} • последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
+        <div class="progress">Ответов: <span id="answersCount">{{ ideas|length }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} — последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} — последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
       {% elif phase == 1 and ideas %}
-        <div class="progress">Проголосовало: <span id="votesCount">{{ voters_count }}</span>{% if last_vote_ago_s is not none %} • последний голос <span id="lastVoteAgo">{{ last_vote_ago_s }}</span>{% else %} • последний голос <span id="lastVoteAgo">-</span>{% endif %}</div>
+        <div class="progress">Проголосовало: <span id="votesCount">{{ voters_count }}</span>{% if last_vote_ago_s is not none %} — последний голос <span id="lastVoteAgo">{{ last_vote_ago_s }}</span>{% else %} — последний голос <span id="lastVoteAgo">-</span>{% endif %}</div>
       {% endif %}
     {% elif step.type == 'quiz' and phase == 0 %}
-      <div class="progress">Ответов: <span id="answersCount">{{ answers_count }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} • последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} • последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
+      <div class="progress">Ответов: <span id="answersCount">{{ answers_count }}</span> / {{ total_users }}{% if last_answer_ago_s is not none %} — последний ответ <span id="lastAnswerAgo">{{ last_answer_ago_s }}</span>{% else %} — последний ответ <span id="lastAnswerAgo">-</span>{% endif %}</div>
     {% endif %}
   </div>
+
+  <div class="stage">{{ STAGES.get(step.type, '') }}</div>
 
   <h1>{{ step.title }}</h1>
 
