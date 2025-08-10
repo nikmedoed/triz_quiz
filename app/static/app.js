@@ -80,3 +80,38 @@ window.renderMcq = function() {
     });
   }
 };
+
+window.layoutRegistration = function() {
+  const grid = document.querySelector('.grid');
+  const content = document.querySelector('.content');
+  if (!grid || !content) return;
+  const count = grid.children.length;
+  let rows, cols;
+  if (count <= 5) {
+    rows = 1;
+    cols = count;
+  } else if (count <= 14) {
+    rows = 2;
+    cols = Math.ceil(count / rows);
+  } else {
+    cols = 7;
+    rows = Math.ceil(count / cols);
+  }
+  const aspect = 1.25;
+  const baseSlot = 224;
+  const gapBase = 16;
+  const width = content.clientWidth;
+  const height = content.clientHeight;
+  const scaleW = width / (baseSlot * cols + gapBase * (cols - 1));
+  const scaleH = height / (baseSlot * aspect * rows + gapBase * (rows - 1));
+  const scale = Math.min(scaleW, scaleH);
+  grid.style.setProperty('--scale', scale);
+  grid.style.gridTemplateColumns = `repeat(${cols}, var(--slot-size))`;
+  const totalWidth = (baseSlot * cols + gapBase * (cols - 1)) * scale;
+  grid.style.width = totalWidth + 'px';
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+  window.layoutRegistration();
+  window.addEventListener('resize', window.layoutRegistration);
+});

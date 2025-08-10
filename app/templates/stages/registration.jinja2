@@ -9,12 +9,7 @@
 {% block body %}
   <div class="stage">Регистрация</div>
   <div class="content">
-    {% set count = users|length %}
-    {% set scale = 1 %}
-    {% if count > 30 %}
-      {% set scale = 30 / count %}
-    {% endif %}
-    <div class="grid" style="--scale: {{ '%.4f'|format(scale) }};">
+    <div class="grid">
       {% for u in users %}
       <div class="card">
         <img class="avatar" src="/avatars/{{ u.id }}.jpg" title="{{ u.name }}" />

@@ -114,10 +114,9 @@ h2 {
   --card-size: calc(var(--base-card) * var(--scale));
   --slot-size: calc(var(--card-size) + var(--space-4) * 2 * var(--scale));
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(var(--slot-size), 1fr));
   justify-content: center;
   gap: calc(var(--space-4) * var(--scale));
-  width: 100%;
+  margin: 0 auto;
 }
 
 .card {
