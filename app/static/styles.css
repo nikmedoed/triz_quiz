@@ -147,11 +147,13 @@ h2 {
   flex: 1;
   margin: 0 auto;
   min-height: 0;
+  overflow: hidden;
 }
 
 .mcq-container canvas {
-  width: 100% !important;
-  height: 100% !important;
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .mcq-avatar-col {
