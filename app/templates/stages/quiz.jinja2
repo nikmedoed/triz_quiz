@@ -2,7 +2,7 @@
 
 {% block top_right %}
   {% if phase == 0 %}
-    <div class="status">Ответы: <span id="answersCount">{{ answers_count }}</span> / {{ total_users }} Последний: <span id="lastAnswerAgo">{{ last_answer_ago_s if last_answer_ago_s is not none else '-' }}</span></div>
+    <div class="status" id="answersStatus" data-total="{{ total_users }}">Ответы: <span id="answersCount">{{ answers_count }}</span> / {{ total_users }} Последний: <span id="lastAnswerAgo">{{ last_answer_ago_s if last_answer_ago_s is not none else '-' }}</span></div>
   {% endif %}
 {% endblock %}
 

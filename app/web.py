@@ -6,7 +6,7 @@ from typing import Dict, Set
 
 import logging
 
-from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -64,7 +64,7 @@ async def reset_page(request: Request):
 @router.post("/reset")
 async def reset_confirm(request: Request, session: AsyncSession = Depends(get_session)):
     await api_reset(session)
-    return RedirectResponse("/", status_code=302)
+    return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
 @router.post("/api/reset")
 async def api_reset(session: AsyncSession = Depends(get_session)):
