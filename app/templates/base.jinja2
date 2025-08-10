@@ -74,7 +74,7 @@
     const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
     ws.onmessage = (ev) => {
       const msg = JSON.parse(ev.data);
-      if (msg.type === 'reload') location.reload();
+      if (msg.type === 'reload') location.replace("/");
       if (msg.type === 'idea_progress'){
         const cnt = document.getElementById('answersCount');
         if (cnt) cnt.textContent = msg.count;
