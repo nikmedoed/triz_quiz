@@ -68,8 +68,8 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
     emoji_size = int(size * 0.7)
     emoji_img = None
 
-    try:
-        if cairosvg:
+    if cairosvg:
+        try:
             url = f"https://twemoji.maxcdn.com/v/latest/svg/{codepoints}.svg"
             resp = requests.get(url, timeout=10)
             resp.raise_for_status()
@@ -79,15 +79,6 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
                 output_height=emoji_size,
             )
             emoji_img = Image.open(BytesIO(png_bytes)).convert("RGBA")
-        else:
-            raise RuntimeError("cairosvg unavailable")
-    except Exception:
-        try:
-            url = f"https://twemoji.maxcdn.com/v/latest/72x72/{codepoints}.png"
-            resp = requests.get(url, timeout=10)
-            resp.raise_for_status()
-            emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
-            emoji_img = emoji_img.resize((emoji_size, emoji_size), Image.LANCZOS)
         except Exception:
             emoji_img = None
 
@@ -101,10 +92,16 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
         img.paste(emoji_img, (x, y), emoji_img)
     else:
         try:
-            font = ImageFont.truetype("DejaVuSans.ttf", int(size * 0.7))
+            font = ImageFont.truetype("DejaVuSans.ttf", emoji_size)
         except Exception:
             font = ImageFont.load_default()
-        draw.text((size / 2, size / 2), emoji, font=font, anchor="mm")
+        draw.text(
+            (size / 2, size / 2),
+            emoji,
+            font=font,
+            anchor="mm",
+            embedded_color=True,
+        )
 
     img.save(path / f"{user.id}.png")
 
@@ -113,12 +110,18 @@ async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker) -> None:
     path = Path(settings.AVATAR_DIR)
     path.mkdir(exist_ok=True)
     buf = BytesIO()
-    file_id = sticker.file_id
-    if (sticker.is_animated or sticker.is_video) and sticker.thumbnail:
-        file_id = sticker.thumbnail.file_id
-    await bot.download(file_id, destination=buf)
+    await bot.download(sticker.file_id, destination=buf)
     buf.seek(0)
-    img = Image.open(buf).convert("RGBA")
+    try:
+        img = Image.open(buf).convert("RGBA")
+    except Exception:
+        if sticker.thumbnail:
+            buf = BytesIO()
+            await bot.download(sticker.thumbnail.file_id, destination=buf)
+            buf.seek(0)
+            img = Image.open(buf).convert("RGBA")
+        else:
+            raise
     bbox = img.getbbox()
     if bbox:
         img = img.crop(bbox)
