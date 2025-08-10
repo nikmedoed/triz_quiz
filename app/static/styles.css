@@ -138,12 +138,12 @@ h2 {
 
 .mcq-results {
   justify-content: flex-start;
+  align-items: stretch;
 }
 
 .mcq-container {
   position: relative;
   width: 100%;
-  max-width: 900px;
   flex: 1;
   height: 100%;
   margin: 0 auto;
