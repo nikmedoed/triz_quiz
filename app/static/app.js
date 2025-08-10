@@ -25,30 +25,31 @@ window.renderMcq = function() {
       labels: labels,
       datasets: [{ label: 'Votes (%)', data: data.percents, backgroundColor: colors, borderColor: colors }]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => `${data.counts[ctx.dataIndex]} (${data.percents[ctx.dataIndex]}%)`
-          }
-        }
-      },
-      scales: {
-        x: {
-          ticks: {
-            color: ctx => ctx.index === data.correct ? primary : neutral,
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 2,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${data.counts[ctx.dataIndex]} (${data.percents[ctx.dataIndex]}%)`
+            }
           }
         },
-        y: {
-          ticks: { callback: value => value + '%' },
-          suggestedMax: 100
-        }
+        scales: {
+          x: {
+            ticks: {
+              color: ctx => ctx.index === data.correct ? primary : neutral,
+            }
+          },
+          y: {
+            ticks: { callback: value => value + '%' },
+            suggestedMax: 100
+          }
+        },
+        animation: { onComplete: () => { drawOverlays(); } }
       },
-      animation: { onComplete: () => { drawOverlays(); } }
-    },
   });
   function drawOverlays(){
     container.querySelectorAll('.mcq-avatar-col, .mcq-count').forEach(e => e.remove());
