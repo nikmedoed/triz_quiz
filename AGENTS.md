@@ -84,7 +84,7 @@ Keep changes minimal, safe, and production-ready.
 ### Avatars
 
 * Primary source: Telegram profile photo.
-* Fallback: ask user for emoji or sticker, render Twemoji SVGs and save 640x640 PNG to `/avatars/{user.id}.png`.
+* Fallback: ask user for emoji or sticker. Render Twemoji SVG at 640×640 PNG when `cairosvg` is available; otherwise upscale the 72×72 PNG. Save result to `/avatars/{user.id}.png`.
 
 ---
 

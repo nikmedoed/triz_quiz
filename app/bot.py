@@ -7,7 +7,10 @@ import random
 from io import BytesIO
 
 import requests
-import cairosvg
+try:  # optional, may require system cairo library
+    import cairosvg  # type: ignore
+except Exception:  # pragma: no cover - fallback when cairo missing
+    cairosvg = None
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 from aiogram import Bot, Dispatcher, Router, F
@@ -62,17 +65,33 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
     draw = ImageDraw.Draw(img)
 
     codepoints = "-".join(f"{ord(c):x}" for c in emoji)
-    url = f"https://twemoji.maxcdn.com/v/latest/svg/{codepoints}.svg"
+    emoji_size = int(size * 0.7)
+    emoji_img = None
+
     try:
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
-        emoji_size = int(size * 0.7)
-        png_bytes = cairosvg.svg2png(
-            bytestring=resp.content,
-            output_width=emoji_size,
-            output_height=emoji_size,
-        )
-        emoji_img = Image.open(BytesIO(png_bytes)).convert("RGBA")
+        if cairosvg:
+            url = f"https://twemoji.maxcdn.com/v/latest/svg/{codepoints}.svg"
+            resp = requests.get(url, timeout=10)
+            resp.raise_for_status()
+            png_bytes = cairosvg.svg2png(
+                bytestring=resp.content,
+                output_width=emoji_size,
+                output_height=emoji_size,
+            )
+            emoji_img = Image.open(BytesIO(png_bytes)).convert("RGBA")
+        else:
+            raise RuntimeError("cairosvg unavailable")
+    except Exception:
+        try:
+            url = f"https://twemoji.maxcdn.com/v/latest/72x72/{codepoints}.png"
+            resp = requests.get(url, timeout=10)
+            resp.raise_for_status()
+            emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
+            emoji_img = emoji_img.resize((emoji_size, emoji_size), Image.LANCZOS)
+        except Exception:
+            emoji_img = None
+
+    if emoji_img:
         shadow = Image.new("RGBA", emoji_img.size, (0, 0, 0, 0))
         shadow.paste((0, 0, 0, 80), mask=emoji_img.split()[3])
         shadow = shadow.filter(ImageFilter.GaussianBlur(4))
@@ -80,7 +99,7 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
         y = (size - emoji_size) // 2
         img.paste(shadow, (x + 4, y + 4), shadow)
         img.paste(emoji_img, (x, y), emoji_img)
-    except Exception:
+    else:
         try:
             font = ImageFont.truetype("DejaVuSans.ttf", int(size * 0.7))
         except Exception:

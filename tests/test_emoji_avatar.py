@@ -1,9 +1,11 @@
 import random
 from types import SimpleNamespace
+from io import BytesIO
 
+import pytest
 from PIL import Image
 
-from app.bot import _emoji_avatar, AVATAR_SIZE
+from app.bot import _emoji_avatar, AVATAR_SIZE, cairosvg
 from app.settings import settings
 
 
@@ -16,6 +18,7 @@ class DummyResponse:
         pass
 
 
+@pytest.mark.skipif(cairosvg is None, reason="cairosvg not installed")
 def test_emoji_avatar_uses_svg(tmp_path, monkeypatch):
     random.seed(0)
     monkeypatch.setattr(settings, "AVATAR_DIR", str(tmp_path))
@@ -36,6 +39,34 @@ def test_emoji_avatar_uses_svg(tmp_path, monkeypatch):
     _emoji_avatar(tmp_path, user, "🔥")
 
     assert "/svg/" in url_holder["url"]
+    file = tmp_path / "1.png"
+    assert file.exists()
+    img = Image.open(file)
+    assert img.mode == "RGBA"
+    assert img.size == (AVATAR_SIZE, AVATAR_SIZE)
+    assert img.getpixel((AVATAR_SIZE // 2, AVATAR_SIZE // 2))[:3] == (255, 0, 0)
+
+
+def test_emoji_avatar_png_fallback(tmp_path, monkeypatch):
+    random.seed(0)
+    monkeypatch.setattr(settings, "AVATAR_DIR", str(tmp_path))
+
+    url_holder = {}
+
+    def fake_get(url, timeout=10):
+        url_holder["url"] = url
+        img = Image.new("RGBA", (10, 10), (255, 0, 0, 255))
+        buf = BytesIO()
+        img.save(buf, format="PNG")
+        return DummyResponse(buf.getvalue(), url_holder)
+
+    monkeypatch.setattr("app.bot.requests.get", fake_get)
+    monkeypatch.setattr("app.bot.cairosvg", None)
+
+    user = SimpleNamespace(id=1)
+    _emoji_avatar(tmp_path, user, "🔥")
+
+    assert "/72x72/" in url_holder["url"]
     file = tmp_path / "1.png"
     assert file.exists()
     img = Image.open(file)
