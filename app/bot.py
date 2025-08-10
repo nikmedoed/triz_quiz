@@ -6,11 +6,12 @@ from pathlib import Path
 import random
 from io import BytesIO
 
-from PIL import Image, ImageDraw, ImageFont
+import requests
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, Sticker
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from html import escape
 
@@ -28,42 +29,82 @@ router = Router()
 
 
 def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
-    """Generate avatar with given emoji on gradient background."""
+    """Generate avatar with given emoji on colorful gradient background."""
     size = 256
-    start = tuple(random.randint(150, 230) for _ in range(3))
-    end = tuple(random.randint(150, 230) for _ in range(3))
+    # choose four corner colors for a lively gradient
+    corners = [
+        tuple(random.randint(0, 255) for _ in range(3)) for _ in range(4)
+    ]  # tl, tr, bl, br
     img = Image.new("RGB", (size, size))
     draw = ImageDraw.Draw(img)
-    for y in range(size):
-        ratio = y / size
-        r = int(start[0] * (1 - ratio) + end[0] * ratio)
-        g = int(start[1] * (1 - ratio) + end[1] * ratio)
-        b = int(start[2] * (1 - ratio) + end[2] * ratio)
-        draw.line([(0, y), (size, y)], fill=(r, g, b))
+    for x in range(size):
+        rx = x / (size - 1)
+        for y in range(size):
+            ry = y / (size - 1)
+            top = [
+                int(corners[0][i] * (1 - rx) + corners[1][i] * rx) for i in range(3)
+            ]
+            bottom = [
+                int(corners[2][i] * (1 - rx) + corners[3][i] * rx) for i in range(3)
+            ]
+            r = int(top[0] * (1 - ry) + bottom[0] * ry)
+            g = int(top[1] * (1 - ry) + bottom[1] * ry)
+            b = int(top[2] * (1 - ry) + bottom[2] * ry)
+            draw.point((x, y), fill=(r, g, b))
+
+    codepoints = "-".join(f"{ord(c):x}" for c in emoji)
+    url = f"https://twemoji.maxcdn.com/v/latest/72x72/{codepoints}.png"
     try:
-        font = ImageFont.truetype("DejaVuSans.ttf", 180)
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
+        emoji_size = int(size * 0.7)
+        emoji_img = emoji_img.resize((emoji_size, emoji_size), Image.LANCZOS)
+        # drop shadow
+        shadow = Image.new("RGBA", emoji_img.size, (0, 0, 0, 0))
+        shadow.paste((0, 0, 0, 80), mask=emoji_img.split()[3])
+        shadow = shadow.filter(ImageFilter.GaussianBlur(4))
+        x = (size - emoji_size) // 2
+        y = (size - emoji_size) // 2
+        img.paste(shadow, (x + 4, y + 4), shadow)
+        img.paste(emoji_img, (x, y), emoji_img)
     except Exception:
-        font = ImageFont.load_default()
-    draw.text((size / 2, size / 2), emoji, font=font, anchor="mm")
-    img.save(path / f"{user.id}.jpg")
+        try:
+            font = ImageFont.truetype("DejaVuSans.ttf", int(size * 0.7))
+        except Exception:
+            font = ImageFont.load_default()
+        draw.text((size / 2, size / 2), emoji, font=font, anchor="mm")
+
+    img.save(path / f"{user.id}.png")
 
 
-async def _sticker_avatar(bot: Bot, user: User, file_id: str) -> None:
+async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker) -> None:
     path = Path(settings.AVATAR_DIR)
     path.mkdir(exist_ok=True)
     buf = BytesIO()
+    file_id = sticker.file_id
+    if (sticker.is_animated or sticker.is_video) and sticker.thumbnail:
+        file_id = sticker.thumbnail.file_id
     await bot.download(file_id, destination=buf)
     buf.seek(0)
-    Image.open(buf).convert("RGB").save(path / f"{user.id}.jpg")
+    img = Image.open(buf)
+    if img.mode != "RGBA":
+        img = img.convert("RGBA")
+    img.save(path / f"{user.id}.png")
 
 
 async def save_avatar(bot: Bot, user: User) -> bool:
     path = Path(settings.AVATAR_DIR)
     path.mkdir(exist_ok=True)
-    photos = await bot.get_user_profile_photos(user.id, limit=1)
-    if photos.total_count:
-        file_id = photos.photos[0][-1].file_id
-        await bot.download(file_id, destination=path / f"{user.id}.jpg")
+    chat = await bot.get_chat(user.id)
+    if chat.photo:
+        buf = BytesIO()
+        await bot.download(chat.photo.big_file_id, destination=buf)
+        buf.seek(0)
+        img = Image.open(buf)
+        if img.mode != "RGBA":
+            img = img.convert("RGBA")
+        img.save(path / f"{user.id}.png")
         return True
     return False
 
@@ -136,6 +177,7 @@ async def idea_vote_kb(session: AsyncSession, open_step: Step, voter: User):
 async def cmd_start(message: Message, bot: Bot):
     session, user, state, step = await get_ctx(str(message.from_user.id))
     try:
+        await save_avatar(bot, user)
         user.waiting_for_name = True
         await session.commit()
         if user.name:
@@ -170,7 +212,7 @@ async def on_text(message: Message, bot: Bot):
             user.waiting_for_avatar = False
             await session.commit()
             await hub.broadcast({"type": "reload"})
-            await message.answer(texts.AVATAR_SAVED)
+            await send_prompt(bot, user, step, state.phase, prefix=texts.NAME_SAVED)
             return
 
         # 1) режим ввода имени работает ТОЛЬКО если он активирован /start
@@ -179,18 +221,18 @@ async def on_text(message: Message, bot: Bot):
             if not new_name:
                 await message.answer(texts.NAME_EMPTY)
                 return
+            was_new = user.name == ""
             user.name = new_name
             user.waiting_for_name = False
             await session.commit()
             saved = await save_avatar(bot, user)
-            if not saved:
-                avatar_path = Path(settings.AVATAR_DIR) / f"{user.id}.jpg"
-                if not avatar_path.exists():
-                    user.waiting_for_avatar = True
-                    await session.commit()
-                    await message.answer(texts.ASK_AVATAR)
-            await hub.broadcast({"type": "reload"})
-            await send_prompt(bot, user, step, state.phase, prefix=texts.NAME_SAVED)
+            if was_new and not saved:
+                user.waiting_for_avatar = True
+                await session.commit()
+                await message.answer(texts.ASK_AVATAR)
+            else:
+                await hub.broadcast({"type": "reload"})
+                await send_prompt(bot, user, step, state.phase, prefix=texts.NAME_SAVED)
             return
 
         # 2) обычные текстовые ответы принимаем только в open:collect
@@ -248,14 +290,14 @@ async def on_text(message: Message, bot: Bot):
 
 @router.message(F.sticker)
 async def on_sticker(message: Message, bot: Bot):
-    session, user, _, _ = await get_ctx(str(message.from_user.id))
+    session, user, state, step = await get_ctx(str(message.from_user.id))
     try:
         if user.waiting_for_avatar:
-            await _sticker_avatar(bot, user, message.sticker.file_id)
+            await _sticker_avatar(bot, user, message.sticker)
             user.waiting_for_avatar = False
             await session.commit()
             await hub.broadcast({"type": "reload"})
-            await message.answer(texts.AVATAR_SAVED)
+            await send_prompt(bot, user, step, state.phase, prefix=texts.NAME_SAVED)
     finally:
         await session.close()
 
