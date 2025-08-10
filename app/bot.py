@@ -28,14 +28,12 @@ import app.texts as texts
 router = Router()
 
 
-def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
-    """Generate avatar with given emoji on colorful gradient background."""
-    size = 256
-    # choose four corner colors for a lively gradient
+def _gradient(size: int) -> Image.Image:
+    """Create a colorful four-corner gradient image."""
     corners = [
         tuple(random.randint(0, 255) for _ in range(3)) for _ in range(4)
     ]  # tl, tr, bl, br
-    img = Image.new("RGB", (size, size))
+    img = Image.new("RGBA", (size, size))
     draw = ImageDraw.Draw(img)
     for x in range(size):
         rx = x / (size - 1)
@@ -50,7 +48,15 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
             r = int(top[0] * (1 - ry) + bottom[0] * ry)
             g = int(top[1] * (1 - ry) + bottom[1] * ry)
             b = int(top[2] * (1 - ry) + bottom[2] * ry)
-            draw.point((x, y), fill=(r, g, b))
+            draw.point((x, y), fill=(r, g, b, 255))
+    return img
+
+
+def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
+    """Generate avatar with given emoji on colorful gradient background."""
+    size = 256
+    img = _gradient(size)
+    draw = ImageDraw.Draw(img)
 
     codepoints = "-".join(f"{ord(c):x}" for c in emoji)
     url = f"https://twemoji.maxcdn.com/v/latest/72x72/{codepoints}.png"
@@ -87,10 +93,18 @@ async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker) -> None:
         file_id = sticker.thumbnail.file_id
     await bot.download(file_id, destination=buf)
     buf.seek(0)
-    img = Image.open(buf)
-    if img.mode != "RGBA":
-        img = img.convert("RGBA")
-    img.save(path / f"{user.id}.png")
+    img = Image.open(buf).convert("RGBA")
+    bbox = img.getbbox()
+    if bbox:
+        img = img.crop(bbox)
+    size = 256
+    max_size = int(size * 0.8)
+    img.thumbnail((max_size, max_size), Image.LANCZOS)
+    background = _gradient(size)
+    x = (size - img.width) // 2
+    y = (size - img.height) // 2
+    background.alpha_composite(img, dest=(x, y))
+    background.save(path / f"{user.id}.png")
 
 
 async def save_avatar(bot: Bot, user: User) -> bool:

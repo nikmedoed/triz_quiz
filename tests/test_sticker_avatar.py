@@ -1,4 +1,5 @@
 import asyncio
+import random
 from types import SimpleNamespace
 from io import BytesIO
 
@@ -20,6 +21,7 @@ class DummyBot:
 
 def test_static_sticker(tmp_path, monkeypatch):
     async def run():
+        random.seed(0)
         monkeypatch.setattr(settings, "AVATAR_DIR", str(tmp_path))
         bot = DummyBot()
         sticker = SimpleNamespace(file_id="orig", is_animated=False, is_video=False, thumbnail=None)
@@ -30,13 +32,16 @@ def test_static_sticker(tmp_path, monkeypatch):
         assert file.exists()
         img = Image.open(file)
         assert img.mode == "RGBA"
-        assert img.getpixel((0, 0))[3] == 0
+        assert img.size == (256, 256)
+        assert img.getpixel((0, 0))[3] == 255
+        assert img.getpixel((0, 0)) != img.getpixel((255, 255))
 
     asyncio.run(run())
 
 
 def test_animated_sticker_uses_thumbnail(tmp_path, monkeypatch):
     async def run():
+        random.seed(0)
         monkeypatch.setattr(settings, "AVATAR_DIR", str(tmp_path))
         bot = DummyBot()
         thumb = SimpleNamespace(file_id="thumb")
@@ -48,6 +53,8 @@ def test_animated_sticker_uses_thumbnail(tmp_path, monkeypatch):
         assert file.exists()
         img = Image.open(file)
         assert img.mode == "RGBA"
-        assert img.getpixel((0, 0))[3] == 0
+        assert img.size == (256, 256)
+        assert img.getpixel((0, 0))[3] == 255
+        assert img.getpixel((0, 0)) != img.getpixel((255, 255))
 
     asyncio.run(run())
