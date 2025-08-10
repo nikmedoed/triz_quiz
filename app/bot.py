@@ -6,6 +6,7 @@ from pathlib import Path
 import random
 from io import BytesIO
 
+import requests
 from PIL import Image, ImageDraw, ImageFont
 
 from aiogram import Bot, Dispatcher, Router, F
@@ -30,8 +31,8 @@ router = Router()
 def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
     """Generate avatar with given emoji on gradient background."""
     size = 256
-    start = tuple(random.randint(150, 230) for _ in range(3))
-    end = tuple(random.randint(150, 230) for _ in range(3))
+    start = tuple(random.randint(0, 255) for _ in range(3))
+    end = tuple(max(0, min(255, c + random.randint(-120, 120))) for c in start)
     img = Image.new("RGB", (size, size))
     draw = ImageDraw.Draw(img)
     for y in range(size):
@@ -40,11 +41,27 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
         g = int(start[1] * (1 - ratio) + end[1] * ratio)
         b = int(start[2] * (1 - ratio) + end[2] * ratio)
         draw.line([(0, y), (size, y)], fill=(r, g, b))
+
+    codepoints = "-".join(f"{ord(c):x}" for c in emoji)
+    url = f"https://twemoji.maxcdn.com/v/latest/72x72/{codepoints}.png"
     try:
-        font = ImageFont.truetype("DejaVuSans.ttf", 180)
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
+        emoji_size = int(size * 0.7)
+        emoji_img = emoji_img.resize((emoji_size, emoji_size), Image.LANCZOS)
+        img.paste(
+            emoji_img,
+            ((size - emoji_size) // 2, (size - emoji_size) // 2),
+            emoji_img,
+        )
     except Exception:
-        font = ImageFont.load_default()
-    draw.text((size / 2, size / 2), emoji, font=font, anchor="mm")
+        try:
+            font = ImageFont.truetype("DejaVuSans.ttf", int(size * 0.7))
+        except Exception:
+            font = ImageFont.load_default()
+        draw.text((size / 2, size / 2), emoji, font=font, anchor="mm")
+
     img.save(path / f"{user.id}.jpg")
 
 
@@ -136,6 +153,7 @@ async def idea_vote_kb(session: AsyncSession, open_step: Step, voter: User):
 async def cmd_start(message: Message, bot: Bot):
     session, user, state, step = await get_ctx(str(message.from_user.id))
     try:
+        await save_avatar(bot, user)
         user.waiting_for_name = True
         await session.commit()
         if user.name:
