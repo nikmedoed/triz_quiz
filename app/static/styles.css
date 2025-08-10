@@ -104,16 +104,20 @@ h2 {
 
 
 .grid {
-  --count: 1;
-  display: flex;
-  flex-wrap: wrap;
+  --cols: 1;
+  --card-w: 128px;
+  --card-h: calc(var(--card-w) * 1.25);
+  display: grid;
   justify-content: center;
   gap: var(--space-4);
+  grid-template-columns: repeat(var(--cols), var(--card-w));
+  grid-auto-rows: var(--card-h);
   width: 100%;
 }
 
 .card {
-  flex: 0 1 min(128px, calc((100% - (var(--count) - 1) * var(--space-4)) / var(--count)));
+  width: var(--card-w);
+  height: var(--card-h);
   padding: var(--space-4);
   text-align: center;
 }

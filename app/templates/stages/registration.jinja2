@@ -1,7 +1,7 @@
 {% extends 'base.jinja2' %}
 
 {% block content %}
-  <div class="grid" style="--count: {{ users|length }};">
+  <div class="grid">
     {% for u in users %}
     <div class="card">
       <img class="avatar" src="/avatars/{{ u.id }}.png" title="{{ u.name }}" />
@@ -9,4 +9,5 @@
     </div>
     {% endfor %}
   </div>
+  <script src="/static/registration.js"></script>
 {% endblock %}
