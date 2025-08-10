@@ -6,12 +6,7 @@ import random
 from io import BytesIO
 from pathlib import Path
 
-import requests
-try:  # optional, may require system cairo library
-    import cairosvg  # type: ignore
-except Exception:  # pragma: no cover - fallback when cairo missing
-    cairosvg = None
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 
 from aiogram import Bot
 from aiogram.types import Sticker
@@ -48,60 +43,21 @@ def _gradient(size: int) -> Image.Image:
 
 
 def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
-    """Generate avatar with given emoji on colorful gradient background."""
+    """Generate avatar with given emoji on a colorful gradient background."""
     size = AVATAR_SIZE
     img = _gradient(size)
     draw = ImageDraw.Draw(img)
-
-    codepoints = "-".join(f"{ord(c):x}" for c in emoji)
-    emoji_size = int(size * 0.7)
-    emoji_img = None
-
-    if cairosvg:
-        try:
-            url_svg = f"https://twemoji.maxcdn.com/v/latest/svg/{codepoints}.svg"
-            resp = requests.get(url_svg, timeout=10)
-            resp.raise_for_status()
-            png_bytes = cairosvg.svg2png(
-                bytestring=resp.content,
-                output_width=emoji_size,
-                output_height=emoji_size,
-            )
-            emoji_img = Image.open(BytesIO(png_bytes)).convert("RGBA")
-        except Exception:
-            emoji_img = None
-
-    if emoji_img is None:
-        try:
-            url_png = f"https://twemoji.maxcdn.com/v/latest/72x72/{codepoints}.png"
-            resp = requests.get(url_png, timeout=10)
-            resp.raise_for_status()
-            emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
-            emoji_img = emoji_img.resize((emoji_size, emoji_size), Image.LANCZOS)
-        except Exception:
-            emoji_img = None
-
-    if emoji_img is None:
-        try:
-            font = ImageFont.truetype("DejaVuSans.ttf", emoji_size)
-        except Exception:
-            font = ImageFont.load_default()
-        draw.text(
-            (size / 2, size / 2),
-            emoji,
-            font=font,
-            anchor="mm",
-            embedded_color=True,
-        )
-    else:
-        shadow = Image.new("RGBA", emoji_img.size, (0, 0, 0, 0))
-        shadow.paste((0, 0, 0, 80), mask=emoji_img.split()[3])
-        shadow = shadow.filter(ImageFilter.GaussianBlur(4))
-        x = (size - emoji_size) // 2
-        y = (size - emoji_size) // 2
-        img.paste(shadow, (x + 4, y + 4), shadow)
-        img.paste(emoji_img, (x, y), emoji_img)
-
+    try:
+        font = ImageFont.truetype("DejaVuSans.ttf", int(size * 0.7))
+    except Exception:
+        font = ImageFont.load_default()
+    draw.text(
+        (size / 2, size / 2),
+        emoji,
+        font=font,
+        anchor="mm",
+        embedded_color=True,
+    )
     img.save(path / f"{user.id}.png")
 
 

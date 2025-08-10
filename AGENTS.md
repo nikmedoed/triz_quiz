@@ -85,9 +85,9 @@ Keep changes minimal, safe, and production-ready.
 
 * Primary source: Telegram profile photo.
 * Fallback: ask user for emoji or sticker.
-  * Emoji: render Twemoji SVG at 640×640 PNG when `cairosvg` is available; otherwise upscale Twemoji's 72×72 PNG and, if that fails, draw the emoji with a system font.
+  * Emoji: draw the emoji glyph with a system font on a 640×640 gradient background.
   * Stickers: try the original file for best resolution; fall back to the provided thumbnail if it can't be decoded.
-* Save result to `/avatars/{user.id}.png`.
+* Save result to `/avatars/{user.id}.png` as a PNG file.
 
 ---
 
