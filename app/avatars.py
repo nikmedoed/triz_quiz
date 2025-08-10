@@ -139,13 +139,16 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
     img.save(path / f"{user.id}.png")
 
 
-def _downscale_high_quality(img: Image.Image, target_max: int) -> Image.Image:
-    """High-quality downscale for RGBA using premultiplied alpha."""
-    w, h = img.width, img.height
-    if max(w, h) <= target_max:
+def _resize_fit_rgba(img: Image.Image, target_max: int, allow_upscale: bool) -> Image.Image:
+    """Resize to target_max using premultiplied alpha; optionally upscale."""
+    w, h = img.size
+    if w == 0 or h == 0:
         return img
 
     scale = target_max / max(w, h)
+    if scale >= 1.0 and not allow_upscale:
+        return img
+
     new_size = (max(1, int(w * scale)), max(1, int(h * scale)))
 
     if img.mode != "RGBA":
@@ -188,7 +191,7 @@ def _render_tgs_high_quality(tgs_bytes: bytes, target_max: int, oversample: int 
         W, H = max(1, int(w * scale)), max(1, int(h * scale))
         bgra = anim.render(f, W, H)
         img = Image.frombytes("RGBA", (W, H), bgra, "raw", "BGRA")
-        return _downscale_high_quality(img, target_max)
+        return _resize_fit_rgba(img, target_max, allow_upscale=False)
     except Exception:
         pass
     try:
@@ -202,7 +205,7 @@ def _render_tgs_high_quality(tgs_bytes: bytes, target_max: int, oversample: int 
         scale = (target_max * oversample) / max(w, h)
         W, H = max(1, int(w * scale)), max(1, int(h * scale))
         img = anim.render_pillow_frame(width=W, height=H, frame_no=f).convert("RGBA")
-        return _downscale_high_quality(img, target_max)
+        return _resize_fit_rgba(img, target_max, allow_upscale=False)
     except Exception:
         return None
 
@@ -237,8 +240,11 @@ def _extract_webm_frame_rgba(webm_bytes: bytes, sec: float = 0.5) -> Image.Image
 
 
 def _auto_crop(img: Image.Image) -> Image.Image:
-    """Crop transparent borders with small padding."""
-    bbox = img.getbbox()
+    """Crop by alpha channel with small padding."""
+    if img.mode != "RGBA":
+        img = img.convert("RGBA")
+    a = img.split()[3]
+    bbox = a.getbbox()
     if not bbox:
         return img
     left, top, right, bottom = bbox
@@ -296,7 +302,10 @@ async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker, target_size: i
         raise RuntimeError("Failed to decode sticker to an image")
 
     img = _auto_crop(img)
-    img = _downscale_high_quality(img, max_size)
+    if sticker.is_animated or sticker.is_video:
+        img = _resize_fit_rgba(img, max_size, allow_upscale=True)
+    else:
+        img = _resize_fit_rgba(img, max_size, allow_upscale=False)
     if not (sticker.is_animated or sticker.is_video):
         img = _post_sharpen(img)
 
