@@ -144,6 +144,9 @@ async def get_ctx(tg_id: str):
             session.add(user)
             await session.commit()
             await session.refresh(user)
+            avatar = Path(settings.AVATAR_DIR) / f"{user.id}.png"
+            if avatar.exists():
+                avatar.unlink()
         state = await session.get(GlobalState, 1)
         step = await session.get(Step, state.current_step_id)
         return session, user, state, step
