@@ -7,8 +7,8 @@
 {% endblock %}
 
 {% block body %}
-  <div class="stage">Выбери верный</div>
-  <div class="content">
+  <div class="stage">Выбери верный{% if phase != 0 %} — результаты{% endif %}</div>
+  <div class="content{% if phase != 0 %} mcq-results{% endif %}">
     <h1>{{ step.title }}</h1>
     {% if phase == 0 %}
       {% if step.text %}
@@ -28,7 +28,6 @@
         </ol>
       {% endif %}
     {% else %}
-      <div class="question">Результаты</div>
       <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
       <script>
         window.__mcq = {

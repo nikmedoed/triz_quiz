@@ -61,6 +61,7 @@ window.renderMcq = function() {
       label.textContent = `${data.counts[i]} (${data.percents[i]}%)`;
       label.style.left = bar.x + 'px';
       label.style.top = Math.max(bar.y - 24, minTop) + 'px';
+      label.style.color = i === data.correct ? primary : neutral;
       container.appendChild(label);
 
       const div = document.createElement('div');

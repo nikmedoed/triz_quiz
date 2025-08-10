@@ -136,11 +136,16 @@ h2 {
   gap: var(--space-1);
 }
 
+.mcq-results {
+  justify-content: flex-start;
+}
+
 .mcq-container {
   position: relative;
   width: 100%;
   max-width: 900px;
-  height: 400px;
+  flex: 1;
+  height: 100%;
   margin: 0 auto;
 }
 
