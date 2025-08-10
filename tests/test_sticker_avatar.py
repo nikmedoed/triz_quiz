@@ -15,7 +15,7 @@ class DummyBot:
 
     async def download(self, file_id: str, destination: BytesIO):
         self.downloaded.append(file_id)
-        img = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
+        img = Image.new("RGBA", (50, 50), (255, 0, 0, 255))
         img.save(destination, format="PNG")
 
 
@@ -56,5 +56,8 @@ def test_animated_sticker_uses_thumbnail(tmp_path, monkeypatch):
         assert img.size == (256, 256)
         assert img.getpixel((0, 0))[3] == 255
         assert img.getpixel((0, 0)) != img.getpixel((255, 255))
+        bbox = img.getbbox()
+        assert bbox[2] - bbox[0] >= 200
+        assert bbox[3] - bbox[1] >= 200
 
     asyncio.run(run())

@@ -99,7 +99,13 @@ async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker) -> None:
         img = img.crop(bbox)
     size = 256
     max_size = int(size * 0.8)
-    img.thumbnail((max_size, max_size), Image.LANCZOS)
+    if sticker.is_animated or sticker.is_video:
+        scale = max_size / max(img.width, img.height)
+        img = img.resize(
+            (int(img.width * scale), int(img.height * scale)), Image.LANCZOS
+        )
+    else:
+        img.thumbnail((max_size, max_size), Image.LANCZOS)
     background = _gradient(size)
     x = (size - img.width) // 2
     y = (size - img.height) // 2
