@@ -86,7 +86,8 @@ def _load_emoji_font(size: int) -> ImageFont.ImageFont:
         return ImageFont.load_default()
 
 
-def _render_emoji_from_font(emoji: str, target_size: int) -> Image.Image:
+def _render_emoji_from_font(emoji: str, target_size: int) -> Image.Image | None:
+    """Render emoji via system fonts; return None if rendering failed."""
     render_scale = 4
     font_size = max(64, render_scale * target_size)
     font = _load_emoji_font(font_size)
@@ -100,8 +101,11 @@ def _render_emoji_from_font(emoji: str, target_size: int) -> Image.Image:
     alpha = img.split()[3]
     bbox = alpha.getbbox()
     if not bbox:
-        return img
+        return None
     glyph = img.crop(bbox)
+    # Heuristic: tiny glyph means missing character (e.g., placeholder cross)
+    if max(glyph.width, glyph.height) < box * 0.3:
+        return None
     scale = target_size / max(glyph.width, glyph.height)
     new_size = (max(1, int(glyph.width * scale)), max(1, int(glyph.height * scale)))
     return glyph.resize(new_size, Image.LANCZOS)
@@ -112,15 +116,19 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
     size = AVATAR_SIZE
     img = _gradient(size)
     emoji_size = int(size * 0.8)
-    try:
-        codepoints = "-".join(f"{ord(c):x}" for c in emoji)
-        url = f"https://emojiapi.dev/api/v1/{codepoints}/512.png"
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
-        emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
-        emoji_img = emoji_img.resize((emoji_size, emoji_size), Image.LANCZOS)
-    except Exception:
-        emoji_img = _render_emoji_from_font(emoji, emoji_size)
+
+    emoji_img = _render_emoji_from_font(emoji, emoji_size)
+    if emoji_img is None:
+        try:
+            codepoints = "-".join(f"{ord(c):x}" for c in emoji)
+            url = f"https://emojiapi.dev/api/v1/{codepoints}/512.png"
+            resp = requests.get(url, timeout=10)
+            resp.raise_for_status()
+            emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
+            emoji_img = emoji_img.resize((emoji_size, emoji_size), Image.LANCZOS)
+        except Exception:
+            # Last resort: placeholder transparent square
+            emoji_img = Image.new("RGBA", (emoji_size, emoji_size), (0, 0, 0, 0))
     shadow = Image.new("RGBA", emoji_img.size, (0, 0, 0, 0))
     shadow.paste((0, 0, 0, 80), mask=emoji_img.split()[3])
     shadow = shadow.filter(ImageFilter.GaussianBlur(4))
