@@ -4,6 +4,9 @@ window.renderMcq = function() {
   if (!ctx || !window.__mcq) return;
   const data = window.__mcq;
   const container = ctx.parentNode;
+  // Ensure the canvas matches the container dimensions
+  ctx.width = container.clientWidth;
+  ctx.height = container.clientHeight;
   const labels = data.labels.map(l => {
     const words = l.split(' ');
     const lines = [];
@@ -27,7 +30,7 @@ window.renderMcq = function() {
       },
       options: {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
           tooltip: {
