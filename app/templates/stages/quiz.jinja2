@@ -1,61 +1,42 @@
 {% extends 'base.jinja2' %}
 
-{% block top_right %}
+{% block content %}
+  <h1>{{ step.title }}</h1>
   {% if phase == 0 %}
-    <div class="status" id="answersStatus" data-total="{{ total_users }}">Ответы: <span id="answersCount">{{ answers_count }}</span> / {{ total_users }} Последний: <span id="lastAnswerAgo">{{ last_answer_ago_s if last_answer_ago_s is not none else '-' }}</span></div>
-  {% endif %}
-{% endblock %}
-
-{% block body %}
-  <div class="stage">Выбери верный{% if phase != 0 %} — результаты{% endif %}</div>
-  <div class="content{% if phase != 0 %} mcq-results{% endif %}">
-    <h1>{{ step.title }}</h1>
-    {% if phase == 0 %}
-      {% if step.text %}
-        <div class="quiz-layout">
-          <div class="quiz-description">{{ step.text }}</div>
-          <ol class="quiz-options">
-            {% for opt in options %}
-              <li>{{ opt.text }}</li>
-            {% endfor %}
-          </ol>
-        </div>
-      {% else %}
-        <ol class="quiz-options quiz-options-alone">
+    {% if step.text %}
+      <div class="quiz-layout">
+        <div class="quiz-description">{{ step.text }}</div>
+        <ol class="quiz-options">
           {% for opt in options %}
             <li>{{ opt.text }}</li>
           {% endfor %}
         </ol>
-      {% endif %}
+      </div>
     {% else %}
-      <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
-      <script>
-        window.__mcq = {
-          labels: [{% for opt in options %}'{{ loop.index }}. {{ opt.text|replace("'", "\\'") }}',{% endfor %}],
-          counts: [{% for c in counts %}{{ c }},{% endfor %}],
-          percents: [{% for p in percents %}{{ p }},{% endfor %}],
-          correct: {{ correct }},
-          avatars: [
-            {% for arr in avatars_map %}[
-              {% for id in arr %}'{{ id }}'{% if not loop.last %},{% endif %}{% endfor %}
-            ]{% if not loop.last %},{% endif %}{% endfor %}
-          ],
-          names: {
-            {% for id, name in names_map.items() %}'{{ id }}': '{{ name|replace("'", "\\'") }}'{% if not loop.last %},{% endif %}{% endfor %}
-          }
-        };
-        document.addEventListener('DOMContentLoaded', () => window.renderMcq());
-      </script>
+      <ol class="quiz-options quiz-options-alone">
+        {% for opt in options %}
+          <li>{{ opt.text }}</li>
+        {% endfor %}
+      </ol>
     {% endif %}
-  </div>
-{% endblock %}
-
-{% block footer_center %}
-  {% if phase == 0 %}
-    Участники выбирают вариант в боте.
+  {% else %}
+    <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
+    <script>
+      window.__mcq = {
+        labels: [{% for opt in options %}'{{ loop.index }}. {{ opt.text|replace("'", "\\'") }}',{% endfor %}],
+        counts: [{% for c in counts %}{{ c }},{% endfor %}],
+        percents: [{% for p in percents %}{{ p }},{% endfor %}],
+        correct: {{ correct }},
+        avatars: [
+          {% for arr in avatars_map %}[
+            {% for id in arr %}'{{ id }}'{% if not loop.last %},{% endif %}{% endfor %}
+          ]{% if not loop.last %},{% endif %}{% endfor %}
+        ],
+        names: {
+          {% for id, name in names_map.items() %}'{{ id }}': '{{ name|replace("'", "\\'") }}'{% if not loop.last %},{% endif %}{% endfor %}
+        }
+      };
+      document.addEventListener('DOMContentLoaded', () => window.renderMcq());
+    </script>
   {% endif %}
-{% endblock %}
-
-{% block footer_right %}
-<button class="btn btn-primary" onclick="post('/api/next')">Далее</button>
 {% endblock %}

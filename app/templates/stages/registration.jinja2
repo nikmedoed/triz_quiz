@@ -1,25 +1,12 @@
 {% extends 'base.jinja2' %}
 
-{% block top_right %}
-<form method="get" action="/reset" class="reset-form">
-  <button class="btn btn-secondary" type="submit">Сброс БД</button>
-</form>
-{% endblock %}
-
-{% block body %}
-  <div class="stage">Регистрация</div>
-  <div class="content">
-    <div class="grid" style="--count: {{ users|length }};">
-      {% for u in users %}
-      <div class="card">
-        <img class="avatar" src="/avatars/{{ u.id }}.png" title="{{ u.name }}" />
-        <div class="name">{{ u.name }}</div>
-      </div>
-      {% endfor %}
+{% block content %}
+  <div class="grid" style="--count: {{ users|length }};">
+    {% for u in users %}
+    <div class="card">
+      <img class="avatar" src="/avatars/{{ u.id }}.png" title="{{ u.name }}" />
+      <div class="name">{{ u.name }}</div>
     </div>
+    {% endfor %}
   </div>
-{% endblock %}
-
-{% block footer_right %}
-<button class="btn btn-primary" onclick="post('/api/next')">Далее</button>
 {% endblock %}

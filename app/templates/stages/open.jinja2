@@ -1,68 +1,39 @@
 {% extends 'base.jinja2' %}
 
-{% block top_center %}
+{% block content %}
+  <h1>{{ step.title }}</h1>
   {% if phase == 0 %}
-    <div class="timer" id="ideaTimer">05:00</div>
-  {% elif phase == 1 and ideas %}
-    <div class="timer" id="voteTimer">01:00</div>
-  {% endif %}
-{% endblock %}
-
-{% block top_right %}
-  {% if phase == 0 %}
-    <div class="status" id="answersStatus" data-total="{{ total_users }}">Ответы: <span id="answersCount">{{ ideas|length }}</span> / {{ total_users }} | последний: <span id="lastAnswerAgo">{{ last_answer_ago_s if last_answer_ago_s is not none else '-' }}</span></div>
-  {% elif phase == 1 and ideas %}
-    <div class="status">Проголосовало: <span id="votesCount">{{ voters_count }}</span> Последний: <span id="lastVoteAgo">{{ last_vote_ago_s if last_vote_ago_s is not none else '-' }}</span></div>
-  {% endif %}
-{% endblock %}
-
-{% block body %}
-  <div class="stage">Вопрос с открытым ответом</div>
-  <div class="content">
-    <h1>{{ step.title }}</h1>
-    {% if phase == 0 %}
-      <p class="description">{{ step.text }}</p>
-    {% elif phase == 1 %}
-      {% if ideas %}
-        <p class="question">Голосование за идеи</p>
-        <div class="ideas-grid">
-          {% for idea in ideas %}
-          <div class="idea-card">
-            <div class="idea-text">{{ idea.text }}</div>
-            <div class="idea-meta">ответ занял {{ idea.delay_text }}</div>
-          </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <p class="question">Ответов нет</p>
-      {% endif %}
-    {% elif phase == 2 %}
+    <p class="description">{{ step.text }}</p>
+  {% elif phase == 1 %}
+    {% if ideas %}
+      <p class="question">Голосование за идеи</p>
       <div class="ideas-grid">
         {% for idea in ideas %}
-        {% set voters = voters_map.get(idea.id) or [] %}
         <div class="idea-card">
-          <div class="idea-vote-count">★ {{ voters|length }}</div>
           <div class="idea-text">{{ idea.text }}</div>
-          <div class="idea-author"><img class="avatar small" src="/avatars/{{ idea.author.id }}.png" title="{{ idea.author.name }}" /> <span class="author-name">{{ idea.author.name }}</span></div>
           <div class="idea-meta">ответ занял {{ idea.delay_text }}</div>
-          <div class="idea-voters">
-            {% for v in voters %}
-              <img src="/avatars/{{ v.id }}.png" title="{{ v.name }}" />
-            {% endfor %}
-          </div>
         </div>
         {% endfor %}
       </div>
+    {% else %}
+      <p class="question">Ответов нет</p>
     {% endif %}
-  </div>
-{% endblock %}
-
-{% block footer_center %}
-  {% if phase == 0 %}
-    Отправляйте идеи боту. Здесь они пока не видны.
+  {% elif phase == 2 %}
+    <div class="ideas-grid">
+      {% for idea in ideas %}
+      {% set voters = voters_map.get(idea.id) or [] %}
+      <div class="idea-card">
+        <div class="idea-vote-count">★ {{ voters|length }}</div>
+        <div class="idea-text">{{ idea.text }}</div>
+        <div class="idea-author"><img class="avatar small" src="/avatars/{{ idea.author.id }}.png" title="{{ idea.author.name }}" /> <span class="author-name">{{ idea.author.name }}</span></div>
+        <div class="idea-meta">ответ занял {{ idea.delay_text }}</div>
+        <div class="idea-voters">
+          {% for v in voters %}
+            <img src="/avatars/{{ v.id }}.png" title="{{ v.name }}" />
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
   {% endif %}
-{% endblock %}
-
-{% block footer_right %}
-<button class="btn btn-primary" onclick="post('/api/next')">Далее</button>
 {% endblock %}
