@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import random
 import gzip
+import json
 import subprocess
+import tempfile
 from io import BytesIO
 from pathlib import Path
 
 import requests
+from cairosvg import svg2png
 from PIL import (
     Image,
     ImageChops,
@@ -18,10 +21,6 @@ from PIL import (
     ImageMath,
     ImageStat,
 )
-try:
-    from rlottie_python import LottieAnimation
-except Exception:  # pragma: no cover - optional dependency
-    LottieAnimation = None  # type: ignore
 
 from aiogram import Bot
 from aiogram.types import Sticker
@@ -179,35 +178,45 @@ def _pick_nice_frame_index(total_frames: int) -> int:
     return max(0, min(total_frames - 1, idx))
 
 
-def _render_tgs_high_quality(tgs_bytes: bytes, target_max: int, oversample: int = 4) -> Image.Image | None:
-    """Render a crisp RGBA frame from .tgs using rlottie if available."""
+def _render_tgs_with_python_lottie_cli(
+    tgs_gz_bytes: bytes, target_max: int, oversample: int = 4
+) -> Image.Image | None:
+    """Render one crisp frame from a .tgs using python-lottie's CLI."""
+    frame_index = 0
     try:
-        import rlottie
-        anim = rlottie.Animation.from_tgs(tgs_bytes)
-        w, h = anim.width(), anim.height()
-        total_frames = anim.totalFrame() or 1
-        f = _pick_nice_frame_index(total_frames)
-        scale = (target_max * oversample) / max(w, h)
-        W, H = max(1, int(w * scale)), max(1, int(h * scale))
-        bgra = anim.render(f, W, H)
-        img = Image.frombytes("RGBA", (W, H), bgra, "raw", "BGRA")
-        return _resize_fit_rgba(img, target_max, allow_upscale=False)
+        data = gzip.decompress(tgs_gz_bytes).decode("utf-8")
+        j = json.loads(data)
+        ip = int(j.get("ip", 0))
+        op = int(j.get("op", ip + 1))
+        total_frames = max(1, op - ip)
+        frame_index = _pick_nice_frame_index(total_frames)
     except Exception:
-        pass
+        frame_index = 0
+
+    with tempfile.TemporaryDirectory() as td:
+        in_path = Path(td) / "input.tgs"
+        out_svg = Path(td) / "frame.svg"
+        in_path.write_bytes(tgs_gz_bytes)
+        cmd = [
+            "lottie_convert.py",
+            str(in_path),
+            str(out_svg),
+            "--frame",
+            str(frame_index),
+        ]
+        try:
+            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            svg_bytes = out_svg.read_bytes()
+        except Exception:
+            return None
+
+    big = target_max * oversample
     try:
-        if LottieAnimation is None:
-            raise ImportError("LottieAnimation unavailable")
-        data = tgs_bytes.decode("utf-8")
-        anim = LottieAnimation(data=data)
-        w, h = anim.lottie_animation_get_size()
-        total_frames = getattr(anim, "lottie_animation_get_totalframe", lambda: 1)() or 1
-        f = _pick_nice_frame_index(total_frames)
-        scale = (target_max * oversample) / max(w, h)
-        W, H = max(1, int(w * scale)), max(1, int(h * scale))
-        img = anim.render_pillow_frame(width=W, height=H, frame_no=f).convert("RGBA")
-        return _resize_fit_rgba(img, target_max, allow_upscale=False)
+        png_bytes = svg2png(bytestring=svg_bytes, output_width=big, output_height=big)
+        img = Image.open(BytesIO(png_bytes)).convert("RGBA")
     except Exception:
         return None
+    return _resize_fit_rgba(img, target_max, allow_upscale=False)
 
 
 def _extract_webm_frame_rgba(webm_bytes: bytes, sec: float = 0.5) -> Image.Image | None:
@@ -216,10 +225,10 @@ def _extract_webm_frame_rgba(webm_bytes: bytes, sec: float = 0.5) -> Image.Image
         "ffmpeg",
         "-loglevel",
         "error",
-        "-ss",
-        f"{sec}",
         "-i",
         "pipe:0",
+        "-ss",
+        f"{sec}",
         "-frames:v",
         "1",
         "-pix_fmt",
@@ -283,11 +292,9 @@ async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker, target_size: i
         img = None
 
     if img is None and sticker.is_animated and not sticker.is_video:
-        try:
-            tgs = gzip.decompress(data_bytes)
-            img = _render_tgs_high_quality(tgs_bytes=tgs, target_max=max_size, oversample=4)
-        except Exception:
-            img = None
+        img = _render_tgs_with_python_lottie_cli(
+            data_bytes, target_max=max_size, oversample=4
+        )
 
     if img is None and sticker.is_video:
         img = _extract_webm_frame_rgba(data_bytes, sec=0.5)
