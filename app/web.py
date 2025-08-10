@@ -275,9 +275,9 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                         .where(McqAnswer.step_id == step.id, McqAnswer.choice_idx == opt.idx)
                     )
                 ).scalars().all()
-                avatars_map.append([u.telegram_id for u in users])
+                avatars_map.append([u.id for u in users])
                 for u in users:
-                    names_map[str(u.telegram_id)] = u.name
+                    names_map[str(u.id)] = u.name
             total = sum(counts)
             percents = [round((c / total) * 100) if total else 0 for c in counts]
             ctx.update(

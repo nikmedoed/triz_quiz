@@ -28,8 +28,8 @@ def test_idea_delay_uses_step_start():
             gs = GlobalState(id=1, current_step_id=step.id, step_started_at=start, phase_started_at=start, phase=0)
             session.add(gs)
 
-            u1 = User(telegram_id="1", name="A")
-            u2 = User(telegram_id="2", name="B")
+            u1 = User(id="1", name="A")
+            u2 = User(id="2", name="B")
             session.add_all([u1, u2])
             await session.flush()
 
@@ -77,7 +77,7 @@ def test_idea_delay_after_phase_change():
             )
             session.add(gs)
 
-            u1 = User(telegram_id="1", name="A")
+            u1 = User(id="1", name="A")
             session.add(u1)
             await session.flush()
 

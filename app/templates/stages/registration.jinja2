@@ -12,7 +12,7 @@
     <div class="grid" style="--count: {{ users|length }};">
       {% for u in users %}
       <div class="card">
-        <img class="avatar" src="/avatars/{{ u.telegram_id }}.jpg" title="{{ u.name }}" />
+        <img class="avatar" src="/avatars/{{ u.id }}.jpg" title="{{ u.name }}" />
         <div class="name">{{ u.name }}</div>
       </div>
       {% endfor %}

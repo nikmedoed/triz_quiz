@@ -3,6 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional, List
 from pathlib import Path
+import random
+from io import BytesIO
+
+from PIL import Image, ImageDraw, ImageFont
 
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import CommandStart, Command
@@ -23,21 +27,52 @@ import app.texts as texts
 router = Router()
 
 
-async def save_avatar(bot: Bot, user: User):
+def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
+    """Generate avatar with given emoji on gradient background."""
+    size = 256
+    start = tuple(random.randint(150, 230) for _ in range(3))
+    end = tuple(random.randint(150, 230) for _ in range(3))
+    img = Image.new("RGB", (size, size))
+    draw = ImageDraw.Draw(img)
+    for y in range(size):
+        ratio = y / size
+        r = int(start[0] * (1 - ratio) + end[0] * ratio)
+        g = int(start[1] * (1 - ratio) + end[1] * ratio)
+        b = int(start[2] * (1 - ratio) + end[2] * ratio)
+        draw.line([(0, y), (size, y)], fill=(r, g, b))
+    try:
+        font = ImageFont.truetype("DejaVuSans.ttf", 180)
+    except Exception:
+        font = ImageFont.load_default()
+    draw.text((size / 2, size / 2), emoji, font=font, anchor="mm")
+    img.save(path / f"{user.id}.jpg")
+
+
+async def _sticker_avatar(bot: Bot, user: User, file_id: str) -> None:
     path = Path(settings.AVATAR_DIR)
     path.mkdir(exist_ok=True)
-    photos = await bot.get_user_profile_photos(user.telegram_id, limit=1)
+    buf = BytesIO()
+    await bot.download(file_id, destination=buf)
+    buf.seek(0)
+    Image.open(buf).convert("RGB").save(path / f"{user.id}.jpg")
+
+
+async def save_avatar(bot: Bot, user: User) -> bool:
+    path = Path(settings.AVATAR_DIR)
+    path.mkdir(exist_ok=True)
+    photos = await bot.get_user_profile_photos(user.id, limit=1)
     if photos.total_count:
         file_id = photos.photos[0][-1].file_id
-        await bot.download(file_id, destination=path / f"{user.telegram_id}.jpg")
-        user.avatar_file_id = file_id
+        await bot.download(file_id, destination=path / f"{user.id}.jpg")
+        return True
+    return False
 
 async def get_ctx(tg_id: str):
     session = AsyncSessionLocal()
     try:
-        user = (await session.execute(select(User).where(User.telegram_id == tg_id))).scalar_one_or_none()
+        user = (await session.execute(select(User).where(User.id == tg_id))).scalar_one_or_none()
         if not user:
-            user = User(telegram_id=tg_id, name="")
+            user = User(id=tg_id, name="")
             session.add(user)
             await session.commit()
             await session.refresh(user)
@@ -124,6 +159,20 @@ async def cmd_cancel(message: Message, bot: Bot):
 async def on_text(message: Message, bot: Bot):
     session, user, state, step = await get_ctx(str(message.from_user.id))
     try:
+        if user.waiting_for_avatar:
+            emoji = message.text.strip()
+            if not emoji:
+                await message.answer(texts.ASK_AVATAR)
+                return
+            path = Path(settings.AVATAR_DIR)
+            path.mkdir(exist_ok=True)
+            _emoji_avatar(path, user, emoji[0])
+            user.waiting_for_avatar = False
+            await session.commit()
+            await hub.broadcast({"type": "reload"})
+            await message.answer(texts.AVATAR_SAVED)
+            return
+
         # 1) режим ввода имени работает ТОЛЬКО если он активирован /start
         if user.waiting_for_name:
             new_name = message.text.strip()[:120]
@@ -133,9 +182,14 @@ async def on_text(message: Message, bot: Bot):
             user.name = new_name
             user.waiting_for_name = False
             await session.commit()
-            await save_avatar(bot, user)
-            await session.commit()
-            await hub.broadcast({"type": "reload"})  # появится на экране регистрации
+            saved = await save_avatar(bot, user)
+            if not saved:
+                avatar_path = Path(settings.AVATAR_DIR) / f"{user.id}.jpg"
+                if not avatar_path.exists():
+                    user.waiting_for_avatar = True
+                    await session.commit()
+                    await message.answer(texts.ASK_AVATAR)
+            await hub.broadcast({"type": "reload"})
             await send_prompt(bot, user, step, state.phase, prefix=texts.NAME_SAVED)
             return
 
@@ -188,6 +242,20 @@ async def on_text(message: Message, bot: Bot):
             )
         else:
             await message.answer(texts.TEXT_NOT_ACCEPTED)
+    finally:
+        await session.close()
+
+
+@router.message(F.sticker)
+async def on_sticker(message: Message, bot: Bot):
+    session, user, _, _ = await get_ctx(str(message.from_user.id))
+    try:
+        if user.waiting_for_avatar:
+            await _sticker_avatar(bot, user, message.sticker.file_id)
+            user.waiting_for_avatar = False
+            await session.commit()
+            await hub.broadcast({"type": "reload"})
+            await message.answer(texts.AVATAR_SAVED)
     finally:
         await session.close()
 
@@ -376,7 +444,7 @@ async def build_prompt_messages(user: User, step: Step, phase: int):
 async def send_prompt(bot: Bot, user: User, step: Step, phase: int, prefix: str | None = None):
     if step.type == "open" and phase == 2 and user.last_vote_msg_id:
         try:
-            await bot.edit_message_reply_markup(user.telegram_id, user.last_vote_msg_id, reply_markup=None)
+            await bot.edit_message_reply_markup(user.id, user.last_vote_msg_id, reply_markup=None)
         except Exception:
             pass
         async with AsyncSessionLocal() as s:
@@ -393,7 +461,7 @@ async def send_prompt(bot: Bot, user: User, step: Step, phase: int, prefix: str 
         else:
             msgs.insert(0, (prefix, {}))
     for text, kwargs in msgs:
-        msg = await bot.send_message(user.telegram_id, text, **kwargs)
+        msg = await bot.send_message(user.id, text, **kwargs)
         if step.type == "open" and phase == 1 and kwargs.get("reply_markup"):
             async with AsyncSessionLocal() as s:
                 u = await s.get(User, user.id)
