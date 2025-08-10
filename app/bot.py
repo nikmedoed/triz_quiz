@@ -70,8 +70,8 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
 
     if cairosvg:
         try:
-            url = f"https://twemoji.maxcdn.com/v/latest/svg/{codepoints}.svg"
-            resp = requests.get(url, timeout=10)
+            url_svg = f"https://twemoji.maxcdn.com/v/latest/svg/{codepoints}.svg"
+            resp = requests.get(url_svg, timeout=10)
             resp.raise_for_status()
             png_bytes = cairosvg.svg2png(
                 bytestring=resp.content,
@@ -82,15 +82,17 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
         except Exception:
             emoji_img = None
 
-    if emoji_img:
-        shadow = Image.new("RGBA", emoji_img.size, (0, 0, 0, 0))
-        shadow.paste((0, 0, 0, 80), mask=emoji_img.split()[3])
-        shadow = shadow.filter(ImageFilter.GaussianBlur(4))
-        x = (size - emoji_size) // 2
-        y = (size - emoji_size) // 2
-        img.paste(shadow, (x + 4, y + 4), shadow)
-        img.paste(emoji_img, (x, y), emoji_img)
-    else:
+    if emoji_img is None:
+        try:
+            url_png = f"https://twemoji.maxcdn.com/v/latest/72x72/{codepoints}.png"
+            resp = requests.get(url_png, timeout=10)
+            resp.raise_for_status()
+            emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
+            emoji_img = emoji_img.resize((emoji_size, emoji_size), Image.LANCZOS)
+        except Exception:
+            emoji_img = None
+
+    if emoji_img is None:
         try:
             font = ImageFont.truetype("DejaVuSans.ttf", emoji_size)
         except Exception:
@@ -102,6 +104,14 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
             anchor="mm",
             embedded_color=True,
         )
+    else:
+        shadow = Image.new("RGBA", emoji_img.size, (0, 0, 0, 0))
+        shadow.paste((0, 0, 0, 80), mask=emoji_img.split()[3])
+        shadow = shadow.filter(ImageFilter.GaussianBlur(4))
+        x = (size - emoji_size) // 2
+        y = (size - emoji_size) // 2
+        img.paste(shadow, (x + 4, y + 4), shadow)
+        img.paste(emoji_img, (x, y), emoji_img)
 
     img.save(path / f"{user.id}.png")
 
