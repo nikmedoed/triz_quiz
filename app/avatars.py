@@ -45,38 +45,77 @@ def _gradient(size: int) -> Image.Image:
     return img
 
 
+def _possible_emoji_fonts() -> list[Path]:
+    paths = [
+        Path("/System/Library/Fonts/Apple Color Emoji.ttc"),
+        Path("/System/Library/Fonts/Apple Color Emoji.ttf"),
+        Path("C:/Windows/Fonts/seguiemj.ttf"),
+        Path("C:/Windows/Fonts/SegoeUIEmoji.ttf"),
+        Path("C:/Windows/Fonts/Segoe UI Emoji.ttf"),
+        Path("/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf"),
+        Path("/usr/share/fonts/truetype/joypixels/JoyPixels.ttf"),
+        Path("/usr/share/fonts/truetype/twemoji/TwitterColorEmoji-SVGinOT.ttf"),
+    ]
+    return [p for p in paths if p.exists()]
+
+
+def _load_emoji_font(size: int) -> ImageFont.ImageFont:
+    for p in _possible_emoji_fonts():
+        try:
+            return ImageFont.truetype(str(p), size)
+        except Exception:
+            try:
+                return ImageFont.truetype(str(p), size, index=0)
+            except Exception:
+                continue
+    try:
+        return ImageFont.truetype("DejaVuSans.ttf", size)
+    except Exception:
+        return ImageFont.load_default()
+
+
+def _render_emoji_from_font(emoji: str, target_size: int) -> Image.Image:
+    render_scale = 4
+    font_size = max(64, render_scale * target_size)
+    font = _load_emoji_font(font_size)
+    box = max(2 * font_size, render_scale * target_size * 2)
+    img = Image.new("RGBA", (box, box), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    try:
+        draw.text((box // 2, box // 2), emoji, font=font, anchor="mm", embedded_color=True)
+    except TypeError:
+        draw.text((box // 2, box // 2), emoji, font=font, anchor="mm")
+    alpha = img.split()[3]
+    bbox = alpha.getbbox()
+    if not bbox:
+        return img
+    glyph = img.crop(bbox)
+    scale = target_size / max(glyph.width, glyph.height)
+    new_size = (max(1, int(glyph.width * scale)), max(1, int(glyph.height * scale)))
+    return glyph.resize(new_size, Image.LANCZOS)
+
+
 def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
     """Generate avatar from emoji image with a colorful gradient background."""
     size = AVATAR_SIZE
     img = _gradient(size)
+    emoji_size = int(size * 0.7)
     try:
         codepoints = "-".join(f"{ord(c):x}" for c in emoji)
         url = f"https://emojiapi.dev/api/v1/{codepoints}/512.png"
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
-        emoji_size = int(size * 0.7)
         emoji_img = emoji_img.resize((emoji_size, emoji_size), Image.LANCZOS)
-        shadow = Image.new("RGBA", emoji_img.size, (0, 0, 0, 0))
-        shadow.paste((0, 0, 0, 80), mask=emoji_img.split()[3])
-        shadow = shadow.filter(ImageFilter.GaussianBlur(4))
-        x = (size - emoji_size) // 2
-        y = (size - emoji_size) // 2
-        img.paste(shadow, (x + 4, y + 4), shadow)
-        img.paste(emoji_img, (x, y), emoji_img)
     except Exception:
-        draw = ImageDraw.Draw(img)
-        try:
-            font = ImageFont.truetype("DejaVuSans.ttf", int(size * 0.7))
-        except Exception:
-            font = ImageFont.load_default()
-        draw.text(
-            (size / 2, size / 2),
-            emoji,
-            font=font,
-            anchor="mm",
-            embedded_color=True,
-        )
+        emoji_img = _render_emoji_from_font(emoji, emoji_size)
+    shadow = Image.new("RGBA", emoji_img.size, (0, 0, 0, 0))
+    shadow.paste((0, 0, 0, 80), mask=emoji_img.split()[3])
+    shadow = shadow.filter(ImageFilter.GaussianBlur(4))
+    x = (size - emoji_img.width) // 2
+    y = (size - emoji_img.height) // 2
+    img.paste(shadow, (x + 4, y + 4), shadow)
+    img.paste(emoji_img, (x, y), emoji_img)
     img.save(path / f"{user.id}.png")
 
 

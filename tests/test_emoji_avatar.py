@@ -44,3 +44,34 @@ def test_emoji_avatar_downloads_image(tmp_path, monkeypatch):
     assert img.size == (AVATAR_SIZE, AVATAR_SIZE)
     center = img.getpixel((AVATAR_SIZE // 2, AVATAR_SIZE // 2))
     assert center[:3] == (255, 0, 0)
+
+
+def test_emoji_avatar_font_fallback(tmp_path, monkeypatch):
+    random.seed(0)
+    monkeypatch.setattr(settings, "AVATAR_DIR", str(tmp_path))
+
+    def fake_get(url, timeout):
+        raise requests.RequestException("fail")
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    import app.avatars as avatars
+
+    called = {}
+
+    def fake_render(emoji, target):
+        called["emoji"] = emoji
+        return Image.new("RGBA", (target, target), (0, 255, 0, 255))
+
+    monkeypatch.setattr(avatars, "_render_emoji_from_font", fake_render)
+
+    user = SimpleNamespace(id=2)
+    avatars._emoji_avatar(tmp_path, user, "🔥")
+
+    assert called["emoji"] == "🔥"
+    file = tmp_path / "2.png"
+    assert file.exists()
+    img = Image.open(file)
+    assert img.size == (AVATAR_SIZE, AVATAR_SIZE)
+    center = img.getpixel((AVATAR_SIZE // 2, AVATAR_SIZE // 2))
+    assert center[:3] == (0, 255, 0)
