@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 {% set active_page = 'reset' %}
 {% block body %}
-<div class="container">
-  <h1>Подтверждение сброса</h1>
-  <p>Вы уверены, что хотите сбросить базу данных?</p>
-  <form method="post" class="reset-actions">
-    <button class="btn btn-primary" type="submit">Сброс БД</button>
-    <button class="btn btn-secondary" type="button" onclick="window.history.back()">Отмена</button>
-  </form>
-</div>
+  <div class="content">
+    <h1>Подтверждение сброса</h1>
+    <p>Вы уверены, что хотите сбросить базу данных?</p>
+    <form method="post" class="reset-actions">
+      <button class="btn btn-primary" type="submit">Сброс БД</button>
+      <button class="btn btn-secondary" type="button" onclick="window.history.back()">Отмена</button>
+    </form>
+  </div>
 {% endblock %}

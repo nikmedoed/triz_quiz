@@ -56,13 +56,10 @@ body {
   color: var(--color-dark);
   font-family: var(--font-sans);
   font-weight: var(--font-weight-regular);
-  width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   overflow: hidden;
-  position: relative;
 }
 
 a {
@@ -76,14 +73,11 @@ a:focus {
   text-decoration: underline;
 }
 
-.container {
-  max-width: 1200px;
-  width: 100%;
-  height: 100%;
-  padding: var(--space-8) var(--space-6);
+.main {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  position: relative;
+  padding: var(--space-8) var(--space-6);
 }
 
 .content {
@@ -200,9 +194,10 @@ h2 {
 }
 
 .status {
-  font-size: 24px;
+  font-size: 16px;
   line-height: 1.2;
   color: var(--color-dark);
+  white-space: nowrap;
 }
 
 .description {
@@ -475,33 +470,30 @@ ol {
 
 
 .topbar {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   padding: var(--space-4);
-  z-index: 2;
 }
 
 .top-left {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-6);
 }
 
 .top-center {
   position: absolute;
-  top: var(--space-4);
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
 }
 
 .top-right {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-4);
 }
 
@@ -519,9 +511,6 @@ ol {
 
 
 .bottombar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
   width: 100%;
   display: flex;
   justify-content: space-between;
