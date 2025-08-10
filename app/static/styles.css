@@ -102,23 +102,25 @@ h2 {
   margin: var(--space-4) 0;
 }
 
+
 .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  --count: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-4);
-  justify-items: center;
+  width: 100%;
 }
 
 .card {
-  background: transparent;
-  border: none;
+  flex: 0 1 min(128px, calc((100% - (var(--count) - 1) * var(--space-4)) / var(--count)));
   padding: var(--space-4);
   text-align: center;
 }
 
 .avatar {
-  width: clamp(80px, 12vw, 128px);
-  height: clamp(80px, 12vw, 128px);
+  width: 100%;
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
   object-fit: cover;
 }
@@ -165,9 +167,15 @@ h2 {
 
 .name {
   margin-top: var(--space-3);
-  font-size: clamp(18px, 2vw, 24px);
+  font-size: clamp(14px, 1.5vw, 20px);
   white-space: normal;
   word-break: break-word;
+}
+
+.reset-actions {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
 }
 
 .question {

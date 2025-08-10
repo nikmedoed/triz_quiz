@@ -4,9 +4,9 @@
 <div class="container">
   <h1>Подтверждение сброса</h1>
   <p>Вы уверены, что хотите сбросить базу данных?</p>
-  <form method="post">
+  <form method="post" class="reset-actions">
     <button class="btn btn-primary" type="submit">Сброс БД</button>
+    <button class="btn btn-secondary" type="button" onclick="window.history.back()">Отмена</button>
   </form>
-  <button class="btn btn-secondary" onclick="window.history.back()">Отмена</button>
 </div>
 {% endblock %}

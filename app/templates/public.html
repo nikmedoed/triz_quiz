@@ -18,7 +18,7 @@
   <h1>{{ step.title }}</h1>
 
   {% if step.type == 'registration' %}
-    <div class="grid">
+    <div class="grid" style="--count: {{ users|length }};">
       {% for u in users %}
         <div class="card">
           <img class="avatar" src="/avatars/{{ u.telegram_id }}.jpg" title="{{ u.name }}" />
