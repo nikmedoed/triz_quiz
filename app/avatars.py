@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import random
 import gzip
+import subprocess
 from io import BytesIO
 from pathlib import Path
 
 import requests
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageStat
 from rlottie_python import LottieAnimation
 
 from aiogram import Bot
@@ -119,46 +120,141 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
     img.save(path / f"{user.id}.png")
 
 
-async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker) -> None:
+def _downscale_high_quality(img: Image.Image, target_max: int) -> Image.Image:
+    """Downscale with LANCZOS only (no upscaling)."""
+    if max(img.width, img.height) <= target_max:
+        return img
+    scale = target_max / max(img.width, img.height)
+    return img.resize((int(img.width * scale), int(img.height * scale)), Image.LANCZOS)
+
+
+def _pick_nice_frame_index(total_frames: int) -> int:
+    """Heuristic: take ~30% into the animation."""
+    if total_frames <= 1:
+        return 0
+    idx = int(total_frames * 0.3)
+    return max(0, min(total_frames - 1, idx))
+
+
+def _render_tgs_high_quality(tgs_bytes: bytes, target_max: int, oversample: int = 4) -> Image.Image | None:
+    """Render a crisp RGBA frame from .tgs using rlottie if available."""
+    try:
+        import rlottie
+        anim = rlottie.Animation.from_tgs(tgs_bytes)
+        w, h = anim.width(), anim.height()
+        total_frames = anim.totalFrame() or 1
+        f = _pick_nice_frame_index(total_frames)
+        scale = (target_max * oversample) / max(w, h)
+        W, H = max(1, int(w * scale)), max(1, int(h * scale))
+        bgra = anim.render(f, W, H)
+        img = Image.frombytes("RGBA", (W, H), bgra, "raw", "BGRA")
+        return _downscale_high_quality(img, target_max)
+    except Exception:
+        pass
+    try:
+        data = tgs_bytes.decode("utf-8")
+        anim = LottieAnimation(data=data)
+        w, h = anim.lottie_animation_get_size()
+        total_frames = getattr(anim, "lottie_animation_get_totalframe", lambda: 1)() or 1
+        f = _pick_nice_frame_index(total_frames)
+        scale = (target_max * oversample) / max(w, h)
+        W, H = max(1, int(w * scale)), max(1, int(h * scale))
+        img = anim.render_pillow_frame(width=W, height=H, frame_no=f).convert("RGBA")
+        return _downscale_high_quality(img, target_max)
+    except Exception:
+        return None
+
+
+def _extract_webm_frame_rgba(webm_bytes: bytes, sec: float = 0.5) -> Image.Image | None:
+    """Use ffmpeg to grab a single RGBA PNG frame."""
+    cmd = [
+        "ffmpeg",
+        "-loglevel",
+        "error",
+        "-ss",
+        f"{sec}",
+        "-i",
+        "pipe:0",
+        "-frames:v",
+        "1",
+        "-f",
+        "image2",
+        "-vcodec",
+        "png",
+        "pipe:1",
+    ]
+    try:
+        proc = subprocess.run(
+            cmd, input=webm_bytes, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
+        )
+        return Image.open(BytesIO(proc.stdout)).convert("RGBA")
+    except Exception:
+        return None
+
+
+def _auto_crop(img: Image.Image) -> Image.Image:
+    """Crop transparent borders with small padding."""
+    bbox = img.getbbox()
+    if not bbox:
+        return img
+    left, top, right, bottom = bbox
+    pad = max(2, int(0.01 * max(img.width, img.height)))
+    left = max(0, left - pad)
+    top = max(0, top - pad)
+    right = min(img.width, right + pad)
+    bottom = min(img.height, bottom + pad)
+    return img.crop((left, top, right, bottom))
+
+
+def _post_sharpen(img: Image.Image) -> Image.Image:
+    """Light sharpening after downscale."""
+    edge_var = ImageStat.Stat(img.filter(ImageFilter.FIND_EDGES).convert("L")).var[0]
+    if edge_var < 5:
+        return img
+    return img.filter(ImageFilter.UnsharpMask(radius=1.0, percent=80, threshold=3))
+
+
+async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker, target_size: int = AVATAR_SIZE) -> None:
+    """Extract a crisp frame from a Telegram sticker and save an avatar."""
     path = Path(settings.AVATAR_DIR)
     path.mkdir(exist_ok=True)
+
     buf = BytesIO()
     await bot.download(sticker.file_id, destination=buf)
-    buf.seek(0)
-    size = AVATAR_SIZE
+    data_bytes = buf.getvalue()
+
+    size = target_size
     max_size = int(size * 0.8)
+    img = None
+
     try:
-        img = Image.open(buf).convert("RGBA")
+        img = Image.open(BytesIO(data_bytes)).convert("RGBA")
     except Exception:
         img = None
-        if sticker.is_animated and not sticker.is_video:
-            try:
-                buf.seek(0)
-                data = gzip.decompress(buf.read()).decode("utf-8")
-                anim = LottieAnimation(data=data)
-                width, height = anim.lottie_animation_get_size()
-                scale = max_size / max(width, height)
-                img = anim.render_pillow_frame(
-                    width=int(width * scale), height=int(height * scale)
-                ).convert("RGBA")
-            except Exception:
-                img = None
-        if img is None:
-            if sticker.thumbnail:
-                buf = BytesIO()
-                await bot.download(sticker.thumbnail.file_id, destination=buf)
-                buf.seek(0)
-                img = Image.open(buf).convert("RGBA")
-            else:
-                raise
-    bbox = img.getbbox()
-    if bbox:
-        img = img.crop(bbox)
-    if sticker.is_animated or sticker.is_video:
-        scale = max_size / max(img.width, img.height)
-        img = img.resize((int(img.width * scale), int(img.height * scale)), Image.LANCZOS)
-    else:
-        img.thumbnail((max_size, max_size), Image.LANCZOS)
+
+    if img is None and sticker.is_animated and not sticker.is_video:
+        try:
+            tgs = gzip.decompress(data_bytes)
+            img = _render_tgs_high_quality(tgs_bytes=tgs, target_max=max_size, oversample=4)
+        except Exception:
+            img = None
+
+    if img is None and sticker.is_video:
+        img = _extract_webm_frame_rgba(data_bytes, sec=0.5)
+
+    if img is None and getattr(sticker, "thumbnail", None):
+        th_buf = BytesIO()
+        await bot.download(sticker.thumbnail.file_id, destination=th_buf)
+        th_buf.seek(0)
+        img = Image.open(th_buf).convert("RGBA")
+
+    if img is None:
+        raise RuntimeError("Failed to decode sticker to an image")
+
+    img = _auto_crop(img)
+    img = _downscale_high_quality(img, max_size)
+    img = _post_sharpen(img)
+
     background = _gradient(size)
     x = (size - img.width) // 2
     y = (size - img.height) // 2
@@ -185,4 +281,3 @@ async def save_avatar(bot: Bot, user: User) -> bool:
         background.save(path / f"{user.id}.png")
         return True
     return False
-
