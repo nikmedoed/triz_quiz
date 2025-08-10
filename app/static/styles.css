@@ -86,6 +86,7 @@ a:focus {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 100%;
 }
 
 h1 {
@@ -390,6 +391,7 @@ ol {
   gap: var(--space-8);
   width: 100%;
   justify-content: center;
+  align-items: center;
   max-width: 960px;
   margin: 0 auto;
 }
@@ -409,7 +411,7 @@ ol {
 
 .quiz-options li {
   font-size: 24px;
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-regular);
   margin-bottom: var(--space-2);
   border: 2px solid var(--color-slate-300);
   padding: var(--space-4);
@@ -421,6 +423,13 @@ ol {
 .quiz-options-alone {
   max-width: 600px;
   margin: 0 auto;
+}
+
+.quiz-note {
+  font-size: 24px;
+  font-weight: var(--font-weight-light);
+  margin-bottom: var(--space-4);
+  text-align: center;
 }
 
 .timer {

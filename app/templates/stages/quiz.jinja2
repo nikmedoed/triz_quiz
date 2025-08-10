@@ -20,6 +20,9 @@
       </ol>
     {% endif %}
   {% else %}
+    {% if step.text %}
+      <div class="quiz-note">{{ step.text }}</div>
+    {% endif %}
     <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
     <script>
       window.__mcq = {
