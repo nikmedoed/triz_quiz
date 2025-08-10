@@ -1,10 +1,12 @@
 import random
 from types import SimpleNamespace
+from io import BytesIO
 
 import pathlib
 import sys
 
-from PIL import Image, ImageFont, ImageDraw
+import requests
+from PIL import Image
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
@@ -12,34 +14,33 @@ from app.avatars import _emoji_avatar, AVATAR_SIZE
 from app.settings import settings
 
 
-def test_emoji_avatar_draws_text(tmp_path, monkeypatch):
+def test_emoji_avatar_downloads_image(tmp_path, monkeypatch):
     random.seed(0)
     monkeypatch.setattr(settings, "AVATAR_DIR", str(tmp_path))
 
     calls = {}
 
-    default_font = ImageFont.load_default()
+    def fake_get(url, timeout):
+        calls["url"] = url
+        img = Image.new("RGBA", (512, 512), (255, 0, 0, 255))
+        buf = BytesIO()
+        img.save(buf, format="PNG")
+        buf.seek(0)
+        class Resp:
+            content = buf.getvalue()
+            def raise_for_status(self):
+                return None
+        return Resp()
 
-    def fake_truetype(font, size, *_, **__):
-        calls["size"] = size
-        return default_font
-
-    monkeypatch.setattr(ImageFont, "truetype", fake_truetype)
-
-    original_text = ImageDraw.ImageDraw.text
-
-    def fake_text(self, xy, text, font=None, anchor=None, embedded_color=False):
-        calls["text"] = text
-        return original_text(self, xy, text, font=font, anchor=anchor, embedded_color=embedded_color)
-
-    monkeypatch.setattr(ImageDraw.ImageDraw, "text", fake_text)
+    monkeypatch.setattr(requests, "get", fake_get)
 
     user = SimpleNamespace(id=1)
     _emoji_avatar(tmp_path, user, "🔥")
 
+    assert calls["url"].endswith("1f525/512.png")
     file = tmp_path / "1.png"
     assert file.exists()
     img = Image.open(file)
     assert img.size == (AVATAR_SIZE, AVATAR_SIZE)
-    assert calls["size"] == int(AVATAR_SIZE * 0.7)
-    assert calls["text"] == "🔥"
+    center = img.getpixel((AVATAR_SIZE // 2, AVATAR_SIZE // 2))
+    assert center[:3] == (255, 0, 0)

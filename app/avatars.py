@@ -6,7 +6,8 @@ import random
 from io import BytesIO
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+import requests
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 from aiogram import Bot
 from aiogram.types import Sticker
@@ -43,21 +44,37 @@ def _gradient(size: int) -> Image.Image:
 
 
 def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
-    """Generate avatar with given emoji on a colorful gradient background."""
+    """Generate avatar from emoji image with a colorful gradient background."""
     size = AVATAR_SIZE
     img = _gradient(size)
-    draw = ImageDraw.Draw(img)
     try:
-        font = ImageFont.truetype("DejaVuSans.ttf", int(size * 0.7))
+        codepoints = "-".join(f"{ord(c):x}" for c in emoji)
+        url = f"https://emojiapi.dev/api/v1/{codepoints}/512.png"
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
+        emoji_size = int(size * 0.7)
+        emoji_img = emoji_img.resize((emoji_size, emoji_size), Image.LANCZOS)
+        shadow = Image.new("RGBA", emoji_img.size, (0, 0, 0, 0))
+        shadow.paste((0, 0, 0, 80), mask=emoji_img.split()[3])
+        shadow = shadow.filter(ImageFilter.GaussianBlur(4))
+        x = (size - emoji_size) // 2
+        y = (size - emoji_size) // 2
+        img.paste(shadow, (x + 4, y + 4), shadow)
+        img.paste(emoji_img, (x, y), emoji_img)
     except Exception:
-        font = ImageFont.load_default()
-    draw.text(
-        (size / 2, size / 2),
-        emoji,
-        font=font,
-        anchor="mm",
-        embedded_color=True,
-    )
+        draw = ImageDraw.Draw(img)
+        try:
+            font = ImageFont.truetype("DejaVuSans.ttf", int(size * 0.7))
+        except Exception:
+            font = ImageFont.load_default()
+        draw.text(
+            (size / 2, size / 2),
+            emoji,
+            font=font,
+            anchor="mm",
+            embedded_color=True,
+        )
     img.save(path / f"{user.id}.png")
 
 
