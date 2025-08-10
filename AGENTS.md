@@ -84,7 +84,7 @@ Keep changes minimal, safe, and production-ready.
 ### Avatars
 
 * Primary source: Telegram profile photo.
-* Fallback: ask user for emoji or sticker, save to `/avatars/{user.id}.jpg`.
+* Fallback: ask user for emoji or sticker, save to `/avatars/{user.id}.png`.
 
 ---
 

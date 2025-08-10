@@ -27,6 +27,8 @@ import app.texts as texts
 
 router = Router()
 
+AVATAR_SIZE = 640
+
 
 def _gradient(size: int) -> Image.Image:
     """Create a colorful four-corner gradient image."""
@@ -54,7 +56,7 @@ def _gradient(size: int) -> Image.Image:
 
 def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
     """Generate avatar with given emoji on colorful gradient background."""
-    size = 256
+    size = AVATAR_SIZE
     img = _gradient(size)
     draw = ImageDraw.Draw(img)
 
@@ -97,7 +99,7 @@ async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker) -> None:
     bbox = img.getbbox()
     if bbox:
         img = img.crop(bbox)
-    size = 256
+    size = AVATAR_SIZE
     max_size = int(size * 0.8)
     if sticker.is_animated or sticker.is_video:
         scale = max_size / max(img.width, img.height)
@@ -124,7 +126,12 @@ async def save_avatar(bot: Bot, user: User) -> bool:
         img = Image.open(buf)
         if img.mode != "RGBA":
             img = img.convert("RGBA")
-        img.save(path / f"{user.id}.png")
+        img.thumbnail((AVATAR_SIZE, AVATAR_SIZE), Image.LANCZOS)
+        background = Image.new("RGBA", (AVATAR_SIZE, AVATAR_SIZE), (0, 0, 0, 0))
+        x = (AVATAR_SIZE - img.width) // 2
+        y = (AVATAR_SIZE - img.height) // 2
+        background.alpha_composite(img, dest=(x, y))
+        background.save(path / f"{user.id}.png")
         return True
     return False
 

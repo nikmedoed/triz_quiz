@@ -5,7 +5,7 @@ from io import BytesIO
 
 from PIL import Image
 
-from app.bot import _sticker_avatar
+from app.bot import _sticker_avatar, AVATAR_SIZE
 from app.settings import settings
 
 
@@ -32,9 +32,9 @@ def test_static_sticker(tmp_path, monkeypatch):
         assert file.exists()
         img = Image.open(file)
         assert img.mode == "RGBA"
-        assert img.size == (256, 256)
+        assert img.size == (AVATAR_SIZE, AVATAR_SIZE)
         assert img.getpixel((0, 0))[3] == 255
-        assert img.getpixel((0, 0)) != img.getpixel((255, 255))
+        assert img.getpixel((0, 0)) != img.getpixel((AVATAR_SIZE - 1, AVATAR_SIZE - 1))
 
     asyncio.run(run())
 
@@ -53,9 +53,9 @@ def test_animated_sticker_uses_thumbnail(tmp_path, monkeypatch):
         assert file.exists()
         img = Image.open(file)
         assert img.mode == "RGBA"
-        assert img.size == (256, 256)
+        assert img.size == (AVATAR_SIZE, AVATAR_SIZE)
         assert img.getpixel((0, 0))[3] == 255
-        assert img.getpixel((0, 0)) != img.getpixel((255, 255))
+        assert img.getpixel((0, 0)) != img.getpixel((AVATAR_SIZE - 1, AVATAR_SIZE - 1))
         bbox = img.getbbox()
         assert bbox[2] - bbox[0] >= 200
         assert bbox[3] - bbox[1] >= 200
