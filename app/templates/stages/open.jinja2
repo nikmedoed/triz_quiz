@@ -9,6 +9,7 @@
         {% for idea in ideas %}
           {% set voters = voters_map.get(idea.id) or [] %}
           <div class="idea-card">
+            <div class="idea-number">{{ loop.index }}</div>
             {% if phase == 2 %}
               <div class="idea-vote-count">★ {{ voters|length }}</div>
               <div class="idea-header">

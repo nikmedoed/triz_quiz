@@ -331,18 +331,18 @@ ol {
 
 .ideas-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, 320px);
+  grid-template-columns: repeat(auto-fill, 320px);
   gap: var(--space-4);
-  width: 100%;
   max-width: calc(4 * 320px + 3 * var(--space-4));
   margin: 0 auto;
   flex: 1;
   min-height: 0;
+  height: 100%;
   overflow-y: auto;
   padding: var(--space-4) 0;
   scrollbar-width: none;
   justify-content: center;
-  align-content: center;
+  align-content: flex-start;
 }
 
 .ideas-grid::-webkit-scrollbar {
@@ -356,11 +356,12 @@ ol {
 
 .idea-card {
   position: relative;
+  width: 320px;
   background: #ffffff;
   border: 1px solid var(--color-light);
   border-radius: var(--radius-md);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: var(--space-4);
+  padding: var(--space-6) var(--space-8) var(--space-4) var(--space-6);
 }
 
 .idea-header {
@@ -368,6 +369,7 @@ ol {
   align-items: flex-start;
   gap: var(--space-2);
   margin-bottom: var(--space-3);
+  padding-right: var(--space-6);
 }
 
 .idea-author {
@@ -393,12 +395,12 @@ ol {
 }
 
 .idea-text {
-  font-size: 18px;
+  font-size: 16px;
   white-space: pre-line;
 }
 
 .idea-meta {
-  font-size: 16px;
+  font-size: 12px;
   color: var(--color-slate-500);
 }
 
@@ -412,15 +414,23 @@ ol {
 }
 
 .idea-voters img {
-  width: 24px;
-  height: 24px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: 2px solid #ffffff;
-  margin-left: -8px;
+  margin-left: -12px;
 }
 
 .idea-voters img:first-child {
   margin-left: 0;
+}
+
+.idea-number {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  font-size: 20px;
+  font-weight: var(--font-weight-medium);
 }
 
 .quiz-layout {
