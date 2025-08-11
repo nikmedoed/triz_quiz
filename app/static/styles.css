@@ -159,16 +159,25 @@ a:focus {
   -webkit-overflow-scrolling: touch;
 }
 
-.leaderboard-table thead th {
+.leaderboard-table thead {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #ffffff;
 }
 
 .leaderboard-columns > * {
   min-width: 0;
   min-height: 0;
+}
+
+.leaderboard-columns.single {
+  display: flex;
+  justify-content: center;
+}
+
+.leaderboard-columns.single .col-primary {
+  max-width: 600px;
+  width: 100%;
 }
 
 h1 {
