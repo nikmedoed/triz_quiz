@@ -64,11 +64,14 @@
       if(sec >= 60){ const m=Math.floor(sec/60); const s=sec%60; return m+' мин '+s+' с'; }
       return sec+' с';
     }
-    const timerEl = document.getElementById('ideaTimer') || document.getElementById('voteTimer');
+    const timerEl = document.getElementById('ideaTimer')
+      || document.getElementById('voteTimer')
+      || document.getElementById('quizTimer');
     const sinceVal = '{{ since.isoformat() if since is defined else "" }}';
     if (timerEl && sinceVal){
       const start = new Date(sinceVal + 'Z').getTime();
-      const duration = timerEl.id === 'ideaTimer' ? 5*60*1000 : 60*1000;
+      const durations = { ideaTimer: 5*60*1000, voteTimer: 60*1000, quizTimer: 60*1000 };
+      const duration = durations[timerEl.id] || 0;
       function tick(){
         let left = duration - (Date.now() - start);
         if(left < 0) left = 0;

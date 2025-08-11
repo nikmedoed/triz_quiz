@@ -94,6 +94,7 @@ h1 {
   font-weight: var(--font-weight-black);
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  text-align: center;
 }
 
 h2 {
@@ -391,6 +392,19 @@ ol {
   width: 100%;
   justify-content: center;
   align-items: center;
+}
+
+.quiz-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.quiz-title {
+  width: 100%;
 }
 
 .quiz-description {
