@@ -179,6 +179,29 @@ def _pick_nice_frame_index(total_frames: int) -> int:
     return max(0, min(total_frames - 1, idx))
 
 
+def _render_pillow_frame_scaled(
+    anim: LottieAnimation, frame_idx: int, w: int, h: int
+) -> Image.Image:
+    """Render a frame at given size using available rlottie-python APIs."""
+    try:
+        im = anim.render_pillow_frame(frame_num=frame_idx, width=w, height=h)
+        return im.convert("RGBA")
+    except TypeError:
+        pass
+    try:
+        buf = anim.lottie_animation_render(frame_num=frame_idx, width=w, height=h)
+        im = Image.frombuffer("RGBA", (w, h), buf, "raw", "BGRA")
+        return im.convert("RGBA")
+    except TypeError:
+        pass
+    buf = anim.lottie_animation_render(frame_num=frame_idx)
+    w0, h0 = anim.lottie_animation_get_size()
+    im0 = Image.frombuffer("RGBA", (w0, h0), buf, "raw", "BGRA").convert("RGBA")
+    if (w0, h0) != (w, h):
+        im0 = im0.resize((w, h), Image.LANCZOS)
+    return im0
+
+
 def _render_tgs_high_quality(tgs_bytes: bytes, target_max: int, oversample: int = 4) -> Image.Image | None:
     """Render a crisp RGBA frame from .tgs using rlottie if available."""
     try:
@@ -198,14 +221,16 @@ def _render_tgs_high_quality(tgs_bytes: bytes, target_max: int, oversample: int 
         if LottieAnimation is None:
             raise ImportError("LottieAnimation unavailable")
         data = tgs_bytes.decode("utf-8")
-        anim = LottieAnimation(data=data)
-        w, h = anim.lottie_animation_get_size()
-        total_frames = getattr(anim, "lottie_animation_get_totalframe", lambda: 1)() or 1
-        f = _pick_nice_frame_index(total_frames)
-        scale = (target_max * oversample) / max(w, h)
-        W, H = max(1, int(w * scale)), max(1, int(h * scale))
-        img = anim.render_pillow_frame(width=W, height=H, frame_no=f).convert("RGBA")
-        return _resize_fit_rgba(img, target_max, allow_upscale=False)
+        with LottieAnimation.from_data(data) as anim:
+            w, h = anim.lottie_animation_get_size()
+            total_frames = (
+                getattr(anim, "lottie_animation_get_totalframe", lambda: 1)() or 1
+            )
+            f = _pick_nice_frame_index(total_frames)
+            scale = (target_max * oversample) / max(w, h)
+            W, H = max(1, int(w * scale)), max(1, int(h * scale))
+            img = _render_pillow_frame_scaled(anim, f, W, H)
+            return _resize_fit_rgba(img, target_max, allow_upscale=False)
     except Exception:
         return None
 
@@ -274,7 +299,7 @@ async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker, target_size: i
     data_bytes = buf.getvalue()
 
     size = target_size
-    max_size = int(size * 0.9)
+    max_size = int(size * 0.8)
     img = None
 
     try:
