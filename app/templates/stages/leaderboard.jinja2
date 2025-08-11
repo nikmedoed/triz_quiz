@@ -5,6 +5,7 @@
     <div class="leader-top">
       {% for u in users[:3] %}
       <div class="leader-card">
+        <div class="leader-rank">{{ loop.index }}</div>
         <img class="avatar" src="/avatars/{{ u.id }}.png" alt="{{ u.name }}" />
         <div class="leader-info">
           <div class="leader-name">{{ u.name }}</div>
