@@ -475,6 +475,10 @@ ol {
   align-items: center;
   flex: 1;
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 60px;
+  box-sizing: border-box;
   min-height: 0;
   height: 100%;
   overflow: hidden;
@@ -485,34 +489,41 @@ ol {
   display: flex;
   gap: var(--space-6);
   width: 100%;
-  margin: 0 auto;
   justify-content: center;
   align-items: stretch;
-  box-sizing: border-box;
   min-height: 0;
   height: 100%;
 }
 
-.quiz-description {
+.quiz-col {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.quiz-description {
+  width: 100%;
+  max-height: 100%;
   font-size: 22px;
   font-weight: var(--font-weight-light);
   overflow-y: auto;
   white-space: pre-line;
-  min-height: 0;
+  text-align: left;
 }
 
 .quiz-options {
-  flex: 1;
+  width: 100%;
+  max-height: 100%;
   counter-reset: option;
   margin: 0;
   padding: 0;
   overflow-y: auto;
-  min-height: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center;
   gap: var(--space-2);
 }
 

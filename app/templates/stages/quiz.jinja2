@@ -6,19 +6,25 @@
       <h1>{{ step.title }}</h1>
       {% if step.text %}
         <div class="quiz-layout">
-          <div class="quiz-description">{{ step.text }}</div>
-          <ol class="quiz-options">
+          <div class="quiz-col">
+            <div class="quiz-description">{{ step.text }}</div>
+          </div>
+          <div class="quiz-col">
+            <ol class="quiz-options">
+              {% for opt in options %}
+                <li>{{ opt.text }}</li>
+              {% endfor %}
+            </ol>
+          </div>
+        </div>
+      {% else %}
+        <div class="quiz-col">
+          <ol class="quiz-options quiz-options-alone">
             {% for opt in options %}
               <li>{{ opt.text }}</li>
             {% endfor %}
           </ol>
         </div>
-      {% else %}
-        <ol class="quiz-options quiz-options-alone">
-          {% for opt in options %}
-            <li>{{ opt.text }}</li>
-          {% endfor %}
-        </ol>
       {% endif %}
     </div>
   {% else %}
