@@ -53,6 +53,11 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   margin: 0;
   background: #ffffff;
@@ -62,7 +67,11 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+}
+
+.topbar,
+.bottombar {
+  flex: 0 0 auto;
 }
 
 a {
@@ -81,6 +90,7 @@ a:focus {
   display: flex;
   flex-direction: column;
   padding: 0 var(--space-4);
+  min-height: 0;
 }
 
 .content {
@@ -90,6 +100,75 @@ a:focus {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  min-height: 0;
+}
+
+ .content.leaderboard-page {
+  display: block;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--space-6) 0;
+  overflow: hidden;
+}
+
+/* Two-column leaderboard layout */
+.leaderboard-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+}
+
+.col {
+  display: grid;
+  min-height: 0;
+}
+
+.col .col-inner {
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  justify-content: center;
+  min-height: 0;
+  height: 100%;
+  padding: 0 var(--space-6);
+}
+
+.col-secondary .col-inner {
+  justify-content: center;
+  min-height: 0;
+}
+
+.table-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.leaderboard-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #ffffff;
+}
+
+.leaderboard-columns > * {
+  min-width: 0;
+  min-height: 0;
 }
 
 h1 {
@@ -231,7 +310,7 @@ h2 {
 }
 
 
-.board-table {
+.leaderboard-table {
   width: 100%;
   border-collapse: collapse;
   border: 1px solid var(--color-light);
@@ -239,61 +318,61 @@ h2 {
   overflow: hidden;
 }
 
-.board-table th,
-.board-table td {
+.leaderboard-table th,
+.leaderboard-table td {
   padding: var(--space-2);
   border: none;
   vertical-align: middle;
 }
 
-.board-table thead th {
+.leaderboard-table thead th {
   background: var(--color-slate-50);
   font-weight: var(--font-weight-medium);
   text-align: center;
 }
 
-.board-table td {
+.leaderboard-table td {
   font-size: 18px;
 }
 
-.board-table td.align-center {
+.leaderboard-table td.align-center {
   text-align: center;
 }
 
-.board-table td.align-left {
+.leaderboard-table td.align-left {
   text-align: left;
 }
 
-.board-table tbody tr + tr {
+.leaderboard-table tbody tr + tr {
   border-top: 1px solid var(--color-light);
 }
 
-.board-table tbody tr:nth-child(even) {
+.leaderboard-table tbody tr:nth-child(even) {
   background: var(--color-slate-50);
 }
 
-.board-table td:first-child {
+.leaderboard-table td:first-child {
   width: 40px;
 }
 
-.board-table td:nth-child(2) {
+.leaderboard-table td:nth-child(2) {
   width: 70px;
   text-align: center;
 }
 
-.board-table td:nth-child(4),
-.board-table td:nth-child(5),
-.board-table td:nth-child(6) {
+.leaderboard-table td:nth-child(4),
+.leaderboard-table td:nth-child(5),
+.leaderboard-table td:nth-child(6) {
   width: 80px;
 }
 
-.board-table .name-cell {
+.leaderboard-table .name-cell {
   font-size: 24px;
   font-weight: var(--font-weight-medium);
   text-align: left;
 }
 
-.board-table .table-avatar {
+.leaderboard-table .table-avatar {
   width: 60px;
   height: 60px;
   object-fit: cover;
@@ -303,41 +382,11 @@ h2 {
 
 
 
-.leaderboard {
-  display: flex;
-  width: 100%;
-  padding: var(--space-6);
-  gap: var(--space-6);
-  box-sizing: border-box;
-  height: 100%;
-}
-
-.leaderboard.single {
-  justify-content: center;
-}
-
 .leader-top {
-  flex: 0 0 50%;
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  justify-content: center;
-  height: 100%;
-}
-
-.leaderboard .board {
-  flex: 0 0 50%;
-  display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 0 var(--space-6);
-  box-sizing: border-box;
-  height: 100%;
-}
-
-.leaderboard .board-scroll {
-  height: 100%;
-  overflow-y: auto;
   width: 100%;
 }
 
@@ -348,6 +397,7 @@ h2 {
   gap: var(--space-6);
   padding: var(--space-6);
   border-radius: var(--radius-md);
+  width: 100%;
 }
 
 .leader-card.gold {

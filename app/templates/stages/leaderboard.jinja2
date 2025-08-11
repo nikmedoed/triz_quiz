@@ -1,53 +1,62 @@
 {% extends 'base.jinja2' %}
 
 {% block content %}
-  <div class="leaderboard{% if users|length <= 3 %} single{% endif %}">
-    <div class="leader-top">
-      {% for u in users[:3] %}
-      {% set medal = ['gold', 'silver', 'bronze'][loop.index0] %}
-      <div class="leader-card {{ medal }}">
-        <div class="leader-rank">{{ loop.index }}</div>
-        <img class="avatar" src="/avatars/{{ u.id }}.png" alt="{{ u.name }}" />
-        <div class="leader-info">
-          <div class="leader-name">{{ u.name }}</div>
-          <div class="leader-score">Баллы: {{ u.total_score }}</div>
-          {% set parts = [] %}
-          {% for label, count, ms in [
-            ('Открытые', u.open_answer_count, u.open_answer_ms),
-            ('Выбор', u.quiz_answer_count, u.quiz_answer_ms),
-          ] %}
-            {% if count %}
-              {% set _ = parts.append(label ~ ': ' ~ (ms / count / 1000)|round(1) ~ ' с') %}
-            {% endif %}
+  <div class="leaderboard-columns">
+    <section class="col col-primary">
+      <div class="col-inner">
+        <div class="leader-top">
+          {% for u in users[:3] %}
+          {% set medal = ['gold', 'silver', 'bronze'][loop.index0] %}
+          <div class="leader-card {{ medal }}">
+            <div class="leader-rank">{{ loop.index }}</div>
+            <img class="avatar" src="/avatars/{{ u.id }}.png" alt="{{ u.name }}" />
+            <div class="leader-info">
+              <div class="leader-name">{{ u.name }}</div>
+              <div class="leader-score">Баллы: {{ u.total_score }}</div>
+              {% set parts = [] %}
+              {% for label, count, ms in [
+                ('Открытые', u.open_answer_count, u.open_answer_ms),
+                ('Выбор', u.quiz_answer_count, u.quiz_answer_ms),
+              ] %}
+                {% if count %}
+                  {% set _ = parts.append(label ~ ': ' ~ (ms / count / 1000)|round(1) ~ ' с') %}
+                {% endif %}
+              {% endfor %}
+              {% if parts %}
+              <div class="leader-average-label">Среднее время</div>
+              <div class="leader-types">{{ parts|join(', ') }}</div>
+              {% endif %}
+            </div>
+          </div>
           {% endfor %}
-          {% if parts %}
-          <div class="leader-average-label">Среднее время</div>
-          <div class="leader-types">{{ parts|join(', ') }}</div>
-          {% endif %}
         </div>
       </div>
-      {% endfor %}
-    </div>
+    </section>
     {% if users|length > 3 %}
-    <div class="board">
-      <div class="board-scroll">
-        <table class="board-table">
-          <thead><tr><th>#</th><th></th><th>Имя</th><th>Баллы</th><th>Откр. ср. (с)</th><th>Выбор ср. (с)</th></tr></thead>
-          <tbody>
-            {% for u in users[3:] %}
-            <tr>
-              <td class="align-center">{{ loop.index + 3 }}</td>
-              <td><img class="avatar table-avatar" src="/avatars/{{ u.id }}.png" alt="{{ u.name }}" /></td>
-              <td class="name-cell">{{ u.name }}</td>
-              <td class="align-center">{{ u.total_score }}</td>
-              <td class="align-center">{{ (u.open_answer_ms / u.open_answer_count / 1000)|round(1) if u.open_answer_count else 0 }}</td>
-              <td class="align-center">{{ (u.quiz_answer_ms / u.quiz_answer_count / 1000)|round(1) if u.quiz_answer_count else 0 }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+    <section class="col col-secondary">
+      <div class="col-inner">
+        <div class="table-wrap">
+          <div class="table-scroll" data-auto-scroll="leaderboard" data-speed="28">
+            <table class="leaderboard-table">
+              <thead><tr><th>#</th><th></th><th>Имя</th><th>Баллы</th><th>Откр. ср. (с)</th><th>Выбор ср. (с)</th></tr></thead>
+              <tbody>
+                {% for u in users[3:] %}
+                <tr>
+                  <td class="align-center">{{ loop.index + 3 }}</td>
+                  <td><img class="avatar table-avatar" src="/avatars/{{ u.id }}.png" alt="{{ u.name }}" /></td>
+                  <td class="name-cell">{{ u.name }}</td>
+                  <td class="align-center">{{ u.total_score }}</td>
+                  <td class="align-center">{{ (u.open_answer_ms / u.open_answer_count / 1000)|round(1) if u.open_answer_count else 0 }}</td>
+                  <td class="align-center">{{ (u.quiz_answer_ms / u.quiz_answer_count / 1000)|round(1) if u.quiz_answer_count else 0 }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
     {% endif %}
   </div>
 {% endblock %}
+
