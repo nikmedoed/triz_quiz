@@ -32,16 +32,7 @@ function layoutCards() {
     }
   }
 
-  grid.style.setProperty('--cols', best.cols);
   grid.style.setProperty('--card-w', `${best.size}px`);
-
-  cards.forEach((child) => child.style.removeProperty('grid-column-start'));
-  for (let r = 0; r < best.rows; r++) {
-    const count = Math.min(best.cols, n - r * best.cols);
-    const offset = Math.round((best.cols - count) / 2);
-    const first = cards[r * best.cols];
-    if (first) first.style.gridColumnStart = offset + 1;
-  }
 }
 
 window.addEventListener('DOMContentLoaded', layoutCards);

@@ -105,20 +105,17 @@ h2 {
 
 
 .grid {
-  --cols: 1;
   --card-w: 128px;
-  --card-h: calc(var(--card-w) * 1.25);
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--space-4);
-  grid-template-columns: repeat(var(--cols), var(--card-w));
-  grid-auto-rows: var(--card-h);
   justify-content: center;
   align-content: center;
 }
 
 .card {
   width: var(--card-w);
-  height: var(--card-h);
+  min-height: calc(var(--card-w) * 1.25);
   padding: var(--space-4);
   text-align: center;
 }
