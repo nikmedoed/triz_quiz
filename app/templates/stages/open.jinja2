@@ -15,18 +15,18 @@
           <header class="idea-card__head">
             <div class="idea-card__number">#{{ loop.index }}</div>
             <div class="idea-card__time idea-card__time--top">{{ texts.ANSWER_TOOK.format(time=idea.delay_text) }}</div>
+            <div class="idea-card__author">
+              <img class="idea-card__avatar" src="/avatars/{{ idea.author.id }}.png" alt="" />
+              <div class="idea-card__author-info">
+                <div class="idea-card__name">{{ idea.author.name }}</div>
+                <div class="idea-card__time idea-card__time--under-author">{{ texts.ANSWER_TOOK.format(time=idea.delay_text) }}</div>
+              </div>
+            </div>
           </header>
           <div class="idea-card__body">
             <p class="idea-card__text">{{ idea.text }}</p>
           </div>
           <footer class="idea-card__foot">
-            <div class="idea-card__author">
-              <img class="idea-card__avatar" src="/avatars/{{ idea.author.id }}.png" alt="" />
-              <div class="idea-card__name">{{ idea.author.name }}</div>
-              <div class="idea-card__time idea-card__time--under-author">
-                {{ texts.ANSWER_TOOK.format(time=idea.delay_text) }}
-              </div>
-            </div>
             <div class="idea-card__voters">
               {% for v in voters %}
                 <img class="idea-card__voter" src="/avatars/{{ v.id }}.png" alt="" title="{{ v.name }}" />
