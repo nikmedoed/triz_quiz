@@ -85,3 +85,22 @@ window.renderMcq = function() {
     });
   }
 };
+
+// Auto-scroll leaderboard table when present
+const scrollBox = document.querySelector('.board-scroll');
+if (scrollBox) {
+  const scrollSpeed = 30; // pixels per second
+  let last = performance.now();
+  function loop(now) {
+    const elapsed = now - last;
+    last = now;
+    if (scrollBox.scrollHeight > scrollBox.clientHeight) {
+      scrollBox.scrollTop += (scrollSpeed * elapsed) / 1000;
+      if (scrollBox.scrollTop + scrollBox.clientHeight >= scrollBox.scrollHeight) {
+        scrollBox.scrollTop = 0;
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+}
