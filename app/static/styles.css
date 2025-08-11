@@ -501,7 +501,7 @@ ol {
 
 .brand {
   font-weight: var(--font-weight-black);
-  font-size: 1.3em;
+  font-size: 1.6em;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--color-dark);
@@ -536,5 +536,7 @@ ol {
   margin-left: auto;
   display: flex;
   justify-content: flex-end;
- }
+  gap: var(--space-4);
+  align-items: center;
+}
 
