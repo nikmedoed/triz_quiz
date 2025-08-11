@@ -215,6 +215,20 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 delta = int((i.submitted_at - gs.step_started_at).total_seconds())
                 i.delay_text = humanize_seconds(max(0, delta))
         ctx.update(ideas=ideas, stage_title="Вопрос с открытым ответом")
+        if gs.phase >= 1 and ideas:
+            voters_map = {}
+            for idea in ideas:
+                rows = (
+                    await session.execute(
+                        select(User)
+                        .join(IdeaVote, IdeaVote.voter_id == User.id)
+                        .where(IdeaVote.step_id == step.id, IdeaVote.idea_id == idea.id)
+                    )
+                ).scalars().all()
+                voters_map[idea.id] = rows
+            ctx.update(voters_map=voters_map, content_class="ideas-stage")
+            if gs.phase == 2:
+                ideas.sort(key=lambda i: len(voters_map.get(i.id, [])), reverse=True)
         if gs.phase == 0:
             total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
             last_at = await session.scalar(select(func.max(Idea.submitted_at)).where(Idea.step_id == step.id))
@@ -255,20 +269,6 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 status_current=len(voters),
                 status_last=last_vote_ago_s if last_vote_ago_s is not None else "-",
             )
-        if gs.phase == 2:  # reveal
-            # map idea_id -> [User]
-            voters_map = {}
-            for idea in ideas:
-                rows = (
-                    await session.execute(
-                        select(User)
-                        .join(IdeaVote, IdeaVote.voter_id == User.id)
-                        .where(IdeaVote.step_id == step.id, IdeaVote.idea_id == idea.id)
-                    )
-                ).scalars().all()
-                voters_map[idea.id] = rows
-            ideas.sort(key=lambda i: len(voters_map.get(i.id, [])), reverse=True)
-            ctx.update(voters_map=voters_map, ideas=ideas)
     elif step.type == "quiz":
         options = (
             await session.execute(
