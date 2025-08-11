@@ -478,21 +478,25 @@ ol {
 }
 
 .quiz-layout {
+  flex: 1;
   display: flex;
   gap: var(--space-8);
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-8);
   justify-content: center;
-  align-items: center;
-  height: 100%;
+  align-items: stretch;
+  box-sizing: border-box;
 }
 
 .quiz-description {
   flex: 1;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: var(--font-weight-light);
-  max-height: 60vh;
   overflow-y: auto;
   white-space: pre-line;
+  height: 100%;
 }
 
 .quiz-options {
@@ -500,8 +504,8 @@ ol {
   list-style-position: inside;
   margin: 0;
   padding: 0;
-  max-height: 60vh;
   overflow-y: auto;
+  height: 100%;
 }
 
 .quiz-options li {
@@ -517,6 +521,8 @@ ol {
 .quiz-options-alone {
   max-width: 600px;
   margin: 0 auto;
+  padding: 0 var(--space-8);
+  box-sizing: border-box;
 }
 
 .quiz-options-alone li {
