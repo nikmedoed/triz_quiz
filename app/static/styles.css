@@ -270,12 +270,15 @@ h2 {
 
 .leaderboard {
   display: flex;
-  gap: var(--space-8);
   width: 100%;
 }
 
+.leaderboard.single {
+  justify-content: center;
+}
+
 .leader-top {
-  flex: 1;
+  flex: 0 0 50%;
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
@@ -283,16 +286,14 @@ h2 {
 }
 
 .leaderboard .board {
-  flex: 1;
+  flex: 0 0 50%;
+  width: 50%;
   margin-top: 0;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .leader-card {
   display: grid;
-  grid-template-columns: 80px 256px 1fr;
+  grid-template-columns: 60px 200px 1fr;
   align-items: center;
   gap: var(--space-6);
   padding: var(--space-8);
@@ -300,27 +301,27 @@ h2 {
 }
 
 .leader-card.gold {
-  background: var(--color-gold);
+  background: linear-gradient(135deg, var(--color-gold), var(--color-light));
 }
 
 .leader-card.silver {
-  background: var(--color-silver);
+  background: linear-gradient(135deg, var(--color-silver), var(--color-light));
 }
 
 .leader-card.bronze {
-  background: var(--color-bronze);
+  background: linear-gradient(135deg, var(--color-bronze), var(--color-light));
 }
 
 .leader-rank {
-  font-size: 64px;
+  font-size: 48px;
   font-weight: var(--font-weight-medium);
-  width: 80px;
+  width: 60px;
   text-align: center;
 }
 
 .leader-card .avatar {
-  width: 256px;
-  height: 256px;
+  width: 200px;
+  height: 200px;
 }
 
 .leader-info {
@@ -329,12 +330,12 @@ h2 {
 }
 
 .leader-name {
-  font-size: 48px;
+  font-size: 36px;
   font-weight: var(--font-weight-medium);
 }
 
 .leader-score {
-  font-size: 40px;
+  font-size: 32px;
   font-weight: var(--font-weight-medium);
   color: var(--color-primary-500);
   margin-top: var(--space-2);
@@ -342,7 +343,7 @@ h2 {
 
 .leader-average-label,
 .leader-types {
-  font-size: 28px;
+  font-size: 22px;
   color: var(--color-slate-500);
   margin-top: var(--space-1);
 }
