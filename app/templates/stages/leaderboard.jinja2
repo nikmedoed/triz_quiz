@@ -4,7 +4,8 @@
   <div class="leaderboard">
     <div class="leader-top">
       {% for u in users[:3] %}
-      <div class="leader-card">
+      {% set medal = ['gold', 'silver', 'bronze'][loop.index0] %}
+      <div class="leader-card {{ medal }}">
         <div class="leader-rank">{{ loop.index }}</div>
         <img class="avatar" src="/avatars/{{ u.id }}.png" alt="{{ u.name }}" />
         <div class="leader-info">
