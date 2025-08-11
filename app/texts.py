@@ -80,3 +80,9 @@ TITLE_REGISTRATION = "Регистрация"
 TITLE_OPEN = "Гипотезы решения"
 TITLE_QUIZ = "Квиз"
 TITLE_LEADERBOARD = "Финальная таблица"
+
+# Open stage titles and meta
+OPEN_STAGE_TITLE = "Вопрос с открытым ответом"
+OPEN_VOTE_SUFFIX = "— Голосование за идеи"
+OPEN_REVEAL_SUFFIX = "— результаты голосования"
+ANSWER_TOOK = "ответ занял {time}"

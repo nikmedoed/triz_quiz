@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_session
 from app.models import User, Step, StepOption, GlobalState, Idea, IdeaVote, McqAnswer
 from app.scoring import add_vote_points, add_mcq_points, get_leaderboard_users
+from app import texts
 from aiogram import Bot
 from app.settings import settings
 
@@ -214,12 +215,12 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             for i in ideas:
                 delta = int((i.submitted_at - gs.step_started_at).total_seconds())
                 i.delay_text = humanize_seconds(max(0, delta))
-        stage_title = step.title
+        stage_title = texts.OPEN_STAGE_TITLE
         if gs.phase == 1:
-            stage_title = f"{step.title} — Голосование за идеи"
+            stage_title += f" {texts.OPEN_VOTE_SUFFIX}"
         elif gs.phase == 2:
-            stage_title = f"{step.title} — результаты голосования"
-        ctx.update(ideas=ideas, stage_title=stage_title)
+            stage_title += f" {texts.OPEN_REVEAL_SUFFIX}"
+        ctx.update(ideas=ideas, stage_title=stage_title, texts=texts)
         if gs.phase >= 1 and ideas:
             voters_map = {}
             for idea in ideas:
