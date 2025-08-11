@@ -116,11 +116,13 @@ window.renderMcq = function() {
         el.appendChild(clone);
       }
     }
-    if (scrollSpan <= el.clientHeight + 1) return;
+    const totalHeight = headHeight + scrollSpan;
+    if (totalHeight <= el.clientHeight + 1) return;
 
     let raf = 0;
     let last = performance.now();
     let paused = false;
+    let pos = el.scrollTop;
 
     const setPaused = (v) => { paused = v; };
     el.addEventListener('mouseenter', () => setPaused(true));
@@ -136,10 +138,11 @@ window.renderMcq = function() {
       const dt = (now - last) / 1000;
       last = now;
       if (!paused) {
-        el.scrollTop += speed * dt;
-        while (el.scrollTop >= headHeight + scrollSpan) {
-          el.scrollTop -= scrollSpan;
+        pos += speed * dt;
+        while (pos >= headHeight + scrollSpan) {
+          pos -= scrollSpan;
         }
+        el.scrollTop = pos;
       }
       raf = requestAnimationFrame(step);
     };
