@@ -86,21 +86,54 @@ window.renderMcq = function() {
   }
 };
 
-// Auto-scroll leaderboard table when present
-const scrollBox = document.querySelector('.board-scroll');
-if (scrollBox) {
-  const scrollSpeed = 30; // pixels per second
-  let last = performance.now();
-  function loop(now) {
-    const elapsed = now - last;
-    last = now;
-    if (scrollBox.scrollHeight > scrollBox.clientHeight) {
-      scrollBox.scrollTop += (scrollSpeed * elapsed) / 1000;
-      if (scrollBox.scrollTop + scrollBox.clientHeight >= scrollBox.scrollHeight) {
-        scrollBox.scrollTop = 0;
-      }
+// Auto-scrolling loop for a vertical container
+(() => {
+  /** @param {HTMLElement} el */
+  function setupAutoLoop(el) {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!el || prefersReduced) return;
+
+    const speed = Math.max(1, parseFloat(el.getAttribute('data-speed') || '28'));
+    const firstChild = el.firstElementChild;
+    if (!firstChild) return;
+    if (!el.querySelector('[data-clone="1"]')) {
+      const clone = firstChild.cloneNode(true);
+      clone.setAttribute('data-clone', '1');
+      el.appendChild(clone);
     }
-    requestAnimationFrame(loop);
+    if (el.scrollHeight <= el.clientHeight + 1) return;
+
+    let raf = 0;
+    let last = performance.now();
+    let paused = false;
+
+    const setPaused = (v) => { paused = v; };
+    el.addEventListener('mouseenter', () => setPaused(true));
+    el.addEventListener('mouseleave', () => setPaused(false));
+    el.addEventListener('focusin', () => setPaused(true));
+    el.addEventListener('focusout', () => setPaused(false));
+
+    document.addEventListener('visibilitychange', () => {
+      paused = document.hidden;
+    });
+
+    const step = (now) => {
+      const dt = (now - last) / 1000;
+      last = now;
+      if (!paused) {
+        el.scrollTop += speed * dt;
+        const half = el.scrollHeight / 2;
+        if (el.scrollTop >= half) {
+          el.scrollTop = el.scrollTop - half;
+        }
+      }
+      raf = requestAnimationFrame(step);
+    };
+
+    raf = requestAnimationFrame((t) => { last = t; step(t); });
+    el.__destroyAutoLoop = () => cancelAnimationFrame(raf);
   }
-  requestAnimationFrame(loop);
-}
+
+  const targets = document.querySelectorAll('[data-auto-scroll="leaderboard"]');
+  targets.forEach(setupAutoLoop);
+})();
