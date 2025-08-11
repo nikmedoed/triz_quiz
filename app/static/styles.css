@@ -670,7 +670,7 @@ h1 {
   align-items: center;
   gap: var(--space-6);
   max-height: 100%;
-  overflow: auto;
+  overflow-y: auto;
 }
 
 .quiz-title {

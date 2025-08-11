@@ -14,14 +14,14 @@
             </div>
             <ol class="quiz-options">
               {% for opt in options %}
-                <li>{{ opt.text }}</li>
+                <li>{{ loop.index }}. {{ opt.text }}</li>
               {% endfor %}
             </ol>
           </div>
         {% else %}
           <ol class="quiz-options quiz-options-alone">
             {% for opt in options %}
-              <li>{{ opt.text }}</li>
+              <li>{{ loop.index }}. {{ opt.text }}</li>
             {% endfor %}
           </ol>
         {% endif %}
