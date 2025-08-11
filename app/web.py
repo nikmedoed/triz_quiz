@@ -279,7 +279,16 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx)
             )
         ).scalars().all()
-        ctx.update(options=options, stage_title="Выбери верный" if gs.phase == 0 else "Выбери верный — результаты")
+
+        # Provide description for both phases
+        quiz_description = getattr(step, "description", None) or getattr(step, "text", None) or ""
+
+        ctx.update(
+            options=options,
+            quiz_description=quiz_description,
+            stage_title="Выбери верный" if gs.phase == 0 else "Выбери верный — результаты"
+        )
+
         if gs.phase == 0:
             total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
             answers_count = await session.scalar(
@@ -291,10 +300,14 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             last_answer_ago_s = None
             if last_at:
                 last_answer_ago_s = int((datetime.utcnow() - last_at).total_seconds())
+
+            # 1-minute quiz timer
             ctx.update(
                 total_users=int(total_users or 0),
                 answers_count=int(answers_count or 0),
                 last_answer_ago_s=last_answer_ago_s,
+                timer_id="quizTimer",
+                timer_text="01:00",
                 status_mode="answers",
                 status_current=int(answers_count or 0),
                 status_total=int(total_users or 0),

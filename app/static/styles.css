@@ -519,41 +519,6 @@ ol {
   margin-left: 0;
 }
 
-.quiz-layout {
-  display: flex;
-  gap: var(--space-8);
-  width: 100%;
-  justify-content: center;
-}
-
-.quiz-description {
-  flex: 1;
-  font-size: 24px;
-  font-weight: var(--font-weight-light);
-}
-
-.quiz-options {
-  flex: 1;
-  list-style-position: inside;
-  margin: 0;
-  padding: 0;
-}
-
-.quiz-options li {
-  font-size: 24px;
-  font-weight: var(--font-weight-medium);
-  margin-bottom: var(--space-2);
-  border: 1px solid var(--color-light);
-  padding: var(--space-4);
-  background: #ffffff;
-  word-break: break-word;
-}
-
-.quiz-options-alone {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
 .timer {
   font-size: 32px;
   font-weight: var(--font-weight-medium);
@@ -672,5 +637,105 @@ ol {
   justify-content: flex-end;
   gap: var(--space-4);
   align-items: center;
+}
+
+/* Title is centered by default; keep global h1 as is */
+h1 {
+  font-size: 32px;
+  margin-bottom: var(--space-4);
+  font-weight: var(--font-weight-black);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+/* Viewport-level centering */
+.quiz-viewport {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+}
+
+.quiz-card {
+  width: min(1000px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.quiz-title {
+  width: 100%;
+  margin: 0 0 var(--space-6) 0;
+  text-align: center;
+}
+
+/* Layout when description is present */
+.quiz-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8);
+  align-items: start;
+  width: 100%;
+}
+
+.quiz-description {
+  text-align: left;
+  line-height: 1.5;
+}
+
+.quiz-description-results {
+  width: 100%;
+  margin-bottom: var(--space-6);
+}
+
+/* Options */
+.quiz-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.quiz-options li {
+  font-weight: 400; /* regular, not bold */
+  background: var(--bg-2, #f5f5f7);
+  border: 1px solid var(--border, rgba(0,0,0,.08));
+  border-radius: 12px;
+  padding: var(--space-4);
+  cursor: pointer;
+}
+
+.quiz-options li:hover {
+  filter: brightness(0.98);
+}
+
+/* When there is no description, keep options centered and narrow */
+.quiz-options-alone {
+  width: min(720px, 100%);
+}
+
+/* Chart container should stretch */
+.mcq-container {
+  width: 100%;
+}
+
+.mcq-container canvas {
+  width: 100% !important;
+  height: auto !important;
+}
+
+/* Responsive stacking */
+@media (max-width: 768px) {
+  .quiz-grid {
+    grid-template-columns: 1fr;
+  }
+  .quiz-description {
+    margin-bottom: var(--space-4);
+  }
 }
 
