@@ -4,9 +4,9 @@
   <div class="quiz-wrapper">
     <h1 class="quiz-title">{{ step.title }}</h1>
     {% if phase == 0 %}
-      {% if step.text %}
+      {% if description %}
         <div class="quiz-layout">
-          <div class="quiz-description">{{ step.text }}</div>
+          <div class="quiz-description">{{ description }}</div>
           <ol class="quiz-options">
             {% for opt in options %}
               <li>{{ opt.text }}</li>
@@ -21,8 +21,8 @@
         </ol>
       {% endif %}
     {% else %}
-      {% if step.text %}
-        <div class="quiz-description quiz-description-standalone">{{ step.text }}</div>
+      {% if description %}
+        <div class="quiz-description quiz-description-standalone">{{ description }}</div>
       {% endif %}
       <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
       <script>

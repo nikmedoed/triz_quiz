@@ -181,6 +181,7 @@ async def move_to_block(session: AsyncSession, target_order_index: int, to_last_
 async def build_public_context(session: AsyncSession, step: Step, gs: GlobalState):
     ctx = {
         "step": step,
+        "description": step.text,
         "phase": gs.phase,
         "since": gs.phase_started_at,
         "stage_title": "",
