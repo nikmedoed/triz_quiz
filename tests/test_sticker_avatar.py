@@ -5,7 +5,7 @@ from io import BytesIO
 
 from PIL import Image
 
-from app.avatars import _sticker_avatar, AVATAR_SIZE
+from app.avatars import _sticker_avatar, AVATAR_SIZE, _render_tgs_high_quality
 from app.settings import settings
 
 
@@ -90,3 +90,41 @@ def test_animated_sticker_fallback_to_thumbnail(tmp_path, monkeypatch):
         assert bbox[3] - bbox[1] >= 200
 
     asyncio.run(run())
+
+
+def test_render_tgs_high_quality(monkeypatch):
+    calls = {}
+
+    class DummyAnim:
+        def __init__(self, data: str):
+            self.calls = []
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            pass
+
+        def lottie_animation_get_size(self):
+            return (100, 50)
+
+        def lottie_animation_get_totalframe(self):
+            return 10
+
+        def render_pillow_frame(self, frame_num: int, width: int, height: int):
+            self.calls.append((frame_num, width, height))
+            return Image.new("RGBA", (width, height), (255, 0, 0, 255))
+
+    class DummyLottie:
+        @staticmethod
+        def from_data(data: str):
+            calls["anim"] = DummyAnim(data)
+            return calls["anim"]
+
+    monkeypatch.setattr("app.avatars.LottieAnimation", DummyLottie)
+
+    img = _render_tgs_high_quality(b"{}", target_max=64, oversample=2)
+    assert img is not None
+    assert img.size == (64, 32)
+    anim = calls["anim"]
+    assert anim.calls[0][1:] == (128, 64)
