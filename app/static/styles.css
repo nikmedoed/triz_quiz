@@ -157,6 +157,8 @@ a:focus {
   overflow: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--color-light);
+  border-radius: var(--radius-md);
 }
 
 
@@ -307,9 +309,6 @@ h2 {
 .leaderboard-table {
   width: 100%;
   border-collapse: collapse;
-  border: 1px solid var(--color-light);
-  border-radius: var(--radius-md);
-  overflow: hidden;
 }
 
 .leaderboard-table th,

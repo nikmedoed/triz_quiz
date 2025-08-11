@@ -148,6 +148,8 @@ window.renderMcq = function() {
     el.__destroyAutoLoop = () => cancelAnimationFrame(raf);
   }
 
-  const targets = document.querySelectorAll('[data-auto-scroll="leaderboard"]');
-  targets.forEach(setupAutoLoop);
+  window.addEventListener('load', () => {
+    const targets = document.querySelectorAll('[data-auto-scroll="leaderboard"]');
+    targets.forEach(setupAutoLoop);
+  });
 })();
