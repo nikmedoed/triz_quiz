@@ -4,6 +4,9 @@ window.renderMcq = function() {
   if (!ctx || !window.__mcq) return;
   const data = window.__mcq;
   const container = ctx.parentNode;
+  // Ensure the canvas matches the container dimensions
+  ctx.width = container.clientWidth;
+  ctx.height = container.clientHeight;
   const labels = data.labels.map(l => {
     const words = l.split(' ');
     const lines = [];
@@ -19,21 +22,21 @@ window.renderMcq = function() {
   const primary = styles.getPropertyValue('--color-primary-500').trim() || '#e5231b';
   const neutral = styles.getPropertyValue('--color-slate-400').trim() || '#8c929c';
   const colors = labels.map((_, i) => i === data.correct ? primary : neutral);
-  const chart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{ label: 'Votes (%)', data: data.percents, backgroundColor: colors, borderColor: colors }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => `${data.counts[ctx.dataIndex]} (${data.percents[ctx.dataIndex]}%)`
-          }
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{ label: 'Votes (%)', data: data.percents, backgroundColor: colors, borderColor: colors }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${data.counts[ctx.dataIndex]} (${data.percents[ctx.dataIndex]}%)`
+            }
         }
       },
       scales: {
@@ -55,6 +58,7 @@ window.renderMcq = function() {
     const meta = chart.getDatasetMeta(0);
     const xScale = chart.scales.x;
     const minTop = chart.chartArea.top + 15;
+    const avatarOffset = 55;
     meta.data.forEach((bar, i) => {
       const label = document.createElement('div');
       label.className = 'mcq-count';
@@ -67,8 +71,9 @@ window.renderMcq = function() {
       const div = document.createElement('div');
       div.className = 'mcq-avatar-col';
       div.style.left = bar.x + 'px';
-      div.style.top = (xScale.bottom + 4) + 'px';
+      div.style.bottom = (container.clientHeight - xScale.bottom + avatarOffset) + 'px';
       div.style.width = bar.width + 'px';
+      div.style.maxHeight = Math.max(bar.height - avatarOffset, 0) + 'px';
       (data.avatars[i] || []).forEach(id => {
         const img = document.createElement('img');
         img.className = 'avatar small';
