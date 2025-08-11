@@ -137,3 +137,10 @@ window.renderMcq = function() {
   const targets = document.querySelectorAll('[data-auto-scroll="leaderboard"]');
   targets.forEach(setupAutoLoop);
 })();
+
+// Toggle phase visibility on idea cards
+function applyPhase(rootEl, phase){
+  if(!rootEl) return;
+  rootEl.classList.toggle('phase--voting', phase === 'voting');
+  rootEl.classList.toggle('phase--results', phase === 'results');
+}
