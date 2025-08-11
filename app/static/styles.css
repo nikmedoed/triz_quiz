@@ -331,18 +331,18 @@ ol {
 
 .ideas-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, 320px);
   gap: var(--space-4);
   width: 100%;
-  max-width: 1400px;
+  max-width: calc(4 * 320px + 3 * var(--space-4));
   margin: 0 auto;
   flex: 1;
   min-height: 0;
-  height: 100%;
   overflow-y: auto;
   padding: var(--space-4) 0;
   scrollbar-width: none;
-  align-items: start;
+  justify-content: center;
+  align-content: center;
 }
 
 .ideas-grid::-webkit-scrollbar {
@@ -398,7 +398,7 @@ ol {
 }
 
 .idea-meta {
-  font-size: 12px;
+  font-size: 16px;
   color: var(--color-slate-500);
 }
 
