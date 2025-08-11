@@ -678,3 +678,15 @@ ol {
   align-items: center;
 }
 
+/* First column stretches child instead of centering */
+.quiz-layout > .quiz-col:first-child {
+  align-items: stretch;
+}
+
+/* Description fills column height and scrolls internally */
+.quiz-description {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
