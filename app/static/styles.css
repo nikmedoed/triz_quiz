@@ -473,21 +473,23 @@ ol {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100%;
+  flex: 1;
   width: 100%;
+  min-height: 0;
 }
 
 .quiz-layout {
   flex: 1;
   display: flex;
-  gap: var(--space-8);
+  gap: var(--space-6);
   width: 100%;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 var(--space-8);
+  padding: 0 var(--space-4);
   justify-content: center;
   align-items: stretch;
   box-sizing: border-box;
+  min-height: 0;
 }
 
 .quiz-description {
@@ -496,32 +498,45 @@ ol {
   font-weight: var(--font-weight-light);
   overflow-y: auto;
   white-space: pre-line;
-  height: 100%;
+  min-height: 0;
 }
 
 .quiz-options {
   flex: 1;
-  list-style-position: inside;
+  counter-reset: option;
   margin: 0;
   padding: 0;
   overflow-y: auto;
-  height: 100%;
+  min-height: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
 }
 
 .quiz-options li {
+  display: flex;
+  align-items: center;
   font-size: 24px;
   font-weight: var(--font-weight-regular);
-  margin-bottom: var(--space-2);
   border: 1px solid var(--color-light);
-  padding: var(--space-4);
-  background: #ffffff;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-slate-50);
+  border-radius: var(--radius-md);
   word-break: break-word;
+}
+
+.quiz-options li::before {
+  counter-increment: option;
+  content: counter(option) '.';
+  margin-right: var(--space-2);
 }
 
 .quiz-options-alone {
   max-width: 600px;
   margin: 0 auto;
-  padding: 0 var(--space-8);
+  padding: 0 var(--space-4);
   box-sizing: border-box;
 }
 
