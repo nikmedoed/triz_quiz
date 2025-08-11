@@ -112,8 +112,8 @@ h2 {
   gap: var(--space-4);
   grid-template-columns: repeat(var(--cols), var(--card-w));
   grid-auto-rows: var(--card-h);
-  width: max-content;
-  margin: 0 auto;
+  justify-content: center;
+  align-content: center;
 }
 
 .card {
