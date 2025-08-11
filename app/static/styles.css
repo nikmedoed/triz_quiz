@@ -227,50 +227,71 @@ h2 {
   white-space: nowrap;
 }
 
-.board {
+.board-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: var(--space-4);
 }
 
-.board th,
-.board td {
+.board-table th,
+.board-table td {
   border: 1px solid var(--color-light);
   padding: var(--space-2);
 }
 
-.board th {
+.board-table th {
   font-weight: var(--font-weight-medium);
   text-align: center;
 }
 
-.board td {
-  font-size: 16px;
+.board-table td {
+  font-size: 18px;
 }
 
-.board td.align-center {
+.board-table td.align-center {
   text-align: center;
 }
 
-.board td.align-left {
+.board-table td.align-left {
   text-align: left;
 }
 
-.board td:first-child {
+.board-table td:first-child {
   width: 40px;
 }
 
-.board td:nth-child(2) {
-  width: 40px;
+.board-table td:nth-child(2) {
+  width: 80px;
 }
 
-.board thead {
+.board-table td:nth-child(4),
+.board-table td:nth-child(5),
+.board-table td:nth-child(6) {
+  width: 80px;
+}
+
+.board-table thead {
   background: var(--color-slate-50);
 }
+
+.board-table .name-cell {
+  font-size: 24px;
+  font-weight: var(--font-weight-medium);
+  text-align: left;
+}
+
+.board-table .table-avatar {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+}
+
 
 .leaderboard {
   display: flex;
   width: 100%;
+  padding: var(--space-6);
+  gap: var(--space-6);
+  box-sizing: border-box;
 }
 
 .leaderboard.single {
@@ -282,21 +303,29 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  align-items: stretch;
 }
 
 .leaderboard .board {
   flex: 0 0 50%;
-  width: 50%;
-  margin-top: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-left: var(--space-6);
+  box-sizing: border-box;
+}
+
+.leaderboard .board-scroll {
+  max-height: 100%;
+  overflow-y: auto;
+  width: 100%;
 }
 
 .leader-card {
   display: grid;
-  grid-template-columns: 60px 200px 1fr;
+  grid-template-columns: 60px 160px 1fr;
   align-items: center;
   gap: var(--space-6);
-  padding: var(--space-8);
+  padding: var(--space-6);
   border-radius: var(--radius-md);
 }
 
@@ -313,15 +342,15 @@ h2 {
 }
 
 .leader-rank {
-  font-size: 48px;
+  font-size: 40px;
   font-weight: var(--font-weight-medium);
   width: 60px;
   text-align: center;
 }
 
 .leader-card .avatar {
-  width: 200px;
-  height: 200px;
+  width: 160px;
+  height: 160px;
 }
 
 .leader-info {
@@ -330,12 +359,12 @@ h2 {
 }
 
 .leader-name {
-  font-size: 36px;
+  font-size: 32px;
   font-weight: var(--font-weight-medium);
 }
 
 .leader-score {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: var(--font-weight-medium);
   color: var(--color-primary-500);
   margin-top: var(--space-2);
@@ -343,7 +372,7 @@ h2 {
 
 .leader-average-label,
 .leader-types {
-  font-size: 22px;
+  font-size: 20px;
   color: var(--color-slate-500);
   margin-top: var(--space-1);
 }
