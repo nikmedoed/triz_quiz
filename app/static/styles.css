@@ -111,11 +111,12 @@ h2 {
   gap: var(--space-4);
   justify-content: center;
   align-content: center;
+  max-width: 100%;
 }
 
 .card {
   width: var(--card-w);
-  min-height: calc(var(--card-w) * 1.25);
+  min-height: calc(var(--card-w) * 1.4);
   padding: var(--space-4);
   text-align: center;
 }

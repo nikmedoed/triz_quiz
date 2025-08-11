@@ -1,4 +1,4 @@
-const RATIO = 5 / 4; // height / width for a card
+const RATIO = 7 / 5; // height / width for a card, extra room for names
 const MAX_SIZE = 192; // px, roughly 1.5 times the previous avatar size
 
 function layoutCards() {
@@ -19,20 +19,29 @@ function layoutCards() {
   const gap = parseFloat(getComputedStyle(grid).gap) || 0;
   const width = content.clientWidth;
   const height =
-    window.innerHeight - (header ? header.offsetHeight : 0) - (footer ? footer.offsetHeight : 0);
+    window.innerHeight -
+    (header ? header.offsetHeight : 0) -
+    (footer ? footer.offsetHeight : 0) -
+    gap * 2; // keep a safety margin so names do not clip
 
-  let best = { rows: n, cols: 1, size: 0 };
+  const target = width / height;
+  let best = { rows: n, cols: 1, size: 0, score: 0 };
   for (let rows = 1; rows <= n; rows++) {
     const cols = Math.ceil(n / rows);
     const maxW = (width - gap * (cols - 1)) / cols;
     const maxH = (height - gap * (rows - 1)) / rows;
     const size = Math.min(maxW, maxH / RATIO, MAX_SIZE);
-    if (size > best.size + 0.1 || (Math.abs(size - best.size) <= 0.1 && rows < best.rows)) {
-      best = { rows, cols, size };
+    const gridRatio = cols / (rows * RATIO);
+    const diff = Math.abs(gridRatio - target);
+    const score = size - diff * 20;
+    if (score > best.score) {
+      best = { rows, cols, size, score };
     }
   }
 
   grid.style.setProperty('--card-w', `${best.size}px`);
+  const gridWidth = best.cols * best.size + gap * (best.cols - 1);
+  grid.style.width = `${gridWidth}px`;
 }
 
 window.addEventListener('DOMContentLoaded', layoutCards);
