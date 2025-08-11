@@ -1,7 +1,7 @@
 {% extends 'base.jinja2' %}
 
 {% block content %}
-  <div class="quiz-viewport">
+  <div class="quiz-viewport{% if quiz_description %} has-description{% endif %}">
     <div class="quiz-card">
 
       <h1 class="quiz-title">{{ step.title }}</h1>
