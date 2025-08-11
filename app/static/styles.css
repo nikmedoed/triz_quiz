@@ -146,6 +146,7 @@ h2 {
   position: relative;
   flex: 1;
   width: 100%;
+  align-self: stretch;
 }
 
 .mcq-container canvas {
@@ -386,6 +387,7 @@ ol {
   margin-left: 0;
 }
 
+
 .quiz-layout {
   display: flex;
   gap: var(--space-8);
@@ -408,14 +410,22 @@ ol {
 }
 
 .quiz-description {
-  flex: 1;
   font-size: 24px;
   font-weight: var(--font-weight-light);
   white-space: pre-line;
+  text-align: left;
+}
+
+.quiz-description-standalone {
+  margin-bottom: var(--space-4);
+}
+
+.quiz-layout .quiz-description,
+.quiz-layout .quiz-options {
+  flex: 1;
 }
 
 .quiz-options {
-  flex: 1;
   list-style-position: inside;
   margin: 0;
   padding: 0;
