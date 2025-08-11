@@ -278,6 +278,11 @@ h2 {
   gap: var(--space-4);
 }
 
+.leaderboard .board {
+  flex: 1;
+  margin-top: 0;
+}
+
 .leader-card {
   display: flex;
   align-items: center;
@@ -308,7 +313,8 @@ h2 {
   margin-top: var(--space-2);
 }
 
-.leader-times {
+.leader-average-label,
+.leader-types {
   font-size: 14px;
   color: var(--color-slate-500);
   margin-top: var(--space-1);

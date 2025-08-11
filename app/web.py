@@ -330,5 +330,5 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             )
     elif step.type == "leaderboard":
         users = await get_leaderboard_users(session)
-        ctx.update(users=users, stage_title="Результаты", show_reset=True)
+        ctx.update(users=users, stage_title="Результаты", show_reset=True, show_next=False)
     return ctx

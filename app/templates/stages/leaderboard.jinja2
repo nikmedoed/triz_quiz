@@ -8,12 +8,25 @@
         <img class="avatar" src="/avatars/{{ u.id }}.png" alt="{{ u.name }}" />
         <div class="leader-info">
           <div class="leader-name">{{ u.name }}</div>
-          <div class="leader-score">{{ u.total_score }}</div>
-          <div class="leader-times">Откр.: {{ (u.open_answer_ms / u.open_answer_count / 1000)|round(1) if u.open_answer_count else 0 }} с • Выбор: {{ (u.quiz_answer_ms / u.quiz_answer_count / 1000)|round(1) if u.quiz_answer_count else 0 }} с</div>
+          <div class="leader-score">Баллы: {{ u.total_score }}</div>
+          {% set parts = [] %}
+          {% for label, count, ms in [
+            ('Открытые', u.open_answer_count, u.open_answer_ms),
+            ('Выбор', u.quiz_answer_count, u.quiz_answer_ms),
+          ] %}
+            {% if count %}
+              {% set _ = parts.append(label ~ ': ' ~ (ms / count / 1000)|round(1) ~ ' с') %}
+            {% endif %}
+          {% endfor %}
+          {% if parts %}
+          <div class="leader-average-label">Среднее время</div>
+          <div class="leader-types">{{ parts|join(', ') }}</div>
+          {% endif %}
         </div>
       </div>
       {% endfor %}
     </div>
+    {% if users|length > 3 %}
     <table class="board">
       <thead><tr><th>#</th><th></th><th>Имя</th><th>Баллы</th><th>Откр. ср. (с)</th><th>Выбор ср. (с)</th></tr></thead>
       <tbody>
@@ -29,5 +42,6 @@
         {% endfor %}
       </tbody>
     </table>
+    {% endif %}
   </div>
 {% endblock %}
