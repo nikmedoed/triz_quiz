@@ -243,6 +243,9 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             last_vote_at = await session.scalar(
                 select(func.max(IdeaVote.created_at)).where(IdeaVote.step_id == step.id)
             )
+            total_users = await session.scalar(
+                select(func.count(User.id)).where(User.name != "")
+            )
             last_vote_ago_s = None
             if last_vote_at:
                 last_vote_ago_s = int((datetime.utcnow() - last_vote_at).total_seconds())
@@ -253,6 +256,7 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 timer_text="01:00",
                 status_mode="votes",
                 status_current=len(voters),
+                status_total=int(total_users or 0),
                 status_last=last_vote_ago_s if last_vote_ago_s is not None else "-",
             )
         if gs.phase == 2:  # reveal

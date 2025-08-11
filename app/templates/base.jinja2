@@ -42,7 +42,7 @@
       </div>
       {% elif status_mode == 'votes' %}
       <div class="status">
-        <div>Проголосовало: <span id="votesCount">{{ status_current }}</span></div>
+        <div>Проголосовало: <span id="votesCount">{{ status_current }}</span> / {{ status_total }}</div>
         <div>Последний: <span id="lastVoteAgo">{{ status_last }}</span></div>
       </div>
       {% endif %}
