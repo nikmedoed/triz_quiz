@@ -214,7 +214,12 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             for i in ideas:
                 delta = int((i.submitted_at - gs.step_started_at).total_seconds())
                 i.delay_text = humanize_seconds(max(0, delta))
-        ctx.update(ideas=ideas, stage_title="Вопрос с открытым ответом")
+        stage_title = step.title
+        if gs.phase == 1:
+            stage_title = f"{step.title} — Голосование за идеи"
+        elif gs.phase == 2:
+            stage_title = f"{step.title} — результаты голосования"
+        ctx.update(ideas=ideas, stage_title=stage_title)
         if gs.phase >= 1 and ideas:
             voters_map = {}
             for idea in ideas:
