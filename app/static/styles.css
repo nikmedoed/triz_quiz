@@ -132,6 +132,8 @@ a:focus {
   align-content: center;
   justify-content: center;
   min-height: 0;
+  height: 100%;
+  padding: 0 var(--space-6);
 }
 
 .col-secondary .col-inner {
@@ -144,11 +146,13 @@ a:focus {
   flex-direction: column;
   gap: var(--space-3);
   min-height: 0;
+  flex: 1 1 auto;
 }
 
 .table-scroll {
   flex: 1 1 auto;
   min-height: 0;
+  height: 100%;
   max-height: 100%;
   overflow: auto;
   overscroll-behavior: contain;
@@ -159,6 +163,7 @@ a:focus {
   position: sticky;
   top: 0;
   z-index: 1;
+  background: #ffffff;
 }
 
 .leaderboard-columns > * {
@@ -382,6 +387,7 @@ h2 {
   flex-direction: column;
   gap: var(--space-6);
   align-items: center;
+  width: 100%;
 }
 
 .leader-card {
@@ -391,6 +397,7 @@ h2 {
   gap: var(--space-6);
   padding: var(--space-6);
   border-radius: var(--radius-md);
+  width: 100%;
 }
 
 .leader-card.gold {
