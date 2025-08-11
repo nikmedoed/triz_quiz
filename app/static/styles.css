@@ -388,19 +388,6 @@ ol {
   margin-left: 0;
 }
 
-.quiz-layout {
-  display: flex;
-  gap: var(--space-8);
-  width: 100%;
-  justify-content: center;
-}
-
-.quiz-description {
-  flex: 1;
-  font-size: 24px;
-  font-weight: var(--font-weight-light);
-}
-
 .quiz-options {
   flex: 1;
   list-style-position: inside;

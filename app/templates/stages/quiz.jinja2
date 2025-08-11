@@ -2,27 +2,16 @@
 
 {% block content %}
   <h1>{{ step.title }}</h1>
+  {% if step.text %}
+    <p class="description">{{ step.text }}</p>
+  {% endif %}
   {% if phase == 0 %}
-    {% if step.text %}
-      <div class="quiz-layout">
-        <div class="quiz-description">{{ step.text }}</div>
-        <ol class="quiz-options">
-          {% for opt in options %}
-            <li>{{ opt.text }}</li>
-          {% endfor %}
-        </ol>
-      </div>
-    {% else %}
-      <ol class="quiz-options quiz-options-alone">
-        {% for opt in options %}
-          <li>{{ opt.text }}</li>
-        {% endfor %}
-      </ol>
-    {% endif %}
+    <ol class="quiz-options{% if not step.text %} quiz-options-alone{% endif %}">
+      {% for opt in options %}
+        <li>{{ opt.text }}</li>
+      {% endfor %}
+    </ol>
   {% else %}
-    {% if step.text %}
-      <p class="description">{{ step.text }}</p>
-    {% endif %}
     <div class="mcq-container"><canvas id="mcqChart"></canvas></div>
     <script>
       window.__mcq = {
