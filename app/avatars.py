@@ -299,7 +299,7 @@ async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker, target_size: i
     data_bytes = buf.getvalue()
 
     size = target_size
-    max_size = int(size * 0.9)
+    max_size = int(size * 0.8)
     img = None
 
     try:
