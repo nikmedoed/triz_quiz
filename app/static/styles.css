@@ -155,10 +155,11 @@ h2 {
 .mcq-avatar-col {
   position: absolute;
   display: flex;
+  flex-direction: column-reverse;
   gap: var(--space-1);
   transform: translateX(-50%);
-  flex-wrap: wrap;
-  justify-content: center;
+  align-items: center;
+  overflow: hidden;
 }
 
 .mcq-count {
