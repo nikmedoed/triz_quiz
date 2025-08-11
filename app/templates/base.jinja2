@@ -22,6 +22,19 @@
       {% endif %}
     </div>
     <div class="top-right">
+      <button class="btn btn-primary" onclick="post('/api/next')">Далее</button>
+    </div>
+  </header>
+  <main class="main">
+    <div class="content{% if content_class %} {{ content_class }}{% endif %}">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+  <footer class="bottombar">
+    <div class="footer-center">
+      {{ instruction }}
+    </div>
+    <div class="footer-right">
       {% if status_mode == 'answers' %}
       <div class="status" id="answersStatus" data-total="{{ status_total }}">
         <div>Ответы: <span id="answersCount">{{ status_current }}</span> / {{ status_total }}</div>
@@ -38,19 +51,6 @@
         <button class="btn btn-secondary" type="submit">Сброс БД</button>
       </form>
       {% endif %}
-    </div>
-  </header>
-  <main class="main">
-    <div class="content{% if content_class %} {{ content_class }}{% endif %}">
-      {% block content %}{% endblock %}
-    </div>
-  </main>
-  <footer class="bottombar">
-    <div class="footer-center">
-      {{ instruction }}
-    </div>
-    <div class="footer-right">
-      <button class="btn btn-primary" onclick="post('/api/next')">Далее</button>
     </div>
   </footer>
   <script>
