@@ -22,7 +22,9 @@
       {% endif %}
     </div>
     <div class="top-right">
+      {% if show_next is not defined or show_next %}
       <button class="btn btn-primary" onclick="post('/api/next')">Далее</button>
+      {% endif %}
     </div>
   </header>
   <main class="main">

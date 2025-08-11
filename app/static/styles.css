@@ -25,6 +25,9 @@
   --color-dark:   #2b2b2a; /* базовый тёмный текст */
   --color-light:  #e6e6e6; /* подложки, бордеры */
   --color-black:  #000000; /* редкий акцентный текст на светлом */
+  --color-gold:   #ffd700;
+  --color-silver: #c0c0c0;
+  --color-bronze: #cd7f32;
 
   /* Typography */
   --font-sans: "Roboto", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
@@ -227,92 +230,168 @@ h2 {
   white-space: nowrap;
 }
 
-.board {
+
+.board-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: var(--space-4);
-}
-
-.board th,
-.board td {
   border: 1px solid var(--color-light);
-  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
-.board th {
+.board-table th,
+.board-table td {
+  padding: var(--space-2);
+  border: none;
+  vertical-align: middle;
+}
+
+.board-table thead th {
+  background: var(--color-slate-50);
   font-weight: var(--font-weight-medium);
   text-align: center;
 }
 
-.board td {
-  font-size: 16px;
+.board-table td {
+  font-size: 18px;
 }
 
-.board td.align-center {
+.board-table td.align-center {
   text-align: center;
 }
 
-.board td.align-left {
+.board-table td.align-left {
   text-align: left;
 }
 
-.board td:first-child {
-  width: 40px;
+.board-table tbody tr + tr {
+  border-top: 1px solid var(--color-light);
 }
 
-.board td:nth-child(2) {
-  width: 40px;
-}
-
-.board thead {
+.board-table tbody tr:nth-child(even) {
   background: var(--color-slate-50);
 }
 
+.board-table td:first-child {
+  width: 40px;
+}
+
+.board-table td:nth-child(2) {
+  width: 70px;
+  text-align: center;
+}
+
+.board-table td:nth-child(4),
+.board-table td:nth-child(5),
+.board-table td:nth-child(6) {
+  width: 80px;
+}
+
+.board-table .name-cell {
+  font-size: 24px;
+  font-weight: var(--font-weight-medium);
+  text-align: left;
+}
+
+.board-table .table-avatar {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto;
+}
+
+
+
 .leaderboard {
   display: flex;
-  gap: var(--space-8);
   width: 100%;
+  padding: var(--space-6);
+  gap: var(--space-6);
+  box-sizing: border-box;
+}
+
+.leaderboard.single {
+  justify-content: center;
 }
 
 .leader-top {
-  flex: 1;
+  flex: 0 0 50%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-6);
+  justify-content: center;
+  height: 100%;
+}
+
+.leaderboard .board {
+  flex: 0 0 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-left: var(--space-6);
+  box-sizing: border-box;
+}
+
+.leaderboard .board-scroll {
+  max-height: 100%;
+  overflow-y: auto;
+  width: 100%;
 }
 
 .leader-card {
-  display: flex;
+  display: grid;
+  grid-template-columns: 60px 160px 1fr;
   align-items: center;
-  background: #ffffff;
-  border: 1px solid var(--color-light);
-  padding: var(--space-4);
+  gap: var(--space-6);
+  padding: var(--space-6);
+  border-radius: var(--radius-md);
+}
+
+.leader-card.gold {
+  background: linear-gradient(135deg, var(--color-gold), var(--color-light));
+}
+
+.leader-card.silver {
+  background: linear-gradient(135deg, var(--color-silver), var(--color-light));
+}
+
+.leader-card.bronze {
+  background: linear-gradient(135deg, var(--color-bronze), var(--color-light));
+}
+
+.leader-rank {
+  font-size: 40px;
+  font-weight: var(--font-weight-medium);
+  width: 60px;
+  text-align: center;
 }
 
 .leader-card .avatar {
-  width: 64px;
-  height: 64px;
-  margin-right: var(--space-4);
+  width: 160px;
+  height: 160px;
 }
 
 .leader-info {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .leader-name {
-  font-size: 24px;
+  font-size: 32px;
   font-weight: var(--font-weight-medium);
 }
 
 .leader-score {
-  font-size: 20px;
+  font-size: 28px;
   font-weight: var(--font-weight-medium);
   color: var(--color-primary-500);
   margin-top: var(--space-2);
 }
 
-.leader-times {
-  font-size: 14px;
+.leader-average-label,
+.leader-types {
+  font-size: 20px;
   color: var(--color-slate-500);
   margin-top: var(--space-1);
 }
