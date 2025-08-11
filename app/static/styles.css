@@ -159,12 +159,6 @@ a:focus {
   -webkit-overflow-scrolling: touch;
 }
 
-.leaderboard-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: #ffffff;
-}
 
 .leaderboard-columns > * {
   min-width: 0;
@@ -326,6 +320,9 @@ h2 {
 }
 
 .leaderboard-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   background: var(--color-slate-50);
   font-weight: var(--font-weight-medium);
   text-align: center;

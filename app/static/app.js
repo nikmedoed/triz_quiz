@@ -96,12 +96,27 @@ window.renderMcq = function() {
     const speed = Math.max(1, parseFloat(el.getAttribute('data-speed') || '28'));
     const firstChild = el.firstElementChild;
     if (!firstChild) return;
-    if (!el.querySelector('[data-clone="1"]')) {
-      const clone = firstChild.cloneNode(true);
-      clone.setAttribute('data-clone', '1');
-      el.appendChild(clone);
+
+    let scrollSpan;
+    let headHeight = 0;
+    if (firstChild.tagName === 'TABLE' && firstChild.tBodies.length) {
+      const body = firstChild.tBodies[0];
+      scrollSpan = body.scrollHeight;
+      headHeight = firstChild.tHead ? firstChild.tHead.scrollHeight : 0;
+      if (!firstChild.querySelector('tbody[data-clone="1"]')) {
+        const cloneBody = body.cloneNode(true);
+        cloneBody.setAttribute('data-clone', '1');
+        firstChild.appendChild(cloneBody);
+      }
+    } else {
+      scrollSpan = firstChild.scrollHeight;
+      if (!el.querySelector('[data-clone="1"]')) {
+        const clone = firstChild.cloneNode(true);
+        clone.setAttribute('data-clone', '1');
+        el.appendChild(clone);
+      }
     }
-    if (el.scrollHeight <= el.clientHeight + 1) return;
+    if (scrollSpan <= el.clientHeight + 1) return;
 
     let raf = 0;
     let last = performance.now();
@@ -122,9 +137,8 @@ window.renderMcq = function() {
       last = now;
       if (!paused) {
         el.scrollTop += speed * dt;
-        const half = el.scrollHeight / 2;
-        if (el.scrollTop >= half) {
-          el.scrollTop = el.scrollTop - half;
+        while (el.scrollTop >= headHeight + scrollSpan) {
+          el.scrollTop -= scrollSpan;
         }
       }
       raf = requestAnimationFrame(step);
