@@ -99,16 +99,13 @@
     content: ' \2191';
 }
 
-.idea-card__toggle-input:checked ~ .idea-card__text--clamped {
+.idea-card__toggle-input:checked ~ .idea-card__text--clamped,
+.idea-card__toggle-input:checked ~ .idea-card__toggle .idea-card__toggle-more {
     display: none;
 }
 
 .idea-card__toggle-input:checked ~ .idea-card__text--full {
     display: block;
-}
-
-.idea-card__toggle-input:checked ~ .idea-card__toggle .idea-card__toggle-more {
-    display: none;
 }
 
 .idea-card__toggle-input:checked ~ .idea-card__toggle .idea-card__toggle-less {
