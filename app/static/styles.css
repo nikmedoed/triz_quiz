@@ -174,10 +174,7 @@ a:focus {
   text-align: center;
 }
 
-/* Hide header in auto-scroll clone */
-.table-scroll [data-clone="1"] thead {
-  visibility: hidden;
-}
+
 
 .leaderboard-columns > * {
   min-width: 0;
