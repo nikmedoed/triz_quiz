@@ -56,6 +56,19 @@
         </div>
         <script>
             applyPhase(document.getElementById('ideasWrap'), '{{ 'voting' if phase == 1 else 'results' }}');
+            document.querySelectorAll('.idea-card__body').forEach(body => {
+                const clamped = body.querySelector('.idea-card__text--clamped');
+                if (!clamped) return;
+                const full = body.querySelector('.idea-card__text--full');
+                const input = body.querySelector('.idea-card__toggle-input');
+                const toggle = body.querySelector('.idea-card__toggle');
+                if (clamped.scrollHeight <= clamped.clientHeight + 1) {
+                    if (full) full.remove();
+                    if (input) input.remove();
+                    if (toggle) toggle.remove();
+                    clamped.classList.remove('idea-card__text--clamped');
+                }
+            });
         </script>
     {% elif phase in [1, 2] %}
         <p class="question">{{ texts.NO_IDEAS }}</p>
