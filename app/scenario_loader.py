@@ -1,11 +1,16 @@
 # Load scenario (JSON or YAML list). Auto-prepend registration and append leaderboard.
-import json, yaml, os
+import json
+import os
+import yaml
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models import Step, StepOption, GlobalState
+
 import app.texts as texts
+from app.models import Step, StepOption, GlobalState
 
 SUPPORTED = {"open", "quiz", "vote", "vote_results"}
+
 
 async def load_if_empty(session: AsyncSession, path: str) -> None:
     existing = await session.execute(select(Step.id))
@@ -31,9 +36,12 @@ async def load_if_empty(session: AsyncSession, path: str) -> None:
         raise ValueError("Scenario must be a list of blocks or legacy dict format")
 
     order = 0
-    def add_step(_type: str, title: str = "", text: str | None = None, options: list[str] | None = None, correct_index: int | None = None, points: int | None = None):
+
+    def add_step(_type: str, title: str = "", text: str | None = None, options: list[str] | None = None,
+                 correct_index: int | None = None, points: int | None = None):
         nonlocal order
-        s = Step(order_index=order, type=_type, title=title or _type.title(), text=text, correct_index=correct_index, points_correct=points)
+        s = Step(order_index=order, type=_type, title=title or _type.title(), text=text, correct_index=correct_index,
+                 points_correct=points)
         session.add(s)
         order += 1
         return s

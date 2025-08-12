@@ -1,27 +1,28 @@
 # aiogram 3 bot handlers — blocks with internal phases
 from __future__ import annotations
-from datetime import datetime
-from typing import Optional, List
-from pathlib import Path
 
-from aiogram import Bot, Dispatcher, Router, F
+from datetime import datetime
+from html import escape
+from pathlib import Path
+from typing import Optional, List
+
+from aiogram import Bot, Router, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from html import escape
-
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import AsyncSessionLocal
-from app.models import User, GlobalState, Step, StepOption, Idea, IdeaVote, McqAnswer
-from app.scoring import add_mcq_points, get_leaderboard_users
-from app.web import hub
-from app.settings import settings
 import app.texts as texts
 from app.avatars import save_avatar, _emoji_avatar, _sticker_avatar
+from app.db import AsyncSessionLocal
+from app.models import User, GlobalState, Step, StepOption, Idea, IdeaVote, McqAnswer
+from app.scoring import get_leaderboard_users
+from app.settings import settings
+from app.web import hub
 
 router = Router()
+
 
 async def get_ctx(tg_id: str):
     session = AsyncSessionLocal()
@@ -39,6 +40,7 @@ async def get_ctx(tg_id: str):
         await session.close()
         raise
 
+
 # Keyboards
 
 def mcq_kb(options: List[str], selected: Optional[int]) -> InlineKeyboardMarkup:
@@ -51,6 +53,7 @@ def mcq_kb(options: List[str], selected: Optional[int]) -> InlineKeyboardMarkup:
         kb.button(text=label, callback_data=f"mcq:{i}")
     kb.adjust(1)
     return kb.as_markup()
+
 
 async def idea_vote_kb(session: AsyncSession, open_step: Step, voter: User):
     ideas = (
@@ -88,6 +91,7 @@ async def idea_vote_kb(session: AsyncSession, open_step: Step, voter: User):
         return None
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
+
 @router.message(CommandStart())
 async def cmd_start(message: Message, bot: Bot):
     session, user, state, step = await get_ctx(str(message.from_user.id))
@@ -102,6 +106,7 @@ async def cmd_start(message: Message, bot: Bot):
     finally:
         await session.close()
 
+
 @router.message(Command("cancel"))
 async def cmd_cancel(message: Message, bot: Bot):
     session, user, state, step = await get_ctx(str(message.from_user.id))
@@ -111,6 +116,7 @@ async def cmd_cancel(message: Message, bot: Bot):
         await send_prompt(bot, user, step, state.phase, prefix=texts.NAME_UNCHANGED)
     finally:
         await session.close()
+
 
 @router.message(F.text & ~F.via_bot)
 async def on_text(message: Message, bot: Bot):
@@ -216,6 +222,7 @@ async def on_sticker(message: Message, bot: Bot):
     finally:
         await session.close()
 
+
 @router.callback_query(F.data.startswith("mcq:"))
 async def cb_mcq(cb: CallbackQuery, bot: Bot):
     choice_idx = int(cb.data.split(":")[1])
@@ -259,7 +266,8 @@ async def cb_mcq(cb: CallbackQuery, bot: Bot):
             user.quiz_answer_count += 1
         await session.commit()
         await cb.answer(texts.ANSWER_SAVED)
-        options = [o.text for o in (await session.execute(select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx))).scalars().all()]
+        options = [o.text for o in (await session.execute(
+            select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx))).scalars().all()]
         await cb.message.edit_reply_markup(reply_markup=mcq_kb(options, selected=choice_idx))
         count = await session.scalar(select(func.count(McqAnswer.id)).where(McqAnswer.step_id == step.id))
         total = await session.scalar(select(func.count(User.id)).where(User.name != ""))
@@ -269,9 +277,11 @@ async def cb_mcq(cb: CallbackQuery, bot: Bot):
         last_ago = None
         if last_at:
             last_ago = int((datetime.utcnow() - last_at).total_seconds())
-        await hub.broadcast({"type": "mcq_progress", "count": int(count or 0), "total": int(total or 0), "last": last_ago})
+        await hub.broadcast(
+            {"type": "mcq_progress", "count": int(count or 0), "total": int(total or 0), "last": last_ago})
     finally:
         await session.close()
+
 
 @router.callback_query(F.data.startswith("vote:"))
 async def cb_vote(cb: CallbackQuery, bot: Bot):
@@ -281,7 +291,9 @@ async def cb_vote(cb: CallbackQuery, bot: Bot):
         if step.type != "open" or state.phase != 1:
             await cb.answer(texts.NOT_VOTE_PHASE, show_alert=True)
             return
-        existing = (await session.execute(select(IdeaVote).where(IdeaVote.step_id == step.id, IdeaVote.idea_id == idea_id, IdeaVote.voter_id == user.id))).scalar_one_or_none()
+        existing = (await session.execute(
+            select(IdeaVote).where(IdeaVote.step_id == step.id, IdeaVote.idea_id == idea_id,
+                                   IdeaVote.voter_id == user.id))).scalar_one_or_none()
         if existing:
             await session.delete(existing)
             await session.commit()
@@ -309,6 +321,7 @@ async def cb_vote(cb: CallbackQuery, bot: Bot):
         )
     finally:
         await session.close()
+
 
 async def build_prompt_messages(user: User, step: Step, phase: int):
     msgs = []

@@ -1,61 +1,63 @@
 {% extends 'base.jinja2' %}
 
 {% block content %}
-  <h1 class="page__problem-title">{{ step.title }}</h1>
-  {% if phase == 0 %}
-    <p class="description">{{ step.text }}</p>
-  {% elif phase in [1, 2] and ideas %}
-    <div class="ideas-wrap phase--{{ 'voting' if phase == 1 else 'results' }}" id="ideasWrap">
-      <div class="ideas-grid">
-        {% set voters_map = voters_map if voters_map is defined else {} %}
-        {% for idea in ideas %}
-        {% set voters = voters_map.get(idea.id) or [] %}
-        <article class="idea-card" data-idea-id="{{ idea.id }}">
-          {% if phase == 2 %}
-          <div class="idea-card__star"><span class="idea-card__star-icon">★</span> {{ voters|length }}</div>
-          {% endif %}
-          <header class="idea-card__head">
-            <div class="idea-card__number">#{{ loop.index }}</div>
-            {% if phase == 1 %}
-            <div class="idea-card__time idea-card__time--top">{{ texts.ANSWER_TOOK.format(time=idea.delay_text) }}</div>
-            {% else %}
-            <img class="idea-card__avatar" src="/avatars/{{ idea.author.id }}.png" alt="" />
-            <div class="idea-card__author">
-              <div class="idea-card__name">{{ idea.author.name }}</div>
-              <div class="idea-card__time idea-card__time--under-author">{{ texts.ANSWER_TOOK.format(time=idea.delay_text) }}</div>
+    <h1 class="page__problem-title">{{ step.title }}</h1>
+    {% if phase == 0 %}
+        <p class="description">{{ step.text }}</p>
+    {% elif phase in [1, 2] and ideas %}
+        <div class="ideas-wrap phase--{{ 'voting' if phase == 1 else 'results' }}" id="ideasWrap">
+            <div class="ideas-grid">
+                {% set voters_map = voters_map if voters_map is defined else {} %}
+                {% for idea in ideas %}
+                    {% set voters = voters_map.get(idea.id) or [] %}
+                    <article class="idea-card" data-idea-id="{{ idea.id }}">
+                        {% if phase == 2 %}
+                            <div class="idea-card__star"><span class="idea-card__star-icon">★</span> {{ voters|length }}
+                            </div>
+                        {% endif %}
+                        <header class="idea-card__head">
+                            <div class="idea-card__number">#{{ loop.index }}</div>
+                            {% if phase == 1 %}
+                                <div class="idea-card__time idea-card__time--top">{{ texts.ANSWER_TOOK.format(time=idea.delay_text) }}</div>
+                            {% else %}
+                                <img class="idea-card__avatar" src="/avatars/{{ idea.author.id }}.png" alt=""/>
+                                <div class="idea-card__author">
+                                    <div class="idea-card__name">{{ idea.author.name }}</div>
+                                    <div class="idea-card__time idea-card__time--under-author">{{ texts.ANSWER_TOOK.format(time=idea.delay_text) }}</div>
+                                </div>
+                            {% endif %}
+                        </header>
+                        {% if phase == 2 %}
+                            <div class="idea-card__body">
+                                <input type="checkbox" id="idea-toggle-{{ idea.id }}" class="idea-card__toggle-input"/>
+                                <p class="idea-card__text idea-card__text--clamped">{{ idea.text }}</p>
+                                <p class="idea-card__text idea-card__text--full">{{ idea.text }}</p>
+                                <label for="idea-toggle-{{ idea.id }}" class="idea-card__toggle">
+                                    <span class="idea-card__toggle-more">{{ texts.SHOW_MORE }}</span>
+                                    <span class="idea-card__toggle-less">{{ texts.SHOW_LESS }}</span>
+                                </label>
+                            </div>
+                            <footer class="idea-card__foot">
+                                <div class="idea-card__voters">
+                                    {% for v in voters %}
+                                        <img class="idea-card__voter" src="/avatars/{{ v.id }}.png" alt=""
+                                             title="{{ v.name }}"/>
+                                    {% endfor %}
+                                </div>
+                            </footer>
+                        {% else %}
+                            <div class="idea-card__body">
+                                <p class="idea-card__text">{{ idea.text }}</p>
+                            </div>
+                        {% endif %}
+                    </article>
+                {% endfor %}
             </div>
-            {% endif %}
-          </header>
-          {% if phase == 2 %}
-          <div class="idea-card__body">
-            <input type="checkbox" id="idea-toggle-{{ idea.id }}" class="idea-card__toggle-input" />
-            <p class="idea-card__text idea-card__text--clamped">{{ idea.text }}</p>
-            <p class="idea-card__text idea-card__text--full">{{ idea.text }}</p>
-            <label for="idea-toggle-{{ idea.id }}" class="idea-card__toggle">
-              <span class="idea-card__toggle-more">{{ texts.SHOW_MORE }}</span>
-              <span class="idea-card__toggle-less">{{ texts.SHOW_LESS }}</span>
-            </label>
-          </div>
-          <footer class="idea-card__foot">
-            <div class="idea-card__voters">
-              {% for v in voters %}
-                <img class="idea-card__voter" src="/avatars/{{ v.id }}.png" alt="" title="{{ v.name }}" />
-              {% endfor %}
-            </div>
-          </footer>
-          {% else %}
-          <div class="idea-card__body">
-            <p class="idea-card__text">{{ idea.text }}</p>
-          </div>
-          {% endif %}
-        </article>
-        {% endfor %}
-      </div>
-    </div>
-    <script>
-      applyPhase(document.getElementById('ideasWrap'), '{{ 'voting' if phase == 1 else 'results' }}');
-    </script>
-  {% elif phase in [1, 2] %}
-    <p class="question">{{ texts.NO_IDEAS }}</p>
-  {% endif %}
+        </div>
+        <script>
+            applyPhase(document.getElementById('ideasWrap'), '{{ 'voting' if phase == 1 else 'results' }}');
+        </script>
+    {% elif phase in [1, 2] %}
+        <p class="question">{{ texts.NO_IDEAS }}</p>
+    {% endif %}
 {% endblock %}

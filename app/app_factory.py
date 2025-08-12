@@ -2,9 +2,9 @@ import asyncio
 import os
 from contextlib import asynccontextmanager, suppress
 
+from aiogram import Bot, Dispatcher
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from aiogram import Bot, Dispatcher
 
 from app.bot import router as bot_router
 from app.db import Base, engine, AsyncSessionLocal, apply_migrations

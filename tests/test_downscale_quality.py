@@ -1,5 +1,6 @@
-import sys
 import pathlib
+import sys
+
 from PIL import Image
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
@@ -17,4 +18,3 @@ def test_premultiplied_resize_preserves_color():
     r, g, b, a = out.getpixel((0, 0))
     assert a == 128
     assert r >= 250 and g == 0 and b == 0
-

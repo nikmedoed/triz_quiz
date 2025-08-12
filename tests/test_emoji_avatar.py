@@ -1,9 +1,8 @@
-import random
-from types import SimpleNamespace
-from io import BytesIO
-
 import pathlib
+import random
 import sys
+from io import BytesIO
+from types import SimpleNamespace
 
 import requests
 from PIL import Image
@@ -84,4 +83,3 @@ def test_emoji_avatar_web_fallback(tmp_path, monkeypatch):
     img = Image.open(file)
     center = img.getpixel((AVATAR_SIZE // 2, AVATAR_SIZE // 2))
     assert center[:3] == (255, 0, 0)
-

@@ -1,6 +1,7 @@
 ## Purpose
 
-You are a coding agent for this repo. Your job: implement focused changes that help the TRIZ club quiz system run smoothly across **Telegram (aiogram 3)** and **Web (FastAPI + WebSockets)** without rewriting the architecture.
+You are a coding agent for this repo. Your job: implement focused changes that help the TRIZ club quiz system run
+smoothly across **Telegram (aiogram 3)** and **Web (FastAPI + WebSockets)** without rewriting the architecture.
 
 Keep changes minimal, safe, and production-ready.
 
@@ -26,9 +27,10 @@ Keep changes minimal, safe, and production-ready.
 * **Blocks**: `registration`, `open`, `quiz`, `leaderboard`.
 * **Phases**:
 
-  * `open`: `collect → vote (if any ideas) → reveal`
-  * `quiz`: `ask → reveal`
-* **Transitions**: moderator clicks **Next** (POST `/api/next`). Server updates state, scores when entering reveal, and broadcasts. Late joiners sync automatically.
+    * `open`: `collect → vote (if any ideas) → reveal`
+    * `quiz`: `ask → reveal`
+* **Transitions**: moderator clicks **Next** (POST `/api/next`). Server updates state, scores when entering reveal, and
+  broadcasts. Late joiners sync automatically.
 
 ---
 
@@ -41,7 +43,8 @@ Keep changes minimal, safe, and production-ready.
 5. **Escaping & safety.** HTML-escape any user text rendered into Telegram messages or templates.
 6. **Texts live in `texts.py`.** Don’t hardcode Russian strings in handlers/templates.
 7. **UI tokens.** Use existing CSS tokens and structures; avoid adding custom colors.
-8. **No diff syntax in outputs.** When returning patches, show full replaced functions/blocks with clear file paths, not unified diffs.
+8. **No diff syntax in outputs.** When returning patches, show full replaced functions/blocks with clear file paths, not
+   unified diffs.
 
 ---
 
@@ -51,9 +54,10 @@ Keep changes minimal, safe, and production-ready.
 
 * Edit `scenario.yaml`/`.json` to add a block:
 
-  * `type: quiz`, `title`, `options` (list), `correct` (1-based or 0-based), optional `points`.
+    * `type: quiz`, `title`, `options` (list), `correct` (1-based or 0-based), optional `points`.
 * Loader maps options into `step_options`, sets `correct_index` and `points_correct`.
-* Verify: run app, reach step, submit answers, press **Next** → reveal bar chart with correct highlighted and avatars under bars.
+* Verify: run app, reach step, submit answers, press **Next** → reveal bar chart with correct highlighted and avatars
+  under bars.
 
 ### Add an open (ideas) step
 
@@ -65,14 +69,15 @@ Keep changes minimal, safe, and production-ready.
 
 * Update `scoring.py`. Keep scoring applied exactly once:
 
-  * `open`: applied when moving to **reveal** (phase 2).
-  * `quiz`: applied when moving from **ask** to **reveal** (phase 1).
+    * `open`: applied when moving to **reveal** (phase 2).
+    * `quiz`: applied when moving from **ask** to **reveal** (phase 1).
 * Never recompute on refresh; rely on transition hooks in `web.advance`.
 
 ### Add a DB field
 
 * Add to `models.py`.
-* Extend `apply_migrations` in `db.py` with a schema probe (e.g., `PRAGMA table_info`) and `ALTER TABLE ... ADD COLUMN ... DEFAULT`.
+* Extend `apply_migrations` in `db.py` with a schema probe (e.g., `PRAGMA table_info`) and
+  `ALTER TABLE ... ADD COLUMN ... DEFAULT`.
 * Provide sensible defaults to avoid `NULL` surprises in templates/handlers.
 
 ### Adjust Telegram prompts or keyboards
@@ -85,8 +90,9 @@ Keep changes minimal, safe, and production-ready.
 
 * Primary source: Telegram profile photo.
 * Fallback: ask user for emoji or sticker.
-  * Emoji: fetch a 512px image from `emojiapi.dev` and center it on a 640×640 gradient background; fall back to drawing the glyph with a system font if the download fails.
-  * Stickers: try the original file for best resolution; fall back to the provided thumbnail if it can't be decoded.
+    * Emoji: fetch a 512px image from `emojiapi.dev` and center it on a 640×640 gradient background; fall back to
+      drawing the glyph with a system font if the download fails.
+    * Stickers: try the original file for best resolution; fall back to the provided thumbnail if it can't be decoded.
 * Save result to `/avatars/{user.id}.png` as a PNG file.
 
 ---
@@ -95,13 +101,13 @@ Keep changes minimal, safe, and production-ready.
 
 * `GlobalState`:
 
-  * `current_step_id`, `step_started_at`, `phase_started_at`, `phase`.
+    * `current_step_id`, `step_started_at`, `phase_started_at`, `phase`.
 * `advance(session, forward=True)`:
 
-  * Decides next phase or block; applies scoring; commits; `notify_all`.
+    * Decides next phase or block; applies scoring; commits; `notify_all`.
 * `notify_all`:
 
-  * Rebuilds per-user prompts based on current step/phase; throttled by `TELEGRAM_SEND_DELAY`.
+    * Rebuilds per-user prompts based on current step/phase; throttled by `TELEGRAM_SEND_DELAY`.
 
 ---
 
@@ -112,15 +118,15 @@ Before you say a task is done:
 * Start locally, walk through: **registration → open → vote → reveal → quiz → reveal → leaderboard**.
 * Confirm:
 
-  * Progress counters and “last activity” timers update live.
-  * Scoring is correct and applied once.
-  * Late joiner gets the correct current prompt.
-  * No console errors from Chart.js or WebSocket.
+    * Progress counters and “last activity” timers update live.
+    * Scoring is correct and applied once.
+    * Late joiner gets the correct current prompt.
+    * No console errors from Chart.js or WebSocket.
 * Code:
 
-  * Async functions only perform async DB and bot calls.
-  * Names and constants live in the right module (`texts.py`, not templates/handlers).
-  * Unique constraints are respected (e.g., one MCQ answer per user per step).
+    * Async functions only perform async DB and bot calls.
+    * Names and constants live in the right module (`texts.py`, not templates/handlers).
+    * Unique constraints are respected (e.g., one MCQ answer per user per step).
 
 ---
 
@@ -128,12 +134,12 @@ Before you say a task is done:
 
 * `.env`:
 
-  * `TELEGRAM_BOT_TOKEN`, `BASE_URL`, `DATABASE_URL`, `TELEGRAM_SEND_DELAY`.
+    * `TELEGRAM_BOT_TOKEN`, `BASE_URL`, `DATABASE_URL`, `TELEGRAM_SEND_DELAY`.
 * Install and run:
 
-  * `python -m venv .venv && source .venv/bin/activate`
-  * `pip install -r requirements.txt`
-  * `./run_local.sh` or `docker compose up --build`
+    * `python -m venv .venv && source .venv/bin/activate`
+    * `pip install -r requirements.txt`
+    * `./run_local.sh` or `docker compose up --build`
 * Open `http://localhost:8000/`. Use `/reset` to wipe dynamic data.
 
 ---

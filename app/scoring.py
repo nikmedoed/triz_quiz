@@ -1,7 +1,9 @@
 # Scoring helpers
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models import User, Step, Idea, IdeaVote, McqAnswer
+
 
 async def add_vote_points(session: AsyncSession, open_step_id: int) -> None:
     # +1 per vote to the author of each idea in this open block
@@ -16,6 +18,7 @@ async def add_vote_points(session: AsyncSession, open_step_id: int) -> None:
         if user:
             user.total_score += int(votes)
     await session.commit()
+
 
 async def add_mcq_points(session: AsyncSession, mcq_step: Step) -> None:
     if mcq_step.points_correct is None or mcq_step.correct_index is None:

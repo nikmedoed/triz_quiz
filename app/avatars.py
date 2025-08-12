@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import random
 import gzip
+import random
 import subprocess
 from io import BytesIO
 from pathlib import Path
@@ -18,6 +18,7 @@ from PIL import (
     ImageMath,
     ImageStat,
 )
+
 try:
     from rlottie_python import LottieAnimation
 except Exception:  # pragma: no cover - optional dependency
@@ -28,7 +29,6 @@ from aiogram.types import Sticker
 
 from app.settings import settings
 from app.models import User
-
 
 AVATAR_SIZE = 640
 
@@ -180,7 +180,7 @@ def _pick_nice_frame_index(total_frames: int) -> int:
 
 
 def _render_pillow_frame_scaled(
-    anim: LottieAnimation, frame_idx: int, w: int, h: int
+        anim: LottieAnimation, frame_idx: int, w: int, h: int
 ) -> Image.Image:
     """Render a frame at given size using available rlottie-python APIs."""
     try:
@@ -224,7 +224,7 @@ def _render_tgs_high_quality(tgs_bytes: bytes, target_max: int, oversample: int 
         with LottieAnimation.from_data(data) as anim:
             w, h = anim.lottie_animation_get_size()
             total_frames = (
-                getattr(anim, "lottie_animation_get_totalframe", lambda: 1)() or 1
+                    getattr(anim, "lottie_animation_get_totalframe", lambda: 1)() or 1
             )
             f = _pick_nice_frame_index(total_frames)
             scale = (target_max * oversample) / max(w, h)

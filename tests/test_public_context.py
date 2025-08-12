@@ -1,8 +1,7 @@
-from datetime import datetime, timedelta
-
 import asyncio
 import pathlib
 import sys
+from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -94,4 +93,3 @@ def test_idea_delay_after_phase_change():
             assert ctx["ideas"][0].delay_text == "5 с"
 
     asyncio.run(run())
-

@@ -1,13 +1,13 @@
 {% extends 'base.jinja2' %}
 
 {% block content %}
-  <div class="grid">
-    {% for u in users %}
-    <div class="card" data-joined="{{ u.joined_at.isoformat() }}">
-      <img class="avatar" src="/avatars/{{ u.id }}.png" title="{{ u.name }}" />
-      <div class="name">{{ u.name }}</div>
+    <div class="grid">
+        {% for u in users %}
+            <div class="card" data-joined="{{ u.joined_at.isoformat() }}">
+                <img class="avatar" src="/avatars/{{ u.id }}.png" title="{{ u.name }}"/>
+                <div class="name">{{ u.name }}</div>
+            </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-  </div>
-  <script src="/static/registration.js"></script>
+    <script src="/static/registration.js"></script>
 {% endblock %}

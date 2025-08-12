@@ -1,7 +1,7 @@
 import asyncio
 import random
-from types import SimpleNamespace
 from io import BytesIO
+from types import SimpleNamespace
 
 from PIL import Image
 

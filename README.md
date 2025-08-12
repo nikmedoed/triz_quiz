@@ -13,12 +13,14 @@ This project implements a TRIZ-club quiz/presentation system with **Telegram + W
 ### Design decisions aligned with your requirements
 
 * **No admin password**. Everything runs locally at `http://localhost:8000/`.
-* **Mandatory Registration & Leaderboard** are **implicit** and **auto-inserted**: you **do not** specify them in the scenario.
+* **Mandatory Registration & Leaderboard** are **implicit** and **auto-inserted**: you **do not** specify them in the
+  scenario.
 * **Blocks, not micro-steps**: Each content item is a **block** with **internal phases** and a single **Next** control.
 
-  * `open` block phases: **collect → vote (if ideas exist) → reveal**. Voting is skipped if there are no ideas.
-  * `quiz` block phases: **ask → reveal**.
-* **Next button** advances to the next **phase** inside the current block; if it was the last phase, it moves to the next block.
+    * `open` block phases: **collect → vote (if ideas exist) → reveal**. Voting is skipped if there are no ideas.
+    * `quiz` block phases: **ask → reveal**.
+* **Next button** advances to the next **phase** inside the current block; if it was the last phase, it moves to the
+  next block.
 * **Late join**: a participant who joins at any time is synced to the current block & phase.
 
 ---
@@ -57,7 +59,8 @@ Open:
 
 * `http://localhost:8000/`
 
-Invite participants to start the Telegram bot with `/start`. After they set a name, advancing phases with the Next button will push messages to all registered participants.
+Invite participants to start the Telegram bot with `/start`. After they set a name, advancing phases with the Next
+button will push messages to all registered participants.
 
 Messages are throttled with a small delay (configurable via `TELEGRAM_SEND_DELAY`) to avoid Telegram rate limits.
 
@@ -73,7 +76,8 @@ docker compose up --build
 
 ## Scenario format (simple blocks)
 
-Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registration and final leaderboard are **implicit** and auto-added.
+Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registration and final leaderboard are **implicit
+** and auto-added.
 
 **Supported blocks:**
 
@@ -108,7 +112,8 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
 
 > Notes:
 >
-> * `vote` and `vote_results` lines are **optional** and ignored by the loader (the `open` block already includes voting and reveal). You can keep them for readability.
+> * `vote` and `vote_results` lines are **optional** and ignored by the loader (the `open` block already includes voting
+    and reveal). You can keep them for readability.
 > * `quiz.correct` accepts either a **1-based string/number** (e.g., `"3"`) or a **0-based index**.
 >
 > See `scenario.example.yaml` for a complete example scenario.
@@ -126,7 +131,8 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
 ## PPT usage
 
 * Present your normal PowerPoint deck.
-* When you need live results, **Alt-Tab** to the browser tab with the **Public screen** (or add a hyperlink to `BASE_URL/`).
+* When you need live results, **Alt-Tab** to the browser tab with the **Public screen** (or add a hyperlink to
+  `BASE_URL/`).
 
 ---
 

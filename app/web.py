@@ -1,24 +1,23 @@
 # FastAPI web (public screen), WebSockets broadcasting, block/phase transitions
 from __future__ import annotations
+
 import asyncio
+import logging
 from datetime import datetime
 from typing import Dict, Set
 
-import logging
-
+from aiogram import Bot
 from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-
 from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import texts
 from app.db import get_session
 from app.models import User, Step, StepOption, GlobalState, Idea, IdeaVote, McqAnswer
 from app.scoring import add_vote_points, add_mcq_points, get_leaderboard_users
-from aiogram import Bot
 from app.settings import settings
-from app import texts
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -28,14 +27,18 @@ def humanize_seconds(sec: int) -> str:
     m, s = divmod(sec, 60)
     return f"{m} мин {s} с" if m else f"{s} с"
 
+
 class Hub:
     def __init__(self):
         self.active: Set[WebSocket] = set()
+
     async def connect(self, ws: WebSocket):
         await ws.accept()
         self.active.add(ws)
+
     def disconnect(self, ws: WebSocket):
         self.active.discard(ws)
+
     async def broadcast(self, payload: Dict):
         dead = []
         for ws in list(self.active):
@@ -46,7 +49,9 @@ class Hub:
         for ws in dead:
             self.disconnect(ws)
 
+
 hub = Hub()
+
 
 @router.get("/", response_class=HTMLResponse)
 async def public(request: Request, session: AsyncSession = Depends(get_session)):
@@ -55,6 +60,7 @@ async def public(request: Request, session: AsyncSession = Depends(get_session))
     ctx = await build_public_context(session, step, gs)
     template = f"stages/{step.type}.jinja2"
     return templates.TemplateResponse(template, {"request": request, "texts": texts, **ctx})
+
 
 @router.get("/reset", response_class=HTMLResponse)
 async def reset_page(request: Request):
@@ -68,6 +74,7 @@ async def reset_confirm(request: Request, session: AsyncSession = Depends(get_se
     resp = RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
     asyncio.create_task(hub.broadcast({"type": "reload"}))
     return resp
+
 
 @router.post("/api/reset")
 async def api_reset(session: AsyncSession = Depends(get_session), broadcast: bool = True):
@@ -87,6 +94,7 @@ async def api_reset(session: AsyncSession = Depends(get_session), broadcast: boo
         await hub.broadcast({"type": "reload"})
     return {"ok": True}
 
+
 @router.websocket("/ws")
 async def ws_endpoint(ws: WebSocket):
     await hub.connect(ws)
@@ -96,11 +104,13 @@ async def ws_endpoint(ws: WebSocket):
     except WebSocketDisconnect:
         hub.disconnect(ws)
 
+
 @router.post("/api/next")
 async def api_next(session: AsyncSession = Depends(get_session)):
     await advance(session, forward=True)
     await hub.broadcast({"type": "reload"})
     return {"ok": True}
+
 
 async def notify_all(session: AsyncSession):
     from app.bot import send_prompt
@@ -179,6 +189,7 @@ async def move_to_block(session: AsyncSession, target_order_index: int, to_last_
         gs.phase = 0
     await session.commit()
 
+
 async def build_public_context(session: AsyncSession, step: Step, gs: GlobalState):
     ctx = {
         "step": step,
@@ -196,7 +207,8 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
         "content_class": "",
     }
     if step.type == "registration":
-        users = (await session.execute(select(User).where(User.name != "").order_by(User.joined_at.asc()))).scalars().all()
+        users = (
+            await session.execute(select(User).where(User.name != "").order_by(User.joined_at.asc()))).scalars().all()
         ctx.update(users=users, stage_title="Регистрация", show_reset=True)
     elif step.type == "open":
         rows = (

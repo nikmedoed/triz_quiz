@@ -1,7 +1,9 @@
 """Database models (SQLAlchemy 2.0 style)."""
 from datetime import datetime
+
 from sqlalchemy import Integer, String, DateTime, ForeignKey, Text, UniqueConstraint, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.db import Base
 
 
@@ -20,6 +22,7 @@ class User(Base):
     waiting_for_name: Mapped[bool] = mapped_column(Boolean, default=False)  # /start → True, до сохранения имени
     waiting_for_avatar: Mapped[bool] = mapped_column(Boolean, default=False)
 
+
 class Step(Base):
     __tablename__ = "steps"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -30,6 +33,7 @@ class Step(Base):
     correct_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
     points_correct: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+
 class GlobalState(Base):
     __tablename__ = "global_state"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -38,6 +42,7 @@ class GlobalState(Base):
     phase_started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     phase: Mapped[int] = mapped_column(Integer, default=0)
 
+
 class StepOption(Base):
     __tablename__ = "step_options"
     __table_args__ = (UniqueConstraint("step_id", "idx"),)
@@ -45,6 +50,7 @@ class StepOption(Base):
     step_id: Mapped[int] = mapped_column(ForeignKey("steps.id"), index=True)
     idx: Mapped[int] = mapped_column(Integer)
     text: Mapped[str] = mapped_column(Text)
+
 
 class Idea(Base):
     __tablename__ = "ideas"
@@ -55,6 +61,7 @@ class Idea(Base):
     text: Mapped[str] = mapped_column(Text)
     submitted_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
+
 class IdeaVote(Base):
     __tablename__ = "idea_votes"
     __table_args__ = (UniqueConstraint("step_id", "idea_id", "voter_id"),)
@@ -63,6 +70,7 @@ class IdeaVote(Base):
     idea_id: Mapped[int] = mapped_column(ForeignKey("ideas.id"), index=True)
     voter_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
 
 class McqAnswer(Base):
     __tablename__ = "mcq_answers"
