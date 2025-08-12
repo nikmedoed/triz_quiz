@@ -96,12 +96,15 @@ window.renderMcq = function() {
     const speed = Math.max(1, parseFloat(el.getAttribute('data-speed') || '28'));
     const firstChild = el.firstElementChild;
     if (!firstChild) return;
+    const originalHeight = el.scrollHeight;
+    if (originalHeight <= el.clientHeight + 1) return;
     if (!el.querySelector('[data-clone="1"]')) {
       const clone = firstChild.cloneNode(true);
+      const head = clone.querySelector('thead');
+      if (head) head.remove();
       clone.setAttribute('data-clone', '1');
       el.appendChild(clone);
     }
-    if (el.scrollHeight <= el.clientHeight + 1) return;
 
     let raf = 0;
     let last = performance.now();
@@ -122,9 +125,8 @@ window.renderMcq = function() {
       last = now;
       if (!paused) {
         el.scrollTop += speed * dt;
-        const half = el.scrollHeight / 2;
-        if (el.scrollTop >= half) {
-          el.scrollTop = el.scrollTop - half;
+        if (el.scrollTop >= originalHeight) {
+          el.scrollTop = el.scrollTop - originalHeight;
         }
       }
       raf = requestAnimationFrame(step);

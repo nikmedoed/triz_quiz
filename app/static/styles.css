@@ -159,16 +159,36 @@ a:focus {
   -webkit-overflow-scrolling: touch;
 }
 
+
+/* Keep leaderboard header visible while scrolling */
+.leaderboard-table thead,
 .leaderboard-table thead th {
   position: sticky;
   top: 0;
-  z-index: 1;
-  background: #ffffff;
+  z-index: 2;
+  background: var(--color-slate-50);
 }
+
+.leaderboard-table thead th {
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+}
+
+
 
 .leaderboard-columns > * {
   min-width: 0;
   min-height: 0;
+}
+
+.leaderboard-columns.single {
+  display: flex;
+  justify-content: center;
+}
+
+/* Maintain half-width column when table is absent */
+.leaderboard-columns.single .col-primary {
+  flex: 0 0 calc(50% - var(--space-3));
 }
 
 h1 {
@@ -323,12 +343,6 @@ h2 {
   padding: var(--space-2);
   border: none;
   vertical-align: middle;
-}
-
-.leaderboard-table thead th {
-  background: var(--color-slate-50);
-  font-weight: var(--font-weight-medium);
-  text-align: center;
 }
 
 .leaderboard-table td {
