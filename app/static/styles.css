@@ -528,18 +528,17 @@ ol {
 .idea-card__head { display: flex; align-items: center; gap: 8px; }
 .idea-card__number { font-weight: 600; }
 .idea-card__text { font-size: 18px; line-height: 1.4; margin: 8px 0 0; white-space: pre-wrap; }
-.idea-card__details { display: flex; flex-direction: column; }
-.idea-card__toggle { list-style: none; cursor: pointer; color: var(--color-slate-500); text-decoration: underline; order: 3; display: inline-block; align-self: flex-start; margin-top: var(--space-2); }
-.idea-card__toggle::-webkit-details-marker { display: none; }
-.idea-card__text--clamped { order: 1; max-height: calc(1.4 * 5em); overflow: hidden; -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent); mask-image: linear-gradient(180deg, #000 80%, transparent); }
-.idea-card__text--full { order: 2; display: none; }
-.idea-card__details[open] .idea-card__text--clamped { display: none; }
-.idea-card__details[open] .idea-card__text--full { display: block; }
+.idea-card__toggle-input { display: none; }
+.idea-card__text--clamped { max-height: 7em; overflow: hidden; -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent); mask-image: linear-gradient(180deg, #000 80%, transparent); }
+.idea-card__text--full { display: none; }
+.idea-card__toggle { cursor: pointer; color: var(--color-slate-500); text-decoration: underline; display: inline-block; margin-top: var(--space-2); }
 .idea-card__toggle-more::after { content: ' \2193'; }
 .idea-card__toggle-less { display: none; }
 .idea-card__toggle-less::after { content: ' \2191'; }
-.idea-card__details[open] .idea-card__toggle-more { display: none; }
-.idea-card__details[open] .idea-card__toggle-less { display: inline; }
+.idea-card__toggle-input:checked ~ .idea-card__text--clamped { display: none; }
+.idea-card__toggle-input:checked ~ .idea-card__text--full { display: block; }
+.idea-card__toggle-input:checked ~ .idea-card__toggle .idea-card__toggle-more { display: none; }
+.idea-card__toggle-input:checked ~ .idea-card__toggle .idea-card__toggle-less { display: inline; }
 .idea-card__time { font-size: 16px; opacity: .8; }
 .idea-card__author { display: flex; flex-direction: column; }
 .idea-card__name {
