@@ -60,5 +60,21 @@
     </section>
     {% endif %}
   </div>
+  <script>
+    (function(){
+      const scroller = document.querySelector('.table-scroll');
+      if (!scroller) return;
+      if (scroller.scrollHeight <= scroller.clientHeight) return;
+      let direction = 1;
+      setInterval(() => {
+        scroller.scrollTop += direction;
+        if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight) {
+          direction = -1;
+        } else if (scroller.scrollTop <= 0) {
+          direction = 1;
+        }
+      }, 50);
+    })();
+  </script>
 {% endblock %}
 
