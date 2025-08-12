@@ -58,12 +58,21 @@
             applyPhase(document.getElementById('ideasWrap'), '{{ 'voting' if phase == 1 else 'results' }}');
             document.querySelectorAll('.idea-card__body').forEach(body => {
                 const clamped = body.querySelector('.idea-card__text--clamped');
-                if (!clamped) return;
                 const full = body.querySelector('.idea-card__text--full');
+                if (!clamped || !full) return;
                 const input = body.querySelector('.idea-card__toggle-input');
                 const toggle = body.querySelector('.idea-card__toggle');
-                if (clamped.scrollHeight <= clamped.clientHeight + 1) {
-                    if (full) full.remove();
+
+                full.style.position = 'absolute';
+                full.style.visibility = 'hidden';
+                full.style.display = 'block';
+                const needToggle = full.scrollHeight > clamped.scrollHeight + 1;
+                full.style.position = '';
+                full.style.visibility = '';
+                full.style.display = '';
+
+                if (!needToggle) {
+                    full.remove();
                     if (input) input.remove();
                     if (toggle) toggle.remove();
                     clamped.classList.remove('idea-card__text--clamped');
