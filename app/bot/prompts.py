@@ -66,8 +66,13 @@ async def build_prompt_messages(user: User, step: Step, phase: int):
                 ]
             header = texts.QUIZ_HEADER
             title = escape(step.title)
+            body = escape(step.text or "")
             instr = texts.QUIZ_INSTR
-            text = f"<b>{header}</b>\n\n{title}\n\n<i>{instr}</i>"
+            parts = [f"<b>{header}</b>", title]
+            if body:
+                parts.append(body)
+            parts.append(f"<i>{instr}</i>")
+            text = "\n\n".join(parts)
             msgs.append((text, {"parse_mode": "HTML", "reply_markup": mcq_kb(options, selected=None)}))
         else:
             async with AsyncSessionLocal() as s:
