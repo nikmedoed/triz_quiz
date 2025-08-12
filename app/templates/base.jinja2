@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;900&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="/static/styles.css"/>
     <script src="/static/app.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -23,7 +24,7 @@
     </div>
     <div class="top-right">
         {% if show_next is not defined or show_next %}
-            <button class="btn btn-primary" onclick="post('/api/next')">Далее</button>
+            <button class="btn btn-primary" hx-post="/api/next" hx-swap="none" hx-on:afterRequest="location.href='/'">Далее</button>
         {% endif %}
     </div>
 </header>
@@ -56,10 +57,6 @@
     </div>
 </footer>
 <script>
-    async function post(url) {
-        await fetch(url, {method: 'POST'});
-    }
-
     function formatAgo(sec) {
         if (sec == null || sec === '-' || sec === '') return '-';
         sec = parseInt(sec);

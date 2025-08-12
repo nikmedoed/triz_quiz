@@ -70,14 +70,12 @@ async def reset_page(request: Request):
 
 @router.post("/reset")
 async def reset_confirm(request: Request, session: AsyncSession = Depends(get_session)):
-    await api_reset(session, broadcast=False)
-    resp = RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
-    asyncio.create_task(hub.broadcast({"type": "reload"}))
-    return resp
+    await api_reset(session)
+    return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/api/reset")
-async def api_reset(session: AsyncSession = Depends(get_session), broadcast: bool = True):
+async def api_reset(session: AsyncSession = Depends(get_session)):
     # wipe dynamic data
     for model in [IdeaVote, Idea, McqAnswer, User]:
         await session.execute(delete(model))
@@ -90,8 +88,6 @@ async def api_reset(session: AsyncSession = Depends(get_session), broadcast: boo
     gs.phase_started_at = now
     gs.phase = 0
     await session.commit()
-    if broadcast:
-        await hub.broadcast({"type": "reload"})
     return {"ok": True}
 
 
@@ -108,7 +104,6 @@ async def ws_endpoint(ws: WebSocket):
 @router.post("/api/next")
 async def api_next(session: AsyncSession = Depends(get_session)):
     await advance(session, forward=True)
-    await hub.broadcast({"type": "reload"})
     return {"ok": True}
 
 
