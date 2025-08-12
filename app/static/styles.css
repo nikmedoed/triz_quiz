@@ -158,14 +158,16 @@ a:focus {
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  border-bottom-left-radius: var(--radius-md);
-  border-bottom-right-radius: var(--radius-md);
+  border-radius: var(--radius-md);
 }
 
 /* Leaderboard header styling */
 .leaderboard-table thead {
+  position: sticky;
+  top: 0;
   background: var(--color-slate-50);
   box-shadow: 0 2px 0 0 var(--color-light);
+  z-index: 1;
 }
 .leaderboard-table th {
   font-weight: var(--font-weight-medium);
@@ -336,15 +338,9 @@ h2 {
   table-layout: fixed;
 }
 
-.table-wrap > .leaderboard-table {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-}
 
-.table-scroll .leaderboard-table {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-}
+
+
 
 .leaderboard-table th,
 .leaderboard-table td {
