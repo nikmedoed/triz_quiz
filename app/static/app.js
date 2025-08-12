@@ -1,3 +1,20 @@
+window.initTimer = function (id, sinceIso, durationMs) {
+    const el = id ? document.getElementById(id) : null;
+    if (!el || !sinceIso || !durationMs) return;
+    const start = new Date(sinceIso + 'Z').getTime();
+
+    function tick() {
+        let left = durationMs - (Date.now() - start);
+        if (left < 0) left = 0;
+        const m = String(Math.floor(left / 60000)).padStart(2, '0');
+        const s = String(Math.floor((left % 60000) / 1000)).padStart(2, '0');
+        el.textContent = m + ':' + s;
+    }
+
+    tick();
+    setInterval(tick, 1000);
+};
+
 // Minimal Chart.js render for MCQ reveal (no custom colors per requirements)
 window.renderMcq = function () {
     const ctx = document.getElementById('mcqChart');
