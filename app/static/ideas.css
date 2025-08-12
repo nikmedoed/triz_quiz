@@ -234,6 +234,7 @@
     height: 100%;
     align-self: stretch;
     min-height: 0;
+    justify-content: center;
 }
 
 .quiz-description {
@@ -253,10 +254,8 @@
 }
 
 .sequence-description {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     overflow-y: auto;
-    display: flex;
-    align-items: center;
     min-height: 0;
 }
 
