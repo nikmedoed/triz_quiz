@@ -1,18 +1,15 @@
-/* Two-column leaderboard layout */
+/* Layout min-height clamps for scrollable flex children */
 .leaderboard-columns,
 .col,
 .col .col-inner,
 .table-wrap,
 .table-scroll,
-.leaderboard-columns > * {
-    min-height: 0;
-}
+.leaderboard-columns > * { min-height: 0; }
 
+/* Full-height areas */
 .leaderboard-columns,
 .col .col-inner,
-.table-wrap {
-    height: 100%;
-}
+.table-wrap { height: 100%; }
 
 .leaderboard-columns {
     display: grid;
@@ -20,9 +17,7 @@
     gap: var(--space-6);
 }
 
-.col {
-    display: grid;
-}
+.col { display: grid; }
 
 .col .col-inner {
     display: flex;
@@ -32,9 +27,7 @@
     padding: 0 var(--space-6);
 }
 
-.col-secondary .col-inner {
-    justify-content: center;
-}
+/* (removed duplicate) .col-secondary .col-inner { justify-content: center; } */
 
 .table-wrap {
     display: flex;
@@ -54,7 +47,6 @@
     border-radius: var(--radius-md) var(--radius-md) 0 0;
     background: var(--color-slate-50);
 }
-
 .leaderboard-header th {
     font-weight: var(--font-weight-medium);
     text-align: center;
@@ -64,36 +56,10 @@
     border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
-
-.leaderboard-columns > * {
-    min-width: 0;
-}
-
-.leaderboard-columns.single {
-    display: flex;
-    justify-content: center;
-}
-
+.leaderboard-columns > * { min-width: 0; }
+.leaderboard-columns.single { display: flex; justify-content: center; }
 /* Maintain half-width column when table is absent */
-.leaderboard-columns.single .col-primary {
-    flex: 0 0 calc(50% - var(--space-3));
-}
-
-h1 {
-    font-size: 32px;
-    margin-bottom: var(--space-4);
-    font-weight: var(--font-weight-black);
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    text-align: center;
-}
-
-h2 {
-    font-size: 24px;
-    font-weight: var(--font-weight-medium);
-    margin: var(--space-4) 0;
-}
-
+.leaderboard-columns.single .col-primary { flex: 0 0 calc(50% - var(--space-3)); }
 
 .grid {
     --card-w: 128px;
@@ -112,16 +78,8 @@ h2 {
     text-align: center;
 }
 
-.avatar {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.avatar.small {
-    width: 55px;
-}
+.avatar { width: 100%; aspect-ratio: 1 / 1; }
+.avatar.small { width: 55px; }
 
 .avatars {
     display: flex;
@@ -129,22 +87,17 @@ h2 {
     gap: var(--space-1);
 }
 
-.mcq-results {
-    justify-content: flex-start;
-    align-items: stretch;
-}
+.mcq-results { justify-content: flex-start; align-items: stretch; }
 
 .mcq-container {
     position: relative;
     flex: 1;
     width: 100%;
 }
-
 .mcq-container canvas {
     width: 100% !important;
     height: 100% !important;
 }
-
 .mcq-avatar-col {
     position: absolute;
     display: flex;
@@ -155,7 +108,6 @@ h2 {
     transform: translateX(-50%);
     overflow: hidden;
 }
-
 .mcq-count {
     position: absolute;
     transform: translateX(-50%);
@@ -191,7 +143,6 @@ h2 {
     flex-direction: column;
     align-items: flex-end;
 }
-
 .status.complete {
     color: var(--color-primary-500);
     font-weight: var(--font-weight-medium);
@@ -217,73 +168,35 @@ h2 {
     white-space: nowrap;
 }
 
-
+/* Table */
 .leaderboard-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     table-layout: fixed;
 }
-
-
 .leaderboard-table th,
 .leaderboard-table td {
     padding: var(--space-2);
     border: none;
     vertical-align: middle;
 }
+.leaderboard-table td { font-size: 18px; }
 
-.leaderboard-table td {
-    font-size: 18px;
-}
+.leaderboard-table td.align-center { text-align: center; }
+.leaderboard-table td.align-left   { text-align: left; }
 
-.leaderboard-table td.align-center {
-    text-align: center;
-}
+.leaderboard-table tbody tr + tr { border-top: 1px solid var(--color-light); }
+.leaderboard-table tbody tr:nth-child(even) { background: var(--color-slate-50); }
 
-.leaderboard-table td.align-left {
-    text-align: left;
-}
-
-.leaderboard-table tbody tr + tr {
-    border-top: 1px solid var(--color-light);
-}
-
-.leaderboard-table tbody tr:nth-child(even) {
-    background: var(--color-slate-50);
-}
-
-.leaderboard-table :is(td, th):first-child {
-    width: 40px;
-}
-
-.leaderboard-table :is(td, th):nth-child(2) {
-    width: 70px;
-    text-align: center;
-}
-
+/* Narrow columns */
+.leaderboard-table :is(td, th):first-child { width: 40px; }
+.leaderboard-table :is(td, th):nth-child(2) { width: 70px; text-align: center; }
 .leaderboard-table :is(td, th):nth-child(4),
 .leaderboard-table :is(td, th):nth-child(5),
-.leaderboard-table :is(td, th):nth-child(6) {
-    width: 80px;
-}
+.leaderboard-table :is(td, th):nth-child(6) { width: 80px; }
 
-
-.leaderboard-table .name-cell {
-    font-size: 24px;
-    font-weight: var(--font-weight-medium);
-    text-align: left;
-}
-
-.leaderboard-table .table-avatar {
-    width: 60px;
-    height: 60px;
-    object-fit: cover;
-    display: block;
-    margin: 0 auto;
-}
-
-
+/* Top 3 cards */
 .leader-top {
     display: flex;
     flex-direction: column;
@@ -301,18 +214,9 @@ h2 {
     border-radius: var(--radius-md);
     width: 100%;
 }
-
-.leader-card.gold {
-    background: linear-gradient(135deg, var(--color-gold), var(--color-light));
-}
-
-.leader-card.silver {
-    background: linear-gradient(135deg, var(--color-silver), var(--color-light));
-}
-
-.leader-card.bronze {
-    background: linear-gradient(135deg, var(--color-bronze), var(--color-light));
-}
+.leader-card.gold   { background: linear-gradient(135deg, var(--color-gold),   var(--color-light)); }
+.leader-card.silver { background: linear-gradient(135deg, var(--color-silver), var(--color-light)); }
+.leader-card.bronze { background: linear-gradient(135deg, var(--color-bronze), var(--color-light)); }
 
 .leader-rank {
     font-size: 40px;
@@ -320,29 +224,16 @@ h2 {
     width: 60px;
     text-align: center;
 }
+.leader-card .avatar { width: 160px; height: 160px; }
 
-.leader-card .avatar {
-    width: 160px;
-    height: 160px;
-}
-
-.leader-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.leader-name {
-    font-size: 32px;
-    font-weight: var(--font-weight-medium);
-}
-
+.leader-info { display: flex; flex-direction: column; }
+.leader-name  { font-size: 32px; font-weight: var(--font-weight-medium); }
 .leader-score {
     font-size: 28px;
     font-weight: var(--font-weight-medium);
     color: var(--color-primary-500);
     margin-top: var(--space-2);
 }
-
 .leader-average-label,
 .leader-types {
     font-size: 20px;
@@ -350,7 +241,10 @@ h2 {
     margin-top: var(--space-1);
 }
 
-ol {
-    margin-left: var(--space-4);
+/* Table avatars (shares avatar base via grouping in ideas.css) */
+.leaderboard-table .table-avatar {
+    width: 60px;
+    height: 60px;
+    display: block;
+    margin: 0 auto;
 }
-

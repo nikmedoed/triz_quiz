@@ -25,6 +25,7 @@
     --color-dark: #2b2b2a; /* base dark text */
     --color-light: #e6e6e6; /* backgrounds, borders */
     --color-black: #000000; /* rare accent text on light */
+    --color-white: #ffffff; /* unified white */
     --color-gold: #ffd700;
     --color-silver: #c0c0c0;
     --color-bronze: #cd7f32;
@@ -40,6 +41,7 @@
     --radius-none: 0px;
     --radius-sm: 4px;
     --radius-md: 8px;
+    --radius-lg: 12px; /* used by cards */
 
     --space-1: 4px;
     --space-2: 8px;
@@ -47,4 +49,8 @@
     --space-4: 16px;
     --space-6: 24px;
     --space-8: 32px;
+
+    /* App-specific */
+    --bar-h: 64px;              /* top/bottom bars height */
+    --shadow-card: 0 6px 18px rgba(0, 0, 0, .08); /* shared card shadow */
 }
