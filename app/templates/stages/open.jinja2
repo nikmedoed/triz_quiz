@@ -55,7 +55,10 @@
             </div>
         </div>
         <script>
-            applyPhase(document.getElementById('ideasWrap'), '{{ 'voting' if phase == 1 else 'results' }}');
+            const wrap = document.getElementById('ideasWrap');
+            if (window.applyPhase) {
+                applyPhase(wrap, '{{ 'voting' if phase == 1 else 'results' }}');
+            }
             document.querySelectorAll('.idea-card__body').forEach(body => {
                 const clamped = body.querySelector('.idea-card__text--clamped');
                 const full = body.querySelector('.idea-card__text--full');
