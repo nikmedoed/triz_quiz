@@ -113,7 +113,10 @@ async def sequence_bot_prompts(
             text = texts.NO_ANSWER + texts.RESPONSES_CLOSED
         else:
             correct_order = [idx for idx, _ in sorted(options, key=lambda x: x[0])]
-            if json.loads(ans.order_json) == correct_order:
+            order = json.loads(ans.order_json)
+            if len(order) != len(correct_order):
+                text = texts.NO_ANSWER + texts.RESPONSES_CLOSED
+            elif order == correct_order:
                 points = step.points_correct or 0
                 text = (
                     texts.CORRECT_PREFIX.format(points=points)
@@ -162,68 +165,74 @@ async def sequence_on_callback(
     now = datetime.utcnow()
     delta_ms = int((now - state.step_started_at).total_seconds() * 1000)
     delta_ms = max(0, delta_ms)
+    options_count = len(options)
     if payload == "reset":
         if existing:
-            old_delta = int(
-                (existing.answered_at - state.step_started_at).total_seconds() * 1000
+            old_order = json.loads(existing.order_json)
+            was_full = len(old_order) == options_count
+            old_delta = (
+                int((existing.answered_at - state.step_started_at).total_seconds() * 1000)
+                if was_full
+                else 0
             )
-            session.delete(existing)
-            user.total_answer_ms -= old_delta
-            user.quiz_answer_ms -= old_delta
-            if user.quiz_answer_count:
-                user.quiz_answer_count -= 1
-            await session.commit()
-        await cb.answer(texts.ANSWER_SAVED)
-        await cb.message.edit_reply_markup(
-            reply_markup=sequence_kb(options, [])
-        )
-    else:
-        idx = int(payload)
-        order = []
-        if existing:
-            order = json.loads(existing.order_json)
-        if idx in order:
-            order.remove(idx)
-        else:
-            order.append(idx)
-        if order:
-            if existing:
-                old_delta = int(
-                    (existing.answered_at - state.step_started_at).total_seconds() * 1000
-                )
-                existing.order_json = json.dumps(order)
-                existing.answered_at = now
-                user.total_answer_ms += delta_ms - old_delta
-                user.quiz_answer_ms += delta_ms - old_delta
-            else:
-                session.add(
-                    SequenceAnswer(
-                        step_id=step.id,
-                        user_id=user.id,
-                        order_json=json.dumps(order),
-                        answered_at=now,
-                    )
-                )
-                user.total_answer_ms += delta_ms
-                user.quiz_answer_ms += delta_ms
-                user.quiz_answer_count += 1
-        else:
-            if existing:
-                old_delta = int(
-                    (existing.answered_at - state.step_started_at).total_seconds() * 1000
-                )
-                session.delete(existing)
+            await session.delete(existing)
+            if was_full:
                 user.total_answer_ms -= old_delta
                 user.quiz_answer_ms -= old_delta
                 if user.quiz_answer_count:
                     user.quiz_answer_count -= 1
+            await session.commit()
+        await cb.answer(texts.ANSWER_SAVED)
+        await cb.message.edit_reply_markup(reply_markup=sequence_kb(options, []))
+    else:
+        idx = int(payload)
+        existing_order = json.loads(existing.order_json) if existing else []
+        order = list(existing_order)
+        if idx in order:
+            order.remove(idx)
+        else:
+            order.append(idx)
+        was_full = len(existing_order) == options_count
+        old_delta = (
+            int((existing.answered_at - state.step_started_at).total_seconds() * 1000)
+            if existing and was_full
+            else 0
+        )
+        is_full = len(order) == options_count
+        if existing:
+            if order:
+                existing.order_json = json.dumps(order)
+                existing.answered_at = now
+            else:
+                await session.delete(existing)
+        elif order:
+            session.add(
+                SequenceAnswer(
+                    step_id=step.id,
+                    user_id=user.id,
+                    order_json=json.dumps(order),
+                    answered_at=now,
+                )
+            )
+        if was_full:
+            user.total_answer_ms -= old_delta
+            user.quiz_answer_ms -= old_delta
+            if user.quiz_answer_count:
+                user.quiz_answer_count -= 1
+        if is_full:
+            user.total_answer_ms += delta_ms
+            user.quiz_answer_ms += delta_ms
+            user.quiz_answer_count += 1
         await session.commit()
         await cb.answer(texts.ANSWER_SAVED)
         await cb.message.edit_reply_markup(
             reply_markup=sequence_kb(options, order)
         )
     count = await session.scalar(
-        select(func.count(SequenceAnswer.id)).where(SequenceAnswer.step_id == step.id)
+        select(func.count(SequenceAnswer.id)).where(
+            SequenceAnswer.step_id == step.id,
+            func.json_array_length(SequenceAnswer.order_json) == options_count,
+        )
     )
     total = await session.scalar(
         select(func.count(User.id)).where(User.name != "")

@@ -55,7 +55,7 @@ async def add_sequence_points(session: AsyncSession, seq_step: Step) -> None:
     ).all()
     for user, ans in rows:
         order = json.loads(ans.order_json or "[]")
-        if order == correct_order:
+        if len(order) == len(correct_order) and order == correct_order:
             user.total_score += seq_step.points_correct
     await session.commit()
 

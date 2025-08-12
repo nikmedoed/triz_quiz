@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict
 import json
+import random
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -220,8 +221,14 @@ async def sequence_context(
             select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx)
         )
     ).scalars().all()
+    if gs.phase == 0:
+        shuffled = list(options)
+        rng = random.Random(step.id)
+        rng.shuffle(shuffled)
+        ctx.update(options=shuffled)
+    else:
+        ctx.update(options=options)
     ctx.update(
-        options=options,
         stage_title=
             texts.TITLE_SEQUENCE
             if gs.phase == 0
@@ -232,7 +239,10 @@ async def sequence_context(
             select(func.count(User.id)).where(User.name != "")
         )
         answers_count = await session.scalar(
-            select(func.count(SequenceAnswer.id)).where(SequenceAnswer.step_id == step.id)
+            select(func.count(SequenceAnswer.id)).where(
+                SequenceAnswer.step_id == step.id,
+                func.json_array_length(SequenceAnswer.order_json) == len(options),
+            )
         )
         last_at = await session.scalar(
             select(func.max(SequenceAnswer.answered_at)).where(
@@ -269,6 +279,8 @@ async def sequence_context(
         wrong = 0
         for user, ans in rows:
             order = json.loads(ans.order_json or "[]")
+            if len(order) != len(correct_order):
+                continue
             if order == correct_order:
                 correct_users.append(user)
             else:
