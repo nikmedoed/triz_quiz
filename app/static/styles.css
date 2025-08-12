@@ -90,6 +90,7 @@ a:focus {
     display: flex;
     flex-direction: column;
     padding: 0 var(--space-4);
+    min-height: 0;
 }
 
 .content {
@@ -114,6 +115,11 @@ a:focus {
     align-items: stretch;
     justify-content: flex-start;
     padding: 0;
+}
+
+.content.description-page {
+    justify-content: flex-start;
+    overflow: auto;
 }
 
 

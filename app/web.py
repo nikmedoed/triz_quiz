@@ -254,6 +254,7 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 status_total=int(total_users or 0),
                 status_last=last_ago_s if last_ago_s is not None else "-",
                 instruction="Отправляйте идеи боту. Здесь они пока не видны.",
+                content_class="description-page",
             )
         if gs.phase == 1 and ideas:  # vote
             voters = (
