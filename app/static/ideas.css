@@ -231,8 +231,9 @@
     flex-direction: column;
     gap: var(--space-4);
     width: 100%;
-    max-height: 100%;
-    overflow-y: auto;
+    height: 100%;
+    align-self: stretch;
+    min-height: 0;
 }
 
 .quiz-description {
@@ -245,13 +246,31 @@
     text-align: left;
 }
 
+.sequence-details > .quiz-options {
+    flex: 0 0 auto;
+    max-height: none;
+    overflow: visible;
+}
+
+.sequence-description {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    display: flex;
+    align-items: center;
+    min-height: 0;
+}
+
+.sequence-description .quiz-description {
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+}
+
 .quiz-options {
     width: 100%;
-    max-height: 100%;
     counter-reset: option;
     margin: 0;
     padding: 0;
-    overflow-y: auto;
     list-style: none;
     display: flex;
     flex-direction: column;

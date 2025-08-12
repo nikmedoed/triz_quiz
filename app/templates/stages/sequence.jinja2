@@ -31,21 +31,23 @@
         <div class="quiz-center">
             <h1>{{ step.title }}</h1>
             <div class="quiz-layout">
-                <div class="quiz-col chart-col">
-                    <div class="mcq-container">
-                        <canvas id="mcqChart"></canvas>
-                    </div>
-                </div>
                 <div class="quiz-col">
                     <div class="sequence-details">
                         {% if step.text %}
-                            <div class="quiz-description">{{ step.text }}</div>
+                            <div class="sequence-description">
+                                <div class="quiz-description">{{ step.text }}</div>
+                            </div>
                         {% endif %}
                         <ol class="quiz-options">
                             {% for opt in options %}
                                 <li>{{ opt.text }}</li>
                             {% endfor %}
                         </ol>
+                    </div>
+                </div>
+                <div class="quiz-col chart-col">
+                    <div class="mcq-container">
+                        <canvas id="mcqChart"></canvas>
                     </div>
                 </div>
             </div>
