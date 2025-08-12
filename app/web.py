@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from datetime import datetime
 from typing import Dict, Set
 
@@ -17,6 +18,7 @@ from app import texts
 from app.db import get_session
 from app.models import User, Step, StepOption, GlobalState, Idea, IdeaVote, McqAnswer
 from app.scoring import add_vote_points, add_mcq_points, get_leaderboard_users
+from app.scenario_loader import load_if_empty
 from app.settings import settings
 
 router = APIRouter()
@@ -78,18 +80,17 @@ async def reset_confirm(request: Request, session: AsyncSession = Depends(get_se
 
 @router.post("/api/reset")
 async def api_reset(session: AsyncSession = Depends(get_session), broadcast: bool = True):
-    # wipe dynamic data
-    for model in [IdeaVote, Idea, McqAnswer, User]:
+    # wipe dynamic and scenario data
+    for model in [IdeaVote, Idea, McqAnswer, User, StepOption, Step, GlobalState]:
         await session.execute(delete(model))
-    # restore first step
-    first = await session.scalar(select(Step.id).order_by(Step.order_index.asc()))
-    gs = await session.get(GlobalState, 1)
-    gs.current_step_id = first
-    now = datetime.utcnow()
-    gs.step_started_at = now
-    gs.phase_started_at = now
-    gs.phase = 0
     await session.commit()
+
+    # reload scenario from file
+    if os.path.exists("scenario.yaml"):
+        await load_if_empty(session, path="scenario.yaml")
+    elif os.path.exists("scenario.json"):
+        await load_if_empty(session, path="scenario.json")
+
     if broadcast:
         await hub.broadcast({"type": "reload"})
     return {"ok": True}
