@@ -27,23 +27,23 @@
             {% endif %}
           </header>
           {% if phase == 2 %}
-          <details class="idea-card__details">
-            <div class="idea-card__body">
-              <p class="idea-card__text idea-card__text--clamped">{{ idea.text }}</p>
+          <div class="idea-card__body">
+            <p class="idea-card__text idea-card__text--clamped">{{ idea.text }}</p>
+            <details class="idea-card__details" ontoggle="this.parentElement.classList.toggle('idea-card__body--open', this.open)">
+              <summary class="idea-card__toggle">
+                <span class="idea-card__toggle-more">{{ texts.SHOW_MORE }}</span>
+                <span class="idea-card__toggle-less">{{ texts.SHOW_LESS }}</span>
+              </summary>
               <p class="idea-card__text idea-card__text--full">{{ idea.text }}</p>
+            </details>
+          </div>
+          <footer class="idea-card__foot">
+            <div class="idea-card__voters">
+              {% for v in voters %}
+                <img class="idea-card__voter" src="/avatars/{{ v.id }}.png" alt="" title="{{ v.name }}" />
+              {% endfor %}
             </div>
-            <summary class="idea-card__toggle">
-              <span class="idea-card__toggle-more">{{ texts.SHOW_MORE }}</span>
-              <span class="idea-card__toggle-less">{{ texts.SHOW_LESS }}</span>
-            </summary>
-            <footer class="idea-card__foot">
-              <div class="idea-card__voters">
-                {% for v in voters %}
-                  <img class="idea-card__voter" src="/avatars/{{ v.id }}.png" alt="" title="{{ v.name }}" />
-                {% endfor %}
-              </div>
-            </footer>
-          </details>
+          </footer>
           {% else %}
           <div class="idea-card__body">
             <p class="idea-card__text">{{ idea.text }}</p>
