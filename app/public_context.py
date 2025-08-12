@@ -49,8 +49,9 @@ async def open_context(
         )
     ).all()
     ideas = []
-    for idea, author in rows:
+    for idx, (idea, author) in enumerate(rows, start=1):
         idea.author = author
+        idea.idx = idx
         ideas.append(idea)
     if ideas:
         for i in ideas:
@@ -127,7 +128,8 @@ async def open_context(
                 )
             ).scalars().all()
             voters_map[idea.id] = rows
-        # Keep original submission order so numbering matches bot options
+            idea.votes = len(rows)
+        ideas.sort(key=lambda x: x.votes, reverse=True)
         ctx.update(voters_map=voters_map, ideas=ideas)
 
 

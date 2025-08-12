@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from app.models import Base, Step, GlobalState, User, Idea
+from app.models import Base, Step, GlobalState, User, Idea, IdeaVote
 from app.web import build_public_context
 
 
@@ -91,5 +91,62 @@ def test_idea_delay_after_phase_change():
 
             ctx = await build_public_context(session, step, gs)
             assert ctx["ideas"][0].delay_text == "5 с"
+
+    asyncio.run(run())
+
+
+def test_votes_sort_but_keep_original_numbers():
+    async def run():
+        engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+
+        AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        async with AsyncSessionLocal() as session:
+            step = Step(order_index=1, type="open", title="Q1")
+            session.add(step)
+            await session.flush()
+
+            start = datetime(2025, 1, 1, 0, 0, 0)
+            gs = GlobalState(
+                id=1,
+                current_step_id=step.id,
+                step_started_at=start,
+                phase_started_at=start,
+                phase=2,
+            )
+            session.add(gs)
+
+            users = [User(id=str(i), name=f"U{i}") for i in range(1, 5)]
+            session.add_all(users)
+            await session.flush()
+
+            ideas = []
+            for idx, u in enumerate(users[:3], start=1):
+                idea = Idea(
+                    step_id=step.id,
+                    user_id=u.id,
+                    text=f"idea{idx}",
+                    submitted_at=start + timedelta(seconds=idx),
+                )
+                ideas.append(idea)
+            session.add_all(ideas)
+            await session.flush()
+
+            votes = [
+                IdeaVote(step_id=step.id, idea_id=ideas[1].id, voter_id=users[3].id),
+                IdeaVote(step_id=step.id, idea_id=ideas[1].id, voter_id=users[0].id),
+                IdeaVote(step_id=step.id, idea_id=ideas[2].id, voter_id=users[0].id),
+                IdeaVote(step_id=step.id, idea_id=ideas[2].id, voter_id=users[3].id),
+                IdeaVote(step_id=step.id, idea_id=ideas[0].id, voter_id=users[0].id),
+            ]
+            session.add_all(votes)
+            await session.commit()
+
+            ctx = await build_public_context(session, step, gs)
+            ids = [idea.id for idea in ctx["ideas"]]
+            assert ids == [ideas[1].id, ideas[2].id, ideas[0].id]
+            idxs = [idea.idx for idea in ctx["ideas"]]
+            assert idxs == [2, 3, 1]
 
     asyncio.run(run())
