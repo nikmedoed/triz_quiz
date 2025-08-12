@@ -19,12 +19,10 @@
             {% if phase == 1 %}
             <div class="idea-card__time idea-card__time--top">{{ texts.ANSWER_TOOK.format(time=idea.delay_text) }}</div>
             {% else %}
+            <img class="idea-card__avatar" src="/avatars/{{ idea.author.id }}.png" alt="" />
             <div class="idea-card__author">
-              <img class="idea-card__avatar" src="/avatars/{{ idea.author.id }}.png" alt="" />
-              <div class="idea-card__author-info">
-                <div class="idea-card__name">{{ idea.author.name }}</div>
-                <div class="idea-card__time idea-card__time--under-author">{{ texts.ANSWER_TOOK.format(time=idea.delay_text) }}</div>
-              </div>
+              <div class="idea-card__name">{{ idea.author.name }}</div>
+              <div class="idea-card__time idea-card__time--under-author">{{ texts.ANSWER_TOOK.format(time=idea.delay_text) }}</div>
             </div>
             {% endif %}
           </header>

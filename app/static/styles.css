@@ -494,27 +494,28 @@ ol {
 }
 .idea-card__star { position: absolute; top: 8px; right: 8px; z-index: 1; }
 .idea-card__head, .idea-card__body, .idea-card__foot { padding-right: 40px; }
-.idea-card__head { display: flex; align-items: flex-start; gap: 8px; }
+.idea-card__head { display: flex; align-items: center; gap: 8px; }
 .idea-card__number { font-weight: 600; }
 .idea-card__text { font-size: 18px; line-height: 1.4; margin: 8px 0 0; white-space: pre-wrap; }
 .idea-card__time { font-size: 16px; opacity: .8; }
-.idea-card__author { display: flex; align-items: flex-start; gap: 8px; }
-.idea-card__author-info { display: flex; flex-direction: column; }
+.idea-card__author { display: flex; flex-direction: column; }
 .idea-card__name {
   font-size: 20px; font-weight: 600; line-height: 1.2;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.idea-card__avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.idea-card__avatar { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; }
 .idea-card__foot { margin-top: auto; }
 .idea-card__voters { display: flex; align-items: center; }
 .idea-card__voter { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-left: -8px; border: 2px solid #fff; }
 .phase--voting .idea-card__star,
+.phase--voting .idea-card__avatar,
 .phase--voting .idea-card__author,
 .phase--voting .idea-card__voters,
 .phase--voting .idea-card__time--under-author { display: none; }
 .phase--voting .idea-card__time--top { display: block; }
 .phase--results .idea-card__time--top { display: none; }
 .phase--results .idea-card__star,
+.phase--results .idea-card__avatar,
 .phase--results .idea-card__author,
 .phase--results .idea-card__voters,
 .phase--results .idea-card__time--under-author { display: block; }
