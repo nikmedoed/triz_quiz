@@ -678,38 +678,20 @@ ol {
   align-items: center;
 }
 
-/* First column: vertical flex container taking full height */
+/* Keep description column within container and enable scrolling */
+.quiz-layout {
+  height: 100%;
+}
+
 .quiz-layout > .quiz-col:first-child {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
+  height: 100%;
   min-height: 0;
 }
 
-/* Description fills the column and scrolls internally */
 .quiz-layout > .quiz-col:first-child > .quiz-description {
-  flex: 1 1 auto;
+  height: 100%;
   min-height: 0;
-  overflow: auto;
-  max-height: none;
-  height: auto;
+  overflow-y: auto;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
-
-/* Prevent header row from shrinking the container */
-.quiz-center {
-  justify-content: stretch;
-}
-
-/* Ensure both columns use full available height */
-.quiz-layout {
-  align-items: stretch;
-}
-
-/* Safeguard nested flex columns for scrolling */
-.quiz-col {
-  min-height: 0;
-}
-
