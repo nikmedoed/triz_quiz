@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import json
 
 from app.models import User, Step, Idea, IdeaVote, McqAnswer, SequenceAnswer, StepOption
+from app.models import User, Step, Idea, IdeaVote, McqAnswer, MultiAnswer
 
 
 async def add_vote_points(session: AsyncSession, open_step_id: int) -> None:
@@ -32,6 +33,39 @@ async def add_mcq_points(session: AsyncSession, mcq_step: Step) -> None:
     )
     for (user,) in res.all():
         user.total_score += mcq_step.points_correct
+    await session.commit()
+
+
+async def add_multi_points(session: AsyncSession, step: Step) -> None:
+    if not step.correct_multi or step.points_correct is None:
+        return
+    correct_set = {
+        int(x)
+        for x in step.correct_multi.split(",")
+        if x.strip().isdigit()
+    }
+    if not correct_set:
+        return
+    share = step.points_correct / len(correct_set)
+    answers = (
+        await session.execute(
+            select(MultiAnswer).where(MultiAnswer.step_id == step.id)
+        )
+    ).scalars().all()
+    for ans in answers:
+        user = await session.get(User, ans.user_id)
+        if not user:
+            continue
+        chosen = {
+            int(x)
+            for x in ans.choice_idxs.split(",")
+            if x.strip().isdigit()
+        }
+        if not chosen or not chosen.issubset(correct_set):
+            continue
+        points = int(share * len(chosen))
+        if points:
+            user.total_score += points
     await session.commit()
 
 

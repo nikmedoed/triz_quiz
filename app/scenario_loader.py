@@ -38,11 +38,27 @@ async def load_if_empty(session: AsyncSession, path: str) -> None:
 
     order = 0
 
-    def add_step(_type: str, title: str = "", text: str | None = None, options: list[str] | None = None,
-                 correct_index: int | None = None, points: int | None = None, timer_ms: int | None = None):
+    def add_step(
+        _type: str,
+        title: str = "",
+        text: str | None = None,
+        options: list[str] | None = None,
+        correct_index: int | None = None,
+        correct_multi: str | None = None,
+        points: int | None = None,
+        timer_ms: int | None = None,
+    ):
         nonlocal order
-        s = Step(order_index=order, type=_type, title=title or _type.title(), text=text, correct_index=correct_index,
-                 points_correct=points, timer_ms=timer_ms)
+        s = Step(
+            order_index=order,
+            type=_type,
+            title=title or _type.title(),
+            text=text,
+            correct_index=correct_index,
+            correct_multi=correct_multi,
+            points_correct=points,
+            timer_ms=timer_ms,
+        )
         session.add(s)
         order += 1
         return s

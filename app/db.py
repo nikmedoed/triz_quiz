@@ -20,6 +20,10 @@ async def apply_migrations(conn) -> None:
         await conn.exec_driver_sql(
             "ALTER TABLE steps ADD COLUMN timer_ms INTEGER"
         )
+    if "correct_multi" not in cols:
+        await conn.exec_driver_sql(
+            "ALTER TABLE steps ADD COLUMN correct_multi VARCHAR"
+        )
 
 
 engine = create_async_engine(settings.DATABASE_URL, future=True, echo=False)
