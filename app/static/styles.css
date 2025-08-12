@@ -5,7 +5,7 @@
     --color-primary-200: #f6b2af;
     --color-primary-300: #f2918d;
     --color-primary-400: #ee706b;
-    --color-primary-500: #e5231b; /* основной акцент */
+    --color-primary-500: #e5231b; /* main accent */
     --color-primary-600: #c31e17;
     --color-primary-700: #a01813;
     --color-primary-800: #7e130f;
@@ -16,18 +16,16 @@
     --color-slate-200: #c1c5c9;
     --color-slate-300: #a6acb2;
     --color-slate-400: #8c929c;
-    --color-slate-500: #4e5866; /* вторичный */
+    --color-slate-500: #4e5866; /* secondary */
     --color-slate-600: #424b57;
     --color-slate-700: #373e47;
     --color-slate-800: #2b3038;
     --color-slate-900: #1f2329;
 
-    --color-dark: #2b2b2a; /* базовый тёмный текст */
-    --color-light: #e6e6e6; /* подложки, бордеры */
-    --color-black: #000000; /* редкий акцентный текст на светлом */
-    --color-gold: #ffd700;
-    --color-silver: #c0c0c0;
-    --color-bronze: #cd7f32;
+    --color-dark: #2b2b2a; /* base dark text */
+    --color-light: #e6e6e6; /* backgrounds, borders */
+    --color-black: #000000; /* rare accent text on light */
+    --color-white: #ffffff;
 
     /* Typography */
     --font-sans: "Roboto", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
@@ -60,7 +58,7 @@ body {
 
 body {
     margin: 0;
-    background: #ffffff;
+    background: var(--color-white);
     color: var(--color-dark);
     font-family: var(--font-sans);
     font-weight: var(--font-weight-regular);
@@ -168,11 +166,11 @@ a:focus {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     scrollbar-gutter: stable;
-    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    border-radius: var(--radius-none);
 }
 
 .leaderboard-header {
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border-radius: var(--radius-none);
     background: var(--color-slate-50);
 }
 
@@ -182,7 +180,7 @@ a:focus {
 }
 
 .table-scroll .leaderboard-table {
-    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    border-radius: var(--radius-none);
 }
 
 
@@ -435,20 +433,22 @@ h2 {
     align-items: center;
     gap: var(--space-6);
     padding: var(--space-6);
-    border-radius: var(--radius-md);
+    border: 1px solid var(--color-light);
+    border-radius: var(--radius-none);
+    background: var(--color-white);
     width: 100%;
 }
 
 .leader-card.gold {
-    background: linear-gradient(135deg, var(--color-gold), var(--color-light));
+    background: var(--color-primary-50);
 }
 
 .leader-card.silver {
-    background: linear-gradient(135deg, var(--color-silver), var(--color-light));
+    background: var(--color-slate-100);
 }
 
 .leader-card.bronze {
-    background: linear-gradient(135deg, var(--color-bronze), var(--color-light));
+    background: var(--color-slate-200);
 }
 
 .leader-rank {
@@ -527,10 +527,10 @@ ol {
     min-width: 320px;
     display: flex;
     flex-direction: column;
-    border-radius: 12px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
-    background: #fff;
-    padding: 12px 16px;
+    border-radius: var(--radius-none);
+    border: 1px solid var(--color-light);
+    background: var(--color-white);
+    padding: var(--space-4);
 }
 
 .idea-card__star {
@@ -541,8 +541,7 @@ ol {
 }
 
 .idea-card__star-icon {
-    color: var(--color-gold);
-    text-shadow: 0 0 1px var(--color-dark);
+    color: var(--color-primary-500);
 }
 
 .idea-card__head {
@@ -569,8 +568,8 @@ ol {
 .idea-card__text--clamped {
     max-height: 5em;
     overflow: hidden;
-    -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent);
-    mask-image: linear-gradient(180deg, #000 80%, transparent);
+    -webkit-mask-image: linear-gradient(180deg, var(--color-black) 80%, transparent);
+    mask-image: linear-gradient(180deg, var(--color-black) 80%, transparent);
 }
 
 .idea-card__text--full {
@@ -661,7 +660,7 @@ ol {
     border-radius: 50%;
     object-fit: cover;
     margin-left: -14px;
-    border: 2px solid #fff;
+    border: 2px solid var(--color-white);
 }
 
 .phase--voting .idea-card__star,
@@ -752,9 +751,13 @@ ol {
     font-weight: var(--font-weight-regular);
     border: 1px solid var(--color-light);
     padding: var(--space-3) var(--space-4);
-    background: var(--color-slate-50);
-    border-radius: var(--radius-md);
+    background: var(--color-white);
+    border-radius: var(--radius-sm);
     word-break: break-word;
+}
+
+.quiz-options li:hover {
+    background: var(--color-slate-50);
 }
 
 .quiz-options li::before {
@@ -799,7 +802,7 @@ ol {
 .btn-primary {
     background: var(--color-primary-500);
     border-color: var(--color-primary-500);
-    color: #ffffff;
+    color: var(--color-white);
 }
 
 .btn-primary:hover {
