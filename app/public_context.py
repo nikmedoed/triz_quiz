@@ -15,6 +15,7 @@ from app.models import (
     Idea,
     IdeaVote,
     McqAnswer,
+    MultiAnswer,
     User,
 )
 from app.scoring import get_leaderboard_users
@@ -204,6 +205,85 @@ async def quiz_context(
             counts=counts,
             percents=percents,
             correct=step.correct_index,
+            avatars_map=avatars_map,
+            names_map=names_map,
+            content_class="mcq-results",
+        )
+
+
+async def multi_context(
+    session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
+) -> None:
+    options = (
+        await session.execute(
+            select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx)
+        )
+    ).scalars().all()
+    ctx.update(
+        options=options,
+        stage_title="Выбери верные" if gs.phase == 0 else "Выбери верные — результаты",
+    )
+    if gs.phase == 0:
+        total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
+        answers_count = await session.scalar(
+            select(func.count(MultiAnswer.id)).where(MultiAnswer.step_id == step.id)
+        )
+        last_at = await session.scalar(
+            select(func.max(MultiAnswer.answered_at)).where(MultiAnswer.step_id == step.id)
+        )
+        last_answer_ago_s = None
+        if last_at:
+            last_answer_ago_s = int((datetime.utcnow() - last_at).total_seconds())
+        duration_ms = step.timer_ms or 60 * 1000
+        ctx.update(
+            total_users=int(total_users or 0),
+            answers_count=int(answers_count or 0),
+            last_answer_ago_s=last_answer_ago_s,
+            status_mode="answers",
+            status_current=int(answers_count or 0),
+            status_total=int(total_users or 0),
+            status_last=last_answer_ago_s if last_answer_ago_s is not None else "-",
+            instruction="Участники выбирают варианты в боте.",
+            timer_id="quizTimer",
+            timer_text=format_mmss(duration_ms),
+            timer_ms=duration_ms,
+        )
+    if gs.phase == 1:
+        answers = (
+            await session.execute(
+                select(MultiAnswer).where(MultiAnswer.step_id == step.id)
+            )
+        ).scalars().all()
+        counts: list[int] = []
+        avatars_map: list[list[str]] = []
+        names_map: dict[str, str] = {}
+        for opt in options:
+            users = [
+                ans.user_id
+                for ans in answers
+                if ans.choice_idxs and str(opt.idx) in ans.choice_idxs.split(",")
+            ]
+            counts.append(len(users))
+            avatars_map.append(users)
+        total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
+        ids = [uid for sub in avatars_map for uid in sub]
+        if ids:
+            for u in (
+                await session.execute(select(User).where(User.id.in_(ids)))
+            ).scalars().all():
+                names_map[str(u.id)] = u.name
+        percents = [
+            round((c / total_users) * 100) if total_users else 0 for c in counts
+        ]
+        correct = [
+            int(x)
+            for x in (step.correct_multi or "").split(",")
+            if x.strip().isdigit()
+        ]
+        ctx.update(
+            counts=counts,
+            percents=percents,
+            correct=correct,
             avatars_map=avatars_map,
             names_map=names_map,
             content_class="mcq-results",

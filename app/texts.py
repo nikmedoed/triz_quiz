@@ -79,6 +79,14 @@ LEADERBOARD = (
 TITLE_REGISTRATION = "Регистрация"
 TITLE_OPEN = "Гипотезы решения"
 TITLE_QUIZ = "Квиз"
+MULTI_HEADER = "Выберите все верные варианты"
+MULTI_INSTR = (
+    "Выберите\n"
+    "- Все подходящие варианты\n"
+    "- Быстро, пока есть время\n"
+    "- Можно менять выбор"
+)
+TITLE_MULTI = "Множественный выбор"
 TITLE_LEADERBOARD = "Финальная таблица"
 
 STAGE_VOTING_SUFFIX = "Голосование за идеи"

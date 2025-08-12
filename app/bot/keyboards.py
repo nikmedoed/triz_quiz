@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -18,6 +18,18 @@ def mcq_kb(options: List[str], selected: Optional[int]) -> InlineKeyboardMarkup:
         if selected == i:
             label = "✅ " + label
         kb.button(text=label, callback_data=f"mcq:{i}")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def multi_kb(options: List[str], selected: Set[int]) -> InlineKeyboardMarkup:
+    """Inline keyboard for multiple choice with toggle buttons."""
+    kb = InlineKeyboardBuilder()
+    for i, text in enumerate(options):
+        label = f"{i + 1}. {text}"
+        if i in selected:
+            label = "✅ " + label
+        kb.button(text=label, callback_data=f"multi:{i}")
     kb.adjust(1)
     return kb.as_markup()
 
