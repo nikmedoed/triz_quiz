@@ -188,37 +188,35 @@
     display: block;
 }
 
-.quiz-center {
+.quiz-center,
+.quiz-layout,
+.quiz-col {
     display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.quiz-center {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    flex: 1;
     width: 100%;
     padding: 0 60px;
-    box-sizing: border-box;
-    min-height: 0;
     height: 100%;
     overflow: hidden;
 }
 
 .quiz-layout {
-    flex: 1;
-    display: flex;
     gap: var(--space-6);
     width: 100%;
     justify-content: center;
     align-items: stretch;
-    min-height: 0;
     height: 100%;
 }
 
 .quiz-col {
-    flex: 1;
-    display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 0;
 }
 
 .quiz-description {
