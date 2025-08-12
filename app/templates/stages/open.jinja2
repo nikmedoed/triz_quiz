@@ -5,16 +5,20 @@
   {% if phase == 0 %}
     <p class="description">{{ step.text }}</p>
   {% elif phase in [1, 2] and ideas %}
-    <div class="ideas-wrap" id="ideasWrap">
+    <div class="ideas-wrap phase--{{ 'voting' if phase == 1 else 'results' }}" id="ideasWrap">
       <div class="ideas-grid">
         {% set voters_map = voters_map if voters_map is defined else {} %}
         {% for idea in ideas %}
         {% set voters = voters_map.get(idea.id) or [] %}
         <article class="idea-card" data-idea-id="{{ idea.id }}">
+          {% if phase == 2 %}
           <div class="idea-card__star">★ {{ voters|length }}</div>
+          {% endif %}
           <header class="idea-card__head">
             <div class="idea-card__number">#{{ loop.index }}</div>
+            {% if phase == 1 %}
             <div class="idea-card__time idea-card__time--top">{{ texts.ANSWER_TOOK.format(time=idea.delay_text) }}</div>
+            {% else %}
             <div class="idea-card__author">
               <img class="idea-card__avatar" src="/avatars/{{ idea.author.id }}.png" alt="" />
               <div class="idea-card__author-info">
@@ -22,10 +26,12 @@
                 <div class="idea-card__time idea-card__time--under-author">{{ texts.ANSWER_TOOK.format(time=idea.delay_text) }}</div>
               </div>
             </div>
+            {% endif %}
           </header>
           <div class="idea-card__body">
             <p class="idea-card__text">{{ idea.text }}</p>
           </div>
+          {% if phase == 2 %}
           <footer class="idea-card__foot">
             <div class="idea-card__voters">
               {% for v in voters %}
@@ -33,6 +39,7 @@
               {% endfor %}
             </div>
           </footer>
+          {% endif %}
         </article>
         {% endfor %}
       </div>
