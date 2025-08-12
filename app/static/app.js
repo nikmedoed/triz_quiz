@@ -99,7 +99,6 @@ window.renderMcq = function () {
             div.style.left = bar.x + 'px';
             div.style.bottom = (container.clientHeight - xScale.bottom + avatarOffset) + 'px';
             div.style.width = bar.width + 'px';
-            div.style.maxHeight = Math.max(bar.height - avatarOffset, 0) + 'px';
             (data.avatars[i] || []).forEach(id => {
                 const img = document.createElement('img');
                 img.className = 'avatar small';
