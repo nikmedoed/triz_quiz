@@ -18,17 +18,12 @@ from PIL import (
     ImageMath,
     ImageStat,
 )
-
-try:
-    from rlottie_python import LottieAnimation
-except Exception:  # pragma: no cover - optional dependency
-    LottieAnimation = None  # type: ignore
-
 from aiogram import Bot
 from aiogram.types import Sticker
+from rlottie_python import LottieAnimation
 
-from app.settings import settings
 from app.models import User
+from app.settings import settings
 
 AVATAR_SIZE = 640
 
