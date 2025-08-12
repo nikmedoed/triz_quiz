@@ -28,14 +28,13 @@
           </header>
           {% if phase == 2 %}
           <div class="idea-card__body">
+            <input type="checkbox" id="idea-toggle-{{ idea.id }}" class="idea-card__toggle-input" />
             <p class="idea-card__text idea-card__text--clamped">{{ idea.text }}</p>
-            <details class="idea-card__details" ontoggle="this.parentElement.classList.toggle('idea-card__body--open', this.open)">
-              <summary class="idea-card__toggle">
-                <span class="idea-card__toggle-more">{{ texts.SHOW_MORE }}</span>
-                <span class="idea-card__toggle-less">{{ texts.SHOW_LESS }}</span>
-              </summary>
-              <p class="idea-card__text idea-card__text--full">{{ idea.text }}</p>
-            </details>
+            <p class="idea-card__text idea-card__text--full">{{ idea.text }}</p>
+            <label for="idea-toggle-{{ idea.id }}" class="idea-card__toggle">
+              <span class="idea-card__toggle-more">{{ texts.SHOW_MORE }}</span>
+              <span class="idea-card__toggle-less">{{ texts.SHOW_LESS }}</span>
+            </label>
           </div>
           <footer class="idea-card__foot">
             <div class="idea-card__voters">
