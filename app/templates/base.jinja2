@@ -24,7 +24,7 @@
     </div>
     <div class="top-right">
         {% if show_next is not defined or show_next %}
-            <button class="btn btn-primary" hx-post="/api/next" hx-swap="none" hx-on:htmx:afterRequest="location.href='/'">Далее</button>
+            <button class="btn btn-primary" hx-post="/api/next" hx-swap="none">Далее</button>
         {% endif %}
     </div>
 </header>
