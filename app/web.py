@@ -199,6 +199,7 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
         "instruction": "",
         "timer_id": None,
         "timer_text": "",
+        "timer_ms": 0,
         "status_mode": "",
         "status_current": 0,
         "status_total": 0,
@@ -247,6 +248,7 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 last_answer_ago_s=last_ago_s,
                 timer_id="ideaTimer",
                 timer_text="05:00",
+                timer_ms=5 * 60 * 1000,
                 status_mode="answers",
                 status_current=len(ideas),
                 status_total=int(total_users or 0),
@@ -275,6 +277,7 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 last_vote_ago_s=last_vote_ago_s,
                 timer_id="voteTimer",
                 timer_text="01:00",
+                timer_ms=60 * 1000,
                 status_mode="votes",
                 status_current=len(voters),
                 status_total=int(total_users or 0),
@@ -321,6 +324,9 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 status_total=int(total_users or 0),
                 status_last=last_answer_ago_s if last_answer_ago_s is not None else "-",
                 instruction="Участники выбирают вариант в боте.",
+                timer_id="quizTimer",
+                timer_text="01:00",
+                timer_ms=60 * 1000,
             )
         if gs.phase == 1:
             counts = []
