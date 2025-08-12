@@ -153,25 +153,25 @@ a:focus {
 .table-scroll {
   flex: 1 1 auto;
   min-height: 0;
-  height: 100%;
-  max-height: 100%;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  border-radius: var(--radius-md);
+  scrollbar-gutter: stable;
 }
 
-/* Leaderboard header styling */
-.leaderboard-table thead {
-  position: sticky;
-  top: 0;
+.leaderboard-header {
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
   background: var(--color-slate-50);
   box-shadow: 0 2px 0 0 var(--color-light);
-  z-index: 1;
 }
-.leaderboard-table th {
+
+.leaderboard-header th {
   font-weight: var(--font-weight-medium);
   text-align: center;
+}
+
+.table-scroll .leaderboard-table {
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
 
@@ -334,7 +334,6 @@ h2 {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  border-radius: var(--radius-md);
   table-layout: fixed;
 }
 

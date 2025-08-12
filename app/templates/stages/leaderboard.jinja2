@@ -35,10 +35,12 @@
     {% if users|length > 3 %}
     <section class="col col-secondary">
       <div class="col-inner">
-          <div class="table-wrap">
-            <div class="table-scroll">
+        <div class="table-wrap">
+          <table class="leaderboard-table leaderboard-header">
+            <thead><tr><th>#</th><th></th><th>Имя</th><th>Баллы</th><th>Откр. ср. (с)</th><th>Выбор ср. (с)</th></tr></thead>
+          </table>
+          <div class="table-scroll">
             <table class="leaderboard-table">
-              <thead><tr><th>#</th><th></th><th>Имя</th><th>Баллы</th><th>Откр. ср. (с)</th><th>Выбор ср. (с)</th></tr></thead>
               <tbody>
                 {% for u in users[3:] %}
                 <tr>
