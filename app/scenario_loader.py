@@ -7,9 +7,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.texts as texts
-from app.models import Step, StepOption, GlobalState
+from app.models import Step, GlobalState
+from app.step_types import STEP_TYPES
 
-SUPPORTED = {"open", "quiz", "vote", "vote_results"}
+IGNORED = {"vote", "vote_results"}
 
 
 async def load_if_empty(session: AsyncSession, path: str) -> None:
@@ -52,38 +53,19 @@ async def load_if_empty(session: AsyncSession, path: str) -> None:
     # Normalize items
     for item in items:
         t = (item.get("type") or "").strip().lower()
-        if t not in SUPPORTED:
+        if t in IGNORED:
             continue
-        if t == "open":
+        handler = STEP_TYPES.get(t)
+        if not handler:
+            continue
+        if handler.load_item:
+            await handler.load_item(session, add_step, item)
+        else:
             add_step(
-                "open",
-                title=item.get("title", texts.TITLE_OPEN),
+                t,
+                title=item.get("title", t.title()),
                 text=item.get("description") or item.get("text"),
             )
-        elif t == "quiz":
-            time_val = item.get("time")
-            timer_ms = None
-            if isinstance(time_val, str) and time_val.isdigit():
-                timer_ms = int(time_val) * 1000
-            elif isinstance(time_val, (int, float)):
-                timer_ms = int(time_val) * 1000
-            s = add_step(
-                "quiz",
-                title=item.get("title", texts.TITLE_QUIZ),
-                text=item.get("description") or item.get("text"),
-                timer_ms=timer_ms,
-            )
-            await session.flush()
-            opts = item.get("options", [])
-            for idx, text in enumerate(opts):
-                session.add(StepOption(step_id=s.id, idx=idx, text=text))
-            correct = item.get("correct")
-            if isinstance(correct, str) and correct.isdigit():
-                s.correct_index = int(correct) - 1
-            elif isinstance(correct, (int,)):
-                s.correct_index = correct
-            s.points_correct = item.get("points")
-        # vote/vote_results are ignored (implicit in `open`)
 
     # Leaderboard (implicit)
     add_step("leaderboard", title=texts.TITLE_LEADERBOARD)
