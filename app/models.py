@@ -27,7 +27,7 @@ class Step(Base):
     __tablename__ = "steps"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     order_index: Mapped[int] = mapped_column(Integer, index=True)
-    type: Mapped[str] = mapped_column(String(32))  # registration | open | quiz | leaderboard
+    type: Mapped[str] = mapped_column(String(32))  # registration | open | quiz | sequence | leaderboard
     title: Mapped[str] = mapped_column(String(256))
     text: Mapped[str | None] = mapped_column(Text, nullable=True)
     correct_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -80,4 +80,14 @@ class McqAnswer(Base):
     step_id: Mapped[int] = mapped_column(ForeignKey("steps.id"), index=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     choice_idx: Mapped[int] = mapped_column(Integer)
+    answered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class SequenceAnswer(Base):
+    __tablename__ = "sequence_answers"
+    __table_args__ = (UniqueConstraint("step_id", "user_id"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    step_id: Mapped[int] = mapped_column(ForeignKey("steps.id"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    order_json: Mapped[str] = mapped_column(Text)
     answered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

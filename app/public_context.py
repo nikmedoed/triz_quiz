@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any, Dict
+import json
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,7 @@ from app.models import (
     Idea,
     IdeaVote,
     McqAnswer,
+    SequenceAnswer,
     User,
 )
 from app.scoring import get_leaderboard_users
@@ -207,6 +209,75 @@ async def quiz_context(
             avatars_map=avatars_map,
             names_map=names_map,
             content_class="mcq-results",
+        )
+
+
+async def sequence_context(
+    session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
+) -> None:
+    options = (
+        await session.execute(
+            select(StepOption).where(StepOption.step_id == step.id).order_by(StepOption.idx)
+        )
+    ).scalars().all()
+    ctx.update(
+        options=options,
+        stage_title=
+            texts.TITLE_SEQUENCE
+            if gs.phase == 0
+            else f"{texts.TITLE_SEQUENCE} — результаты",
+    )
+    if gs.phase == 0:
+        total_users = await session.scalar(
+            select(func.count(User.id)).where(User.name != "")
+        )
+        answers_count = await session.scalar(
+            select(func.count(SequenceAnswer.id)).where(SequenceAnswer.step_id == step.id)
+        )
+        last_at = await session.scalar(
+            select(func.max(SequenceAnswer.answered_at)).where(
+                SequenceAnswer.step_id == step.id
+            )
+        )
+        last_answer_ago_s = None
+        if last_at:
+            last_answer_ago_s = int((datetime.utcnow() - last_at).total_seconds())
+        duration_ms = step.timer_ms or 2 * 60 * 1000
+        ctx.update(
+            total_users=int(total_users or 0),
+            answers_count=int(answers_count or 0),
+            last_answer_ago_s=last_answer_ago_s,
+            status_mode="answers",
+            status_current=int(answers_count or 0),
+            status_total=int(total_users or 0),
+            status_last=last_answer_ago_s if last_answer_ago_s is not None else "-",
+            instruction=texts.SEQUENCE_PUBLIC_INSTR,
+            timer_id="sequenceTimer",
+            timer_text=format_mmss(duration_ms),
+            timer_ms=duration_ms,
+        )
+    if gs.phase == 1:
+        rows = (
+            await session.execute(
+                select(User, SequenceAnswer)
+                .join(SequenceAnswer, SequenceAnswer.user_id == User.id)
+                .where(SequenceAnswer.step_id == step.id)
+            )
+        ).all()
+        correct_order = [o.idx for o in options]
+        correct_users = []
+        wrong = 0
+        for user, ans in rows:
+            order = json.loads(ans.order_json or "[]")
+            if order == correct_order:
+                correct_users.append(user)
+            else:
+                wrong += 1
+        ctx.update(
+            correct_users=correct_users,
+            correct_count=len(correct_users),
+            wrong_count=wrong,
+            content_class="sequence-results",
         )
 
 

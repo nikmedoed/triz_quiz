@@ -65,6 +65,17 @@ NO_ANSWER = "Вы не ответили.\n\n"
 CORRECT_PREFIX = "Верно! Вы получили {points} балл(ов).\n\n"
 WRONG_ANSWER = "Вы ответили неверно.\n\n"
 
+# Sequence prompts
+SEQUENCE_HEADER = "Выберите варианты в правильном порядке"
+SEQUENCE_INSTR = (
+    "Нажимайте варианты в нужной последовательности.\n",
+    "- Повторное нажатие снимает выбор\n",
+    "- Кнопка \"Сброс\" очищает выбор",
+)
+WRONG_SEQUENCE = "Порядок неверный.\n\n"
+SEQUENCE_RESET = "Сброс"
+SEQUENCE_PUBLIC_INSTR = "Участники выбирают порядок в боте."
+
 # Leaderboard
 LEADERBOARD = (
     "Викторина завершена.\n\n"
@@ -79,6 +90,7 @@ LEADERBOARD = (
 TITLE_REGISTRATION = "Регистрация"
 TITLE_OPEN = "Гипотезы решения"
 TITLE_QUIZ = "Квиз"
+TITLE_SEQUENCE = "Последовательность"
 TITLE_LEADERBOARD = "Финальная таблица"
 
 STAGE_VOTING_SUFFIX = "Голосование за идеи"

@@ -47,4 +47,4 @@ def register(name: str, step_type: StepType) -> None:
 
 
 # Import step modules to populate registry
-from . import registration, open_step, quiz, leaderboard  # noqa: E402,F401
+from . import registration, open_step, quiz, sequence, leaderboard  # noqa: E402,F401

@@ -264,6 +264,16 @@
     margin-right: var(--space-2);
 }
 
+.quiz-options.no-counter {
+    counter-reset: none;
+}
+
+.quiz-options.no-counter li::before {
+    content: '';
+    counter-increment: none;
+    margin-right: 0;
+}
+
 .quiz-options-alone {
     max-width: 600px;
     margin: 0 auto;

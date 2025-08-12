@@ -4,7 +4,7 @@
 
 This project implements a TRIZ-club quiz/presentation system with **Telegram + Web**:
 
-* **Telegram bot (aiogram 3)** for registration, open-form ideas, voting, and MCQ.
+* **Telegram bot (aiogram 3)** for registration, open-form ideas, voting, MCQ, and sequence ordering.
 * **Web app (FastAPI + WebSockets)** for a live projector screen controlled locally.
 * **SQLite** by default (switchable to Postgres). All state is persisted to survive restarts.
 * **Scenario loaded from JSON/YAML list of blocks** (simple), activated on startup.
@@ -18,7 +18,7 @@ This project implements a TRIZ-club quiz/presentation system with **Telegram + W
 * **Blocks, not micro-steps**: Each content item is a **block** with **internal phases** and a single **Next** control.
 
     * `open` block phases: **collect → vote (if ideas exist) → reveal**. Voting is skipped if there are no ideas.
-    * `quiz` block phases: **ask → reveal**.
+    * `quiz` and `sequence` block phases: **ask → reveal**.
 * **Next button** advances to the next **phase** inside the current block; if it was the last phase, it moves to the
   next block.
 * **Late join**: a participant who joins at any time is synced to the current block & phase.
@@ -83,6 +83,7 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
 
 * `open`: free-form idea collection with built-in vote & reveal.
 * `quiz`: MCQ with built-in reveal. Optional `time` (seconds) overrides the default 60-second timer.
+* `sequence`: order options in a correct sequence. Optional `time` overrides the default 120-second timer.
 
 **Example (your sample, with vote steps tolerated but folded into the `open` block):**
 

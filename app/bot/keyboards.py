@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Idea, IdeaVote, Step, User
+import app.texts as texts
 
 
 def mcq_kb(options: List[str], selected: Optional[int]) -> InlineKeyboardMarkup:
@@ -18,6 +19,19 @@ def mcq_kb(options: List[str], selected: Optional[int]) -> InlineKeyboardMarkup:
         if selected == i:
             label = "✅ " + label
         kb.button(text=label, callback_data=f"mcq:{i}")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def sequence_kb(options: List[tuple[int, str]], selected: List[int]) -> InlineKeyboardMarkup:
+    """Keyboard for sequence selection."""
+    kb = InlineKeyboardBuilder()
+    for idx, text in options:
+        label = text
+        if idx in selected:
+            label = f"{selected.index(idx) + 1}. {text}"
+        kb.button(text=label, callback_data=f"seq:{idx}")
+    kb.button(text=texts.SEQUENCE_RESET, callback_data="seq:reset")
     kb.adjust(1)
     return kb.as_markup()
 
