@@ -529,6 +529,8 @@ ol {
 .idea-card__head { display: flex; align-items: center; gap: 8px; }
 .idea-card__number { font-weight: 600; }
 .idea-card__text { font-size: 18px; line-height: 1.4; margin: 8px 0 0; white-space: pre-wrap; }
+.idea-card__details summary { cursor: pointer; }
+.idea-card__text--clamped { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
 .idea-card__time { font-size: 16px; opacity: .8; }
 .idea-card__author { display: flex; flex-direction: column; }
 .idea-card__name {

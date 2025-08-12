@@ -27,7 +27,16 @@
             {% endif %}
           </header>
           <div class="idea-card__body">
+            {% if phase == 2 %}
+            <details class="idea-card__details">
+              <summary class="idea-card__summary">
+                <span class="idea-card__text idea-card__text--clamped">{{ idea.text }}</span>
+              </summary>
+              <p class="idea-card__text">{{ idea.text }}</p>
+            </details>
+            {% else %}
             <p class="idea-card__text">{{ idea.text }}</p>
+            {% endif %}
           </div>
           {% if phase == 2 %}
           <footer class="idea-card__foot">
