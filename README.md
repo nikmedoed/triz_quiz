@@ -83,7 +83,7 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
 
 * `open`: free-form idea collection with built-in vote & reveal.
 * `quiz`: MCQ with built-in reveal. Optional `time` (seconds) overrides the default 60-second timer.
-* `sequence`: order options in a correct sequence. Optional `time` overrides the default 120-second timer.
+* `sequence`: order options in a correct sequence. Optional `time` overrides the default 120-second timer. Optional `points` override the default value of 3.
 
 **Example (your sample, with vote steps tolerated but folded into the `open` block):**
 

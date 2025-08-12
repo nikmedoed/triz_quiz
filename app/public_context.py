@@ -275,21 +275,27 @@ async def sequence_context(
             )
         ).all()
         correct_order = [o.idx for o in options]
-        correct_users = []
-        wrong = 0
+        correct_ids: list[int] = []
+        wrong_ids: list[int] = []
+        names_map: dict[str, str] = {}
         for user, ans in rows:
             order = json.loads(ans.order_json or "[]")
             if len(order) != len(correct_order):
                 continue
+            names_map[str(user.id)] = user.name
             if order == correct_order:
-                correct_users.append(user)
+                correct_ids.append(user.id)
             else:
-                wrong += 1
+                wrong_ids.append(user.id)
+        counts = [len(correct_ids), len(wrong_ids)]
+        total = sum(counts)
+        percents = [round((c / total) * 100) if total else 0 for c in counts]
         ctx.update(
-            correct_users=correct_users,
-            correct_count=len(correct_users),
-            wrong_count=wrong,
-            content_class="sequence-results",
+            counts=counts,
+            percents=percents,
+            avatars_map=[correct_ids, wrong_ids],
+            names_map=names_map,
+            content_class="mcq-results",
         )
 
 

@@ -28,25 +28,41 @@
             {% endif %}
         </div>
     {% else %}
-        <div class="quiz-layout">
-            <div class="quiz-col">
-                <ol class="quiz-options">
-                    {% for opt in options %}
-                        <li>{{ opt.text }}</li>
-                    {% endfor %}
-                </ol>
-            </div>
-            <div class="quiz-col">
-                <div>Верно: {{ correct_count }}</div>
-                <div>Неверно: {{ wrong_count }}</div>
-                {% if correct_users %}
-                    <ul class="quiz-options no-counter">
-                        {% for u in correct_users %}
-                            <li>{{ u.name }}</li>
+        <div class="quiz-center">
+            <h1>{{ step.title }}</h1>
+            {% if step.text %}
+                <div class="quiz-description">{{ step.text }}</div>
+            {% endif %}
+            <div class="quiz-layout">
+                <div class="quiz-col">
+                    <ol class="quiz-options">
+                        {% for opt in options %}
+                            <li>{{ opt.text }}</li>
                         {% endfor %}
-                    </ul>
-                {% endif %}
+                    </ol>
+                </div>
+                <div class="quiz-col">
+                    <div class="mcq-container">
+                        <canvas id="mcqChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
+        <script>
+            window.__mcq = {
+                labels: ['{{ texts.SEQUENCE_STATS_CORRECT }}', '{{ texts.SEQUENCE_STATS_WRONG }}'],
+                counts: [{% for c in counts %}{{ c }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                percents: [{% for p in percents %}{{ p }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                correct: 0,
+                avatars: [
+                    [{% for id in avatars_map[0] %}'{{ id }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+                    [{% for id in avatars_map[1] %}'{{ id }}'{% if not loop.last %}, {% endif %}{% endfor %}]
+                ],
+                names: {
+                    {% for id, name in names_map.items() %}'{{ id }}': '{{ name|replace("'", "\\'") }}'{% if not loop.last %}, {% endif %}{% endfor %}
+                }
+            };
+            document.addEventListener('DOMContentLoaded', () => window.renderMcq());
+        </script>
     {% endif %}
 {% endblock %}

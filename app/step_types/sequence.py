@@ -49,7 +49,13 @@ async def sequence_load_item(
     opts = item.get("options", [])
     for idx, text in enumerate(opts):
         session.add(StepOption(step_id=s.id, idx=idx, text=text))
-    s.points_correct = item.get("points")
+    pts_val = item.get("points")
+    if isinstance(pts_val, str) and pts_val.isdigit():
+        s.points_correct = int(pts_val)
+    elif isinstance(pts_val, (int, float)):
+        s.points_correct = int(pts_val)
+    else:
+        s.points_correct = 3
 
 
 async def sequence_bot_prompts(

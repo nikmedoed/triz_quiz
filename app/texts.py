@@ -75,6 +75,8 @@ SEQUENCE_INSTR = (
 WRONG_SEQUENCE = "Порядок неверный.\n\n"
 SEQUENCE_RESET = "Сброс"
 SEQUENCE_PUBLIC_INSTR = "Участники выбирают порядок в боте."
+SEQUENCE_STATS_CORRECT = "Верно"
+SEQUENCE_STATS_WRONG = "Неверно"
 
 # Leaderboard
 LEADERBOARD = (

@@ -63,3 +63,18 @@ def test_sequence_loader_time_param(tmp_path):
             seq_step = await session.scalar(select(Step).where(Step.type == "sequence"))
             assert seq_step.timer_ms == 45 * 1000
     asyncio.run(run())
+
+
+def test_sequence_loader_default_points(tmp_path):
+    async def run():
+        engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        scenario_path = tmp_path / "scenario.json"
+        scenario_path.write_text('[{"type": "sequence", "title": "S", "options": ["a", "b"]}]')
+        async with AsyncSessionLocal() as session:
+            await load_if_empty(session, str(scenario_path))
+            seq_step = await session.scalar(select(Step).where(Step.type == "sequence"))
+            assert seq_step.points_correct == 3
+    asyncio.run(run())
