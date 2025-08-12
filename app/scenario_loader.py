@@ -56,7 +56,7 @@ async def load_if_empty(session: AsyncSession, path: str) -> None:
             s = add_step(
                 "quiz",
                 title=item.get("title", texts.TITLE_QUIZ),
-                text=item.get("text"),
+                text=item.get("description") or item.get("text"),
             )
             await session.flush()
             opts = item.get("options", [])
