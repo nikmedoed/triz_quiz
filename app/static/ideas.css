@@ -42,6 +42,7 @@
     right: 8px;
     z-index: 1;
 }
+
 .idea-card__star-icon {
     color: var(--color-gold);
     text-shadow: 0 0 1px var(--color-dark);
@@ -52,7 +53,10 @@
     align-items: center;
     gap: 8px;
 }
-.idea-card__number { font-weight: 600; }
+
+.idea-card__number {
+    font-weight: 600;
+}
 
 .idea-card__text {
     font-size: 18px;
@@ -64,7 +68,9 @@
 /* Toggleable text behavior */
 .idea-card__toggle-input,
 .idea-card__text--full,
-.idea-card__toggle-less { display: none; }
+.idea-card__toggle-less {
+    display: none;
+}
 
 .idea-card__text--clamped {
     max-height: 5em;
@@ -77,22 +83,42 @@
     cursor: pointer;
     color: var(--color-slate-500);
     text-decoration: underline;
-    display: block;          /* block simplifies full-width + center */
+    display: block; /* block simplifies full-width + center */
     margin-top: var(--space-2);
     text-align: center;
     width: 100%;
 }
-.idea-card__toggle-more::after { content: ' \2193'; }
-.idea-card__toggle-less::after { content: ' \2191'; }
+
+.idea-card__toggle-more::after {
+    content: ' \2193';
+}
+
+.idea-card__toggle-less::after {
+    content: ' \2191';
+}
 
 .idea-card__toggle-input:checked ~ .idea-card__text--clamped,
-.idea-card__toggle-input:checked ~ .idea-card__toggle .idea-card__toggle-more { display: none; }
-.idea-card__toggle-input:checked ~ .idea-card__text--full { display: block; }
-.idea-card__toggle-input:checked ~ .idea-card__toggle .idea-card__toggle-less { display: inline; }
+.idea-card__toggle-input:checked ~ .idea-card__toggle .idea-card__toggle-more {
+    display: none;
+}
 
-.idea-card__time { font-size: 16px; opacity: .8; }
+.idea-card__toggle-input:checked ~ .idea-card__text--full {
+    display: block;
+}
 
-.idea-card__author { display: flex; flex-direction: column; }
+.idea-card__toggle-input:checked ~ .idea-card__toggle .idea-card__toggle-less {
+    display: inline;
+}
+
+.idea-card__time {
+    font-size: 16px;
+    opacity: .8;
+}
+
+.idea-card__author {
+    display: flex;
+    flex-direction: column;
+}
 
 .idea-card__name {
     font-size: 20px;
@@ -114,7 +140,11 @@
     object-fit: cover;
 }
 
-.idea-card__avatar { width: 54px; height: 54px; }
+.idea-card__avatar {
+    width: 54px;
+    height: 54px;
+}
+
 .idea-card__voter {
     width: 40px;
     height: 40px;
@@ -127,6 +157,7 @@
     display: flex;
     justify-content: flex-end;
 }
+
 .idea-card__voters {
     display: flex;
     align-items: center;
@@ -139,20 +170,34 @@
 .phase--voting .idea-card__avatar,
 .phase--voting .idea-card__author,
 .phase--voting .idea-card__voters,
-.phase--voting .idea-card__time--under-author { display: none; }
-.phase--voting .idea-card__time--top { display: block; }
+.phase--voting .idea-card__time--under-author {
+    display: none;
+}
 
-.phase--results .idea-card__time--top { display: none; }
+.phase--voting .idea-card__time--top {
+    display: block;
+}
+
+.phase--results .idea-card__time--top {
+    display: none;
+}
+
 .phase--results .idea-card__star,
 .phase--results .idea-card__avatar,
 .phase--results .idea-card__author,
 .phase--results .idea-card__voters,
-.phase--results .idea-card__time--under-author { display: block; }
+.phase--results .idea-card__time--under-author {
+    display: block;
+}
 
 /* Quiz layout shared flex rules grouped */
 .quiz-center,
 .quiz-layout,
-.quiz-col { display: flex; flex: 1; min-height: 0; }
+.quiz-col {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
 
 .quiz-center {
     flex-direction: column;
@@ -172,7 +217,10 @@
     height: 100%;
 }
 
-.quiz-col { align-items: center; justify-content: center; }
+.quiz-col {
+    align-items: center;
+    justify-content: center;
+}
 
 .quiz-description {
     width: 100%;
@@ -197,6 +245,7 @@
     justify-content: center;
     gap: var(--space-2);
 }
+
 .quiz-options li {
     display: flex;
     align-items: center;
@@ -208,6 +257,7 @@
     border-radius: var(--radius-md);
     word-break: break-word;
 }
+
 .quiz-options li::before {
     counter-increment: option;
     content: counter(option) '.';
@@ -220,7 +270,10 @@
     box-sizing: border-box;
     justify-content: center;
 }
-.quiz-options-alone li { text-align: center; }
+
+.quiz-options-alone li {
+    text-align: center;
+}
 
 .timer {
     font-size: 32px;

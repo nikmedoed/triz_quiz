@@ -1,7 +1,11 @@
 /* Global reset */
-* { box-sizing: border-box; }
+* {
+    box-sizing: border-box;
+}
 
-html, body { height: 100%; }
+html, body {
+    height: 100%;
+}
 
 body {
     margin: 0;
@@ -15,13 +19,16 @@ body {
 }
 
 /* Bars take natural height, content flexes */
-.topbar, .bottombar { flex: 0 0 auto; }
+.topbar, .bottombar {
+    flex: 0 0 auto;
+}
 
 /* Links */
 a {
     color: var(--color-slate-500);
     text-decoration: none;
 }
+
 a:hover, a:focus {
     color: var(--color-primary-500);
     text-decoration: underline;
@@ -35,6 +42,7 @@ a:hover, a:focus {
     padding: 0 var(--space-4);
     min-height: 0; /* allow children with overflow */
 }
+
 .content {
     flex: 1;
     display: flex;
@@ -51,11 +59,13 @@ a:hover, a:focus {
     flex: 1 1 auto;
     padding: var(--space-6) 0;
 }
+
 .content.ideas-page {
     align-items: stretch;
     justify-content: flex-start;
     padding: 0;
 }
+
 .content.description-page {
     justify-content: center;
     text-align: center;
@@ -71,9 +81,13 @@ h1 {
     letter-spacing: 0.02em;
     text-align: center;
 }
+
 h2 {
     font-size: 24px;
     font-weight: var(--font-weight-medium);
     margin: var(--space-4) 0;
 }
-ol { margin-left: var(--space-4); }
+
+ol {
+    margin-left: var(--space-4);
+}

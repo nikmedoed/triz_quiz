@@ -51,6 +51,6 @@
     --space-8: 32px;
 
     /* App-specific */
-    --bar-h: 64px;              /* top/bottom bars height */
+    --bar-h: 64px; /* top/bottom bars height */
     --shadow-card: 0 6px 18px rgba(0, 0, 0, .08); /* shared card shadow */
 }
