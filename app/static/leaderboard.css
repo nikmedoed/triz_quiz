@@ -250,35 +250,21 @@ h2 {
     background: var(--color-slate-50);
 }
 
-.leaderboard-table td:first-child {
+.leaderboard-table :is(td, th):first-child {
     width: 40px;
 }
 
-.leaderboard-table th:first-child {
-    width: 40px;
-}
-
-.leaderboard-table td:nth-child(2) {
+.leaderboard-table :is(td, th):nth-child(2) {
     width: 70px;
     text-align: center;
 }
 
-.leaderboard-table th:nth-child(2) {
-    width: 70px;
-    text-align: center;
-}
-
-.leaderboard-table td:nth-child(4),
-.leaderboard-table td:nth-child(5),
-.leaderboard-table td:nth-child(6) {
+.leaderboard-table :is(td, th):nth-child(4),
+.leaderboard-table :is(td, th):nth-child(5),
+.leaderboard-table :is(td, th):nth-child(6) {
     width: 80px;
 }
 
-.leaderboard-table th:nth-child(4),
-.leaderboard-table th:nth-child(5),
-.leaderboard-table th:nth-child(6) {
-    width: 80px;
-}
 
 .leaderboard-table .name-cell {
     font-size: 24px;
