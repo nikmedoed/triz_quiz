@@ -16,7 +16,7 @@
                             </div>
                         {% endif %}
                         <header class="idea-card__head">
-                            <div class="idea-card__number">#{{ loop.index }}</div>
+                            <div class="idea-card__number">#{{ idea.idx }}</div>
                             {% if phase == 1 %}
                                 <div class="idea-card__time idea-card__time--top">{{ texts.ANSWER_TOOK.format(time=idea.delay_text) }}</div>
                             {% else %}
