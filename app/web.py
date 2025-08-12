@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Dict, Set
 
 from aiogram import Bot
-from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect, status, Response
+from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select, delete, func
@@ -102,10 +102,9 @@ async def ws_endpoint(ws: WebSocket):
 
 
 @router.post("/api/next")
-async def api_next(response: Response, session: AsyncSession = Depends(get_session)):
+async def api_next(session: AsyncSession = Depends(get_session)):
     await advance(session, forward=True)
-    response.headers["HX-Redirect"] = "/"
-    return {"ok": True}
+    return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
 
 async def notify_all(session: AsyncSession):
