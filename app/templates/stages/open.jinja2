@@ -12,7 +12,7 @@
         {% set voters = voters_map.get(idea.id) or [] %}
         <article class="idea-card" data-idea-id="{{ idea.id }}">
           {% if phase == 2 %}
-          <div class="idea-card__star">★ {{ voters|length }}</div>
+          <div class="idea-card__star"><span class="idea-card__star-icon">★</span> {{ voters|length }}</div>
           {% endif %}
           <header class="idea-card__head">
             <div class="idea-card__number">#{{ loop.index }}</div>
@@ -26,10 +26,17 @@
             </div>
             {% endif %}
           </header>
-          <div class="idea-card__body">
-            <p class="idea-card__text">{{ idea.text }}</p>
-          </div>
           {% if phase == 2 %}
+          <div class="idea-card__body">
+            <p class="idea-card__text idea-card__text--clamped">{{ idea.text }}</p>
+            <details class="idea-card__details" ontoggle="this.parentElement.classList.toggle('idea-card__body--open', this.open)">
+              <summary class="idea-card__toggle">
+                <span class="idea-card__toggle-more">{{ texts.SHOW_MORE }}</span>
+                <span class="idea-card__toggle-less">{{ texts.SHOW_LESS }}</span>
+              </summary>
+              <p class="idea-card__text idea-card__text--full">{{ idea.text }}</p>
+            </details>
+          </div>
           <footer class="idea-card__foot">
             <div class="idea-card__voters">
               {% for v in voters %}
@@ -37,6 +44,10 @@
               {% endfor %}
             </div>
           </footer>
+          {% else %}
+          <div class="idea-card__body">
+            <p class="idea-card__text">{{ idea.text }}</p>
+          </div>
           {% endif %}
         </article>
         {% endfor %}
