@@ -243,7 +243,7 @@ async def multi_context(
             status_current=int(answers_count or 0),
             status_total=int(total_users or 0),
             status_last=last_answer_ago_s if last_answer_ago_s is not None else "-",
-            instruction="Участники выбирают варианты в боте.",
+            instruction="Участники выбирают варианты в боте",
             timer_id="quizTimer",
             timer_text=format_mmss(duration_ms),
             timer_ms=duration_ms,
