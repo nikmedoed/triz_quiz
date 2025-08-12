@@ -158,15 +158,12 @@ a:focus {
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  border-radius: var(--radius-md);
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
 }
 
-
-/* Keep leaderboard header visible while scrolling */
+/* Leaderboard header styling */
 .leaderboard-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 2;
   background: var(--color-slate-50);
   box-shadow: 0 2px 0 0 var(--color-light);
 }
@@ -336,6 +333,17 @@ h2 {
   border-collapse: separate;
   border-spacing: 0;
   border-radius: var(--radius-md);
+  table-layout: fixed;
+}
+
+.table-wrap > .leaderboard-table {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.table-scroll .leaderboard-table {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
 
 .leaderboard-table th,
@@ -369,7 +377,16 @@ h2 {
   width: 40px;
 }
 
+.leaderboard-table th:first-child {
+  width: 40px;
+}
+
 .leaderboard-table td:nth-child(2) {
+  width: 70px;
+  text-align: center;
+}
+
+.leaderboard-table th:nth-child(2) {
   width: 70px;
   text-align: center;
 }
@@ -377,6 +394,12 @@ h2 {
 .leaderboard-table td:nth-child(4),
 .leaderboard-table td:nth-child(5),
 .leaderboard-table td:nth-child(6) {
+  width: 80px;
+}
+
+.leaderboard-table th:nth-child(4),
+.leaderboard-table th:nth-child(5),
+.leaderboard-table th:nth-child(6) {
   width: 80px;
 }
 
