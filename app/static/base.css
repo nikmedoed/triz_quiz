@@ -55,9 +55,7 @@ a:focus {
 .content.leaderboard-page {
     display: block;
     flex: 1 1 auto;
-    min-height: 0;
     padding: var(--space-6) 0;
-    overflow: hidden;
 }
 
 .content.ideas-page {
