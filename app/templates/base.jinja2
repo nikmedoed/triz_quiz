@@ -43,7 +43,7 @@
                 <div>Последний: <span id="lastAnswerAgo">{{ status_last }}</span></div>
             </div>
         {% elif status_mode == 'votes' %}
-            <div class="status">
+            <div class="status" id="votesStatus" data-total="{{ status_total }}">
                 <div>Проголосовало: <span id="votesCount">{{ status_current }}</span> / {{ status_total }}</div>
                 <div>Последний: <span id="lastVoteAgo">{{ status_last }}</span></div>
             </div>
@@ -88,6 +88,9 @@
     const answersStatusEl = document.getElementById('answersStatus');
     const answersCountEl = document.getElementById('answersCount');
     const totalAnswers = answersStatusEl ? parseInt(answersStatusEl.dataset.total) : null;
+    const votesStatusEl = document.getElementById('votesStatus');
+    const votesCountEl = document.getElementById('votesCount');
+    const totalVotes = votesStatusEl ? parseInt(votesStatusEl.dataset.total) : null;
 
     function updateAnswersStatus() {
         if (answersStatusEl && answersCountEl && totalAnswers !== null) {
@@ -100,7 +103,19 @@
         }
     }
 
+    function updateVotesStatus() {
+        if (votesStatusEl && votesCountEl && totalVotes !== null) {
+            const current = parseInt(votesCountEl.textContent);
+            if (!isNaN(current) && current >= totalVotes) {
+                votesStatusEl.classList.add('complete');
+            } else {
+                votesStatusEl.classList.remove('complete');
+            }
+        }
+    }
+
     updateAnswersStatus();
+    updateVotesStatus();
     setInterval(() => {
         if (lastAnswerSec !== null) {
             lastAnswerSec++;
@@ -138,8 +153,10 @@
             }
         }
         if (msg.type === 'vote_progress') {
-            const vcnt = document.getElementById('votesCount');
-            if (vcnt) vcnt.textContent = msg.count;
+            if (votesCountEl) {
+                votesCountEl.textContent = msg.count;
+                updateVotesStatus();
+            }
             if (lastVoteEl && msg.last !== undefined) {
                 lastVoteSec = msg.last;
                 lastVoteEl.textContent = formatAgo(lastVoteSec);
