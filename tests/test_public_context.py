@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-
 import asyncio
 import pathlib
 import sys
@@ -92,6 +91,33 @@ def test_idea_delay_after_phase_change():
 
             ctx = await build_public_context(session, step, gs)
             assert ctx["ideas"][0].delay_text == "5 с"
+
+    asyncio.run(run())
+
+
+def test_quiz_phase_shows_timer():
+    async def run():
+        engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+
+        AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        async with AsyncSessionLocal() as session:
+            step = Step(order_index=1, type="quiz", title="Q1")
+            session.add(step)
+            await session.flush()
+
+            now = datetime(2025, 1, 1, 0, 0, 0)
+            gs = GlobalState(id=1, current_step_id=step.id, step_started_at=now, phase_started_at=now, phase=0)
+            session.add(gs)
+
+            user = User(id="1", name="A")
+            session.add(user)
+            await session.commit()
+
+            ctx = await build_public_context(session, step, gs)
+            assert ctx["timer_id"] == "quizTimer"
+            assert ctx["timer_text"] == "01:00"
 
     asyncio.run(run())
 

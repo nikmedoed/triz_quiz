@@ -66,7 +66,10 @@
       if(sec >= 60){ const m=Math.floor(sec/60); const s=sec%60; return m+' мин '+s+' с'; }
       return sec+' с';
     }
-    const timerEl = document.getElementById('ideaTimer') || document.getElementById('voteTimer');
+    const timerEl =
+      document.getElementById('ideaTimer') ||
+      document.getElementById('voteTimer') ||
+      document.getElementById('quizTimer');
     const sinceVal = '{{ since.isoformat() if since is defined else "" }}';
     if (timerEl && sinceVal){
       const start = new Date(sinceVal + 'Z').getTime();

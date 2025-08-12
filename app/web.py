@@ -304,6 +304,8 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
                 total_users=int(total_users or 0),
                 answers_count=int(answers_count or 0),
                 last_answer_ago_s=last_answer_ago_s,
+                timer_id="quizTimer",
+                timer_text="01:00",
                 status_mode="answers",
                 status_current=int(answers_count or 0),
                 status_total=int(total_users or 0),
