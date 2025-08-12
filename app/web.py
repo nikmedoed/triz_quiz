@@ -232,10 +232,12 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
         suffix = ''
         if gs.phase == 1:
             suffix = ' — ' + texts.STAGE_VOTING_SUFFIX
-            ctx.update(content_class='ideas-page')
+            if ideas:
+                ctx.update(content_class='ideas-page')
         elif gs.phase == 2:
             suffix = ' — ' + texts.STAGE_RESULTS_SUFFIX
-            ctx.update(content_class='ideas-page')
+            if ideas:
+                ctx.update(content_class='ideas-page')
         ctx.update(stage_title=texts.TITLE_OPEN + suffix)
         if gs.phase == 0:
             total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
