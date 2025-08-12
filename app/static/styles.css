@@ -678,20 +678,65 @@ ol {
   align-items: center;
 }
 
-/* Keep description column within container and enable scrolling */
-.quiz-layout {
-  height: 100%;
-}
+/* --- Description column must never exceed parent height --- */
 
+/* Make the first column a vertical flex container that can shrink */
 .quiz-layout > .quiz-col:first-child {
-  height: 100%;
+  /* layout */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+
+  /* allow children to create internal scroll instead of growing parent */
   min-height: 0;
+  overflow: hidden;
+
+  /* enable container queries for better font scaling (modern browsers) */
+  container-type: size;
 }
 
+/* Description fills available height and scrolls internally when needed */
 .quiz-layout > .quiz-col:first-child > .quiz-description {
-  height: 100%;
-  min-height: 0;
-  overflow-y: auto;
+  flex: 1 1 auto;       /* take all vertical space in the column */
+  min-height: 0;        /* critical for nested flex scrolling */
+  overflow: auto;       /* internal scroll instead of pushing footer */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
+
+  /* long tokens/urls must not break layout */
   overflow-wrap: anywhere;
   word-break: break-word;
+
+  line-height: 1.35;
+}
+
+/* --- Adaptive font size (fallback by viewport, then container height) --- */
+
+/* Fallback: adjust by viewport height so text shrinks on short screens */
+.quiz-layout > .quiz-col:first-child > .quiz-description {
+  /* 22px normal, but can shrink to 16px on short viewports */
+  font-size: clamp(16px, 2.3vh, 22px);
+}
+
+/* Preferred: adjust by column height (container query units) */
+@supports (font-size: 1cqh) {
+  .quiz-layout > .quiz-col:first-child > .quiz-description {
+    /* scales with column height; 22px normal, down to 16px if tight */
+    font-size: clamp(16px, 2.6cqh, 22px);
+  }
+}
+
+/* Ensure the whole quiz area actually has a bounded height */
+.quiz-center,
+.quiz-layout,
+.quiz-col {
+  min-height: 0;  /* allow inner scroll everywhere in the chain */
+  height: 100%;   /* keep the columns bounded between header and footer */
+}
+
+/* Optional: prevent the options column from affecting vertical flow */
+.quiz-layout > .quiz-col:last-child {
+  min-height: 0;
+  overflow: hidden;
 }
