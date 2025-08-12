@@ -12,7 +12,7 @@
         {% set voters = voters_map.get(idea.id) or [] %}
         <article class="idea-card" data-idea-id="{{ idea.id }}">
           {% if phase == 2 %}
-          <div class="idea-card__star">★ {{ voters|length }}</div>
+          <div class="idea-card__star"><span class="idea-card__star-icon">★</span> {{ voters|length }}</div>
           {% endif %}
           <header class="idea-card__head">
             <div class="idea-card__number">#{{ loop.index }}</div>
@@ -26,26 +26,28 @@
             </div>
             {% endif %}
           </header>
-          <div class="idea-card__body">
-            {% if phase == 2 %}
-            <details class="idea-card__details">
-              <summary class="idea-card__summary">
-                <span class="idea-card__text idea-card__text--clamped">{{ idea.text }}</span>
-              </summary>
-              <p class="idea-card__text">{{ idea.text }}</p>
-            </details>
-            {% else %}
-            <p class="idea-card__text">{{ idea.text }}</p>
-            {% endif %}
-          </div>
           {% if phase == 2 %}
-          <footer class="idea-card__foot">
-            <div class="idea-card__voters">
-              {% for v in voters %}
-                <img class="idea-card__voter" src="/avatars/{{ v.id }}.png" alt="" title="{{ v.name }}" />
-              {% endfor %}
+          <details class="idea-card__details">
+            <div class="idea-card__body">
+              <p class="idea-card__text idea-card__text--clamped">{{ idea.text }}</p>
+              <p class="idea-card__text idea-card__text--full">{{ idea.text }}</p>
             </div>
-          </footer>
+            <summary class="idea-card__toggle">
+              <span class="idea-card__toggle-more">{{ texts.SHOW_MORE }}</span>
+              <span class="idea-card__toggle-less">{{ texts.SHOW_LESS }}</span>
+            </summary>
+            <footer class="idea-card__foot">
+              <div class="idea-card__voters">
+                {% for v in voters %}
+                  <img class="idea-card__voter" src="/avatars/{{ v.id }}.png" alt="" title="{{ v.name }}" />
+                {% endfor %}
+              </div>
+            </footer>
+          </details>
+          {% else %}
+          <div class="idea-card__body">
+            <p class="idea-card__text">{{ idea.text }}</p>
+          </div>
           {% endif %}
         </article>
         {% endfor %}
