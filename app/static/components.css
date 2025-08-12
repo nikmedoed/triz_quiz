@@ -1,0 +1,115 @@
+/* Buttons */
+.btn {
+    font-family: var(--font-sans);
+    font-weight: var(--font-weight-medium);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid transparent;
+    cursor: pointer;
+    background: transparent;
+    color: var(--color-dark);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--color-primary-500);
+    border-color: var(--color-primary-500);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: var(--color-primary-600);
+    border-color: var(--color-primary-600);
+}
+
+.btn-primary:active {
+    background: var(--color-primary-700);
+    border-color: var(--color-primary-700);
+}
+
+.btn-secondary {
+    border-color: var(--color-slate-300);
+    color: var(--color-slate-700);
+}
+
+.btn-secondary:hover {
+    background: var(--color-slate-50);
+}
+
+
+.topbar {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: var(--space-2) var(--space-4);
+    height: 64px;
+    box-sizing: border-box;
+}
+
+.top-left,
+.top-center,
+.top-right {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.top-left {
+    justify-self: start;
+}
+
+.top-center {
+    justify-self: center;
+}
+
+.top-right {
+    gap: var(--space-4);
+    justify-self: end;
+}
+
+.brand {
+    font-weight: var(--font-weight-black);
+    font-size: 1.6em;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--color-dark);
+    text-decoration: none;
+}
+
+.reset-form {
+    margin: 0;
+}
+
+
+.bottombar {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: var(--space-2) var(--space-4);
+    height: 64px;
+    box-sizing: border-box;
+}
+
+.footer-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    font-size: 28px;
+    color: var(--color-slate-500);
+}
+
+.footer-right {
+    margin-left: auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-4);
+    align-items: center;
+}
+

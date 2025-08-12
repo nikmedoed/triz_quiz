@@ -1,0 +1,353 @@
+/* Two-column leaderboard layout */
+.leaderboard-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+    height: 100%;
+    width: 100%;
+    min-height: 0;
+}
+
+.col {
+    display: grid;
+    min-height: 0;
+}
+
+.col .col-inner {
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    justify-content: center;
+    min-height: 0;
+    height: 100%;
+    padding: 0 var(--space-6);
+}
+
+.col-secondary .col-inner {
+    justify-content: center;
+    min-height: 0;
+}
+
+.table-wrap {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1 1 auto;
+    height: 100%;
+}
+
+.table-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.leaderboard-header {
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    background: var(--color-slate-50);
+}
+
+.leaderboard-header th {
+    font-weight: var(--font-weight-medium);
+    text-align: center;
+}
+
+.table-scroll .leaderboard-table {
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+
+.leaderboard-columns > * {
+    min-width: 0;
+    min-height: 0;
+}
+
+.leaderboard-columns.single {
+    display: flex;
+    justify-content: center;
+}
+
+/* Maintain half-width column when table is absent */
+.leaderboard-columns.single .col-primary {
+    flex: 0 0 calc(50% - var(--space-3));
+}
+
+h1 {
+    font-size: 32px;
+    margin-bottom: var(--space-4);
+    font-weight: var(--font-weight-black);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    text-align: center;
+}
+
+h2 {
+    font-size: 24px;
+    font-weight: var(--font-weight-medium);
+    margin: var(--space-4) 0;
+}
+
+
+.grid {
+    --card-w: 128px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    justify-content: center;
+    align-content: center;
+    max-width: 100%;
+}
+
+.card {
+    width: var(--card-w);
+    min-height: calc(var(--card-w) * 1.4);
+    padding: var(--space-4);
+    text-align: center;
+}
+
+.avatar {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar.small {
+    width: 55px;
+    height: 55px;
+}
+
+.avatars {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.mcq-results {
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+.mcq-container {
+    position: relative;
+    flex: 1;
+    width: 100%;
+}
+
+.mcq-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.mcq-avatar-col {
+    position: absolute;
+    display: flex;
+    flex-wrap: wrap-reverse;
+    justify-content: center;
+    align-content: flex-start;
+    gap: var(--space-1);
+    transform: translateX(-50%);
+    overflow: hidden;
+}
+
+.mcq-count {
+    position: absolute;
+    transform: translateX(-50%);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-dark);
+}
+
+.name {
+    margin-top: var(--space-3);
+    font-size: clamp(14px, 1.5vw, 20px);
+    white-space: normal;
+    word-break: break-word;
+}
+
+.reset-actions {
+    display: flex;
+    gap: var(--space-4);
+    margin-top: var(--space-6);
+}
+
+.question {
+    font-size: 24px;
+    font-weight: var(--font-weight-medium);
+    margin: var(--space-3) 0;
+}
+
+.status {
+    font-size: 17px;
+    line-height: 1;
+    color: var(--color-dark);
+    white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.status.complete {
+    color: var(--color-primary-500);
+    font-weight: var(--font-weight-medium);
+}
+
+.description {
+    font-size: 24px;
+    max-width: 800px;
+    text-align: center;
+    margin: var(--space-6) auto 0;
+}
+
+.hint {
+    position: absolute;
+    bottom: var(--space-8);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 28px;
+    color: var(--color-slate-500);
+    text-align: center;
+    opacity: 0.7;
+    z-index: 1;
+    white-space: nowrap;
+}
+
+
+.leaderboard-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+}
+
+
+.leaderboard-table th,
+.leaderboard-table td {
+    padding: var(--space-2);
+    border: none;
+    vertical-align: middle;
+}
+
+.leaderboard-table td {
+    font-size: 18px;
+}
+
+.leaderboard-table td.align-center {
+    text-align: center;
+}
+
+.leaderboard-table td.align-left {
+    text-align: left;
+}
+
+.leaderboard-table tbody tr + tr {
+    border-top: 1px solid var(--color-light);
+}
+
+.leaderboard-table tbody tr:nth-child(even) {
+    background: var(--color-slate-50);
+}
+
+.leaderboard-table :is(td, th):first-child {
+    width: 40px;
+}
+
+.leaderboard-table :is(td, th):nth-child(2) {
+    width: 70px;
+    text-align: center;
+}
+
+.leaderboard-table :is(td, th):nth-child(4),
+.leaderboard-table :is(td, th):nth-child(5),
+.leaderboard-table :is(td, th):nth-child(6) {
+    width: 80px;
+}
+
+
+.leaderboard-table .name-cell {
+    font-size: 24px;
+    font-weight: var(--font-weight-medium);
+    text-align: left;
+}
+
+.leaderboard-table .table-avatar {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto;
+}
+
+
+.leader-top {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    align-items: center;
+    width: 100%;
+}
+
+.leader-card {
+    display: grid;
+    grid-template-columns: 60px 160px 1fr;
+    align-items: center;
+    gap: var(--space-6);
+    padding: var(--space-6);
+    border-radius: var(--radius-md);
+    width: 100%;
+}
+
+.leader-card.gold {
+    background: linear-gradient(135deg, var(--color-gold), var(--color-light));
+}
+
+.leader-card.silver {
+    background: linear-gradient(135deg, var(--color-silver), var(--color-light));
+}
+
+.leader-card.bronze {
+    background: linear-gradient(135deg, var(--color-bronze), var(--color-light));
+}
+
+.leader-rank {
+    font-size: 40px;
+    font-weight: var(--font-weight-medium);
+    width: 60px;
+    text-align: center;
+}
+
+.leader-card .avatar {
+    width: 160px;
+    height: 160px;
+}
+
+.leader-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.leader-name {
+    font-size: 32px;
+    font-weight: var(--font-weight-medium);
+}
+
+.leader-score {
+    font-size: 28px;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-primary-500);
+    margin-top: var(--space-2);
+}
+
+.leader-average-label,
+.leader-types {
+    font-size: 20px;
+    color: var(--color-slate-500);
+    margin-top: var(--space-1);
+}
+
+ol {
+    margin-left: var(--space-4);
+}
+
