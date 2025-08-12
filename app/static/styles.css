@@ -144,7 +144,6 @@ a:focus {
 .table-wrap {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
   min-height: 0;
   flex: 1 1 auto;
   height: 100%;
@@ -157,6 +156,7 @@ a:focus {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
 .leaderboard-header {
