@@ -32,6 +32,7 @@ class Step(Base):
     text: Mapped[str | None] = mapped_column(Text, nullable=True)
     correct_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
     points_correct: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    timer_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
 class GlobalState(Base):

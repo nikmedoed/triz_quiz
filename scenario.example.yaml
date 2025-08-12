@@ -12,4 +12,5 @@
     - "Применение локальных нагревов"
     - "Ещё какой-то вариант"
   correct: "3"   # 1-based or 0-based index accepted
+  time: 45
   points: 2

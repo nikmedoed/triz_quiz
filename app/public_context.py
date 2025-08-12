@@ -26,6 +26,13 @@ def humanize_seconds(sec: int) -> str:
     return f"{m} мин {s} с" if m else f"{s} с"
 
 
+
+def format_mmss(ms: int) -> str:
+    """Format milliseconds as MM:SS string."""
+    m, s = divmod(ms // 1000, 60)
+    return f"{m:02d}:{s:02d}"
+
+
 async def registration_context(
     session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
 ) -> None:
@@ -154,6 +161,7 @@ async def quiz_context(
         last_answer_ago_s = None
         if last_at:
             last_answer_ago_s = int((datetime.utcnow() - last_at).total_seconds())
+        duration_ms = step.timer_ms or 60 * 1000
         ctx.update(
             total_users=int(total_users or 0),
             answers_count=int(answers_count or 0),
@@ -164,8 +172,8 @@ async def quiz_context(
             status_last=last_answer_ago_s if last_answer_ago_s is not None else "-",
             instruction="Участники выбирают вариант в боте.",
             timer_id="quizTimer",
-            timer_text="01:00",
-            timer_ms=60 * 1000,
+            timer_text=format_mmss(duration_ms),
+            timer_ms=duration_ms,
         )
     if gs.phase == 1:
         counts = []
