@@ -80,3 +80,8 @@ TITLE_REGISTRATION = "Регистрация"
 TITLE_OPEN = "Гипотезы решения"
 TITLE_QUIZ = "Квиз"
 TITLE_LEADERBOARD = "Финальная таблица"
+
+STAGE_VOTING_SUFFIX = "Голосование за идеи"
+STAGE_RESULTS_SUFFIX = "Результаты голосования"
+ANSWER_TOOK = "Ответ занял {time}"
+NO_IDEAS = "Ответов нет"

@@ -18,6 +18,7 @@ from app.models import User, Step, StepOption, GlobalState, Idea, IdeaVote, McqA
 from app.scoring import add_vote_points, add_mcq_points, get_leaderboard_users
 from aiogram import Bot
 from app.settings import settings
+from app import texts
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -53,7 +54,7 @@ async def public(request: Request, session: AsyncSession = Depends(get_session))
     step = await session.get(Step, gs.current_step_id)
     ctx = await build_public_context(session, step, gs)
     template = f"stages/{step.type}.jinja2"
-    return templates.TemplateResponse(template, {"request": request, **ctx})
+    return templates.TemplateResponse(template, {"request": request, "texts": texts, **ctx})
 
 @router.get("/reset", response_class=HTMLResponse)
 async def reset_page(request: Request):
@@ -214,7 +215,15 @@ async def build_public_context(session: AsyncSession, step: Step, gs: GlobalStat
             for i in ideas:
                 delta = int((i.submitted_at - gs.step_started_at).total_seconds())
                 i.delay_text = humanize_seconds(max(0, delta))
-        ctx.update(ideas=ideas, stage_title="Вопрос с открытым ответом")
+        ctx.update(ideas=ideas)
+        suffix = ''
+        if gs.phase == 1:
+            suffix = ' — ' + texts.STAGE_VOTING_SUFFIX
+            ctx.update(content_class='ideas-page')
+        elif gs.phase == 2:
+            suffix = ' — ' + texts.STAGE_RESULTS_SUFFIX
+            ctx.update(content_class='ideas-page')
+        ctx.update(stage_title=texts.TITLE_OPEN + suffix)
         if gs.phase == 0:
             total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
             last_at = await session.scalar(select(func.max(Idea.submitted_at)).where(Idea.step_id == step.id))
