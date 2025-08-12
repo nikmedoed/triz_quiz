@@ -678,15 +678,38 @@ ol {
   align-items: center;
 }
 
-/* First column stretches child instead of centering */
+/* First column: vertical flex container taking full height */
 .quiz-layout > .quiz-col:first-child {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-height: 0;
+}
+
+/* Description fills the column and scrolls internally */
+.quiz-layout > .quiz-col:first-child > .quiz-description {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  max-height: none;
+  height: auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Prevent header row from shrinking the container */
+.quiz-center {
+  justify-content: stretch;
+}
+
+/* Ensure both columns use full available height */
+.quiz-layout {
   align-items: stretch;
 }
 
-/* Description fills column height and scrolls internally */
-.quiz-description {
-  height: 100%;
+/* Safeguard nested flex columns for scrolling */
+.quiz-col {
   min-height: 0;
-  overflow-y: auto;
-  overflow-wrap: anywhere;
 }
+
