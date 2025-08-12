@@ -75,6 +75,7 @@
     const sinceVal = '{{ since.isoformat() if since is defined else "" }}';
     window.addEventListener('DOMContentLoaded', () => {
         initTimer('{{ timer_id or "" }}', sinceVal, {{ timer_ms or 0 }});
+        if (window.initIdeaToggles) initIdeaToggles();
     });
     const lastAnswerEl = document.getElementById('lastAnswerAgo');
     const lastVoteEl = document.getElementById('lastVoteAgo');

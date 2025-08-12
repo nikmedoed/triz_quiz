@@ -112,3 +112,28 @@ window.renderMcq = function () {
     }
 };
 
+// Hide idea text toggles when content fits without expanding
+window.initIdeaToggles = function () {
+    const cards = document.querySelectorAll('.idea-card');
+    cards.forEach(card => {
+        const clamped = card.querySelector('.idea-card__text--clamped');
+        const full = card.querySelector('.idea-card__text--full');
+        const toggle = card.querySelector('.idea-card__toggle');
+        const input = card.querySelector('.idea-card__toggle-input');
+        if (!clamped || !full || !toggle || !input) return;
+        const prev = full.style.display;
+        full.style.display = 'block';
+        const needsToggle = full.scrollHeight > clamped.scrollHeight;
+        full.style.display = prev;
+        if (!needsToggle) {
+            full.remove();
+            toggle.remove();
+            input.remove();
+            clamped.classList.remove('idea-card__text--clamped');
+            clamped.style.maxHeight = 'none';
+            clamped.style.webkitMaskImage = 'none';
+            clamped.style.maskImage = 'none';
+        }
+    });
+};
+
