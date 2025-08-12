@@ -162,7 +162,6 @@ a:focus {
 .leaderboard-header {
   border-radius: var(--radius-md) var(--radius-md) 0 0;
   background: var(--color-slate-50);
-  box-shadow: 0 2px 0 0 var(--color-light);
 }
 
 .leaderboard-header th {
