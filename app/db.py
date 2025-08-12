@@ -14,6 +14,13 @@ async def apply_migrations(conn) -> None:
             "ALTER TABLE users ADD COLUMN waiting_for_name BOOLEAN NOT NULL DEFAULT 0"
         )
 
+    result = await conn.exec_driver_sql("PRAGMA table_info(steps)")
+    cols = [row[1] for row in result.fetchall()]
+    if "timer_ms" not in cols:
+        await conn.exec_driver_sql(
+            "ALTER TABLE steps ADD COLUMN timer_ms INTEGER"
+        )
+
 
 engine = create_async_engine(settings.DATABASE_URL, future=True, echo=False)
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

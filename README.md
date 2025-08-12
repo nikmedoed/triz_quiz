@@ -82,7 +82,7 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
 **Supported blocks:**
 
 * `open`: free-form idea collection with built-in vote & reveal.
-* `quiz`: MCQ with built-in reveal.
+* `quiz`: MCQ with built-in reveal. Optional `time` (seconds) overrides the default 60-second timer.
 
 **Example (your sample, with vote steps tolerated but folded into the `open` block):**
 
@@ -105,6 +105,7 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
       "Ещё какой-то вариант"
     ],
     "correct": "3",
+    "time": 45,
     "points": 2
   }
 ]
