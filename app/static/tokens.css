@@ -1,0 +1,50 @@
+:root {
+    /* Colors */
+    --color-primary-50: #fce9e8;
+    --color-primary-100: #fad3d1;
+    --color-primary-200: #f6b2af;
+    --color-primary-300: #f2918d;
+    --color-primary-400: #ee706b;
+    --color-primary-500: #e5231b; /* primary accent */
+    --color-primary-600: #c31e17;
+    --color-primary-700: #a01813;
+    --color-primary-800: #7e130f;
+    --color-primary-900: #5c0e0b;
+
+    --color-slate-50: #edeef0;
+    --color-slate-100: #dcdee0;
+    --color-slate-200: #c1c5c9;
+    --color-slate-300: #a6acb2;
+    --color-slate-400: #8c929c;
+    --color-slate-500: #4e5866; /* secondary */
+    --color-slate-600: #424b57;
+    --color-slate-700: #373e47;
+    --color-slate-800: #2b3038;
+    --color-slate-900: #1f2329;
+
+    --color-dark: #2b2b2a; /* base dark text */
+    --color-light: #e6e6e6; /* backgrounds, borders */
+    --color-black: #000000; /* rare accent text on light */
+    --color-gold: #ffd700;
+    --color-silver: #c0c0c0;
+    --color-bronze: #cd7f32;
+
+    /* Typography */
+    --font-sans: "Roboto", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    --font-weight-light: 300;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-black: 900;
+
+    /* Sizing & spacing (8pt grid) */
+    --radius-none: 0px;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-6: 24px;
+    --space-8: 32px;
+}

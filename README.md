@@ -145,7 +145,7 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
 
 ## Styling tokens
 
-Design tokens and component styles live in `app/static/styles.css`.
+Design tokens and component styles live in `app/static` as `tokens.css`, `base.css`, `leaderboard.css`, `ideas.css` and `components.css`.
 
 ### Tokens
 
