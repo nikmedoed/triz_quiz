@@ -2,7 +2,9 @@
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import User, Step, Idea, IdeaVote, McqAnswer
+import json
+
+from app.models import User, Step, Idea, IdeaVote, McqAnswer, SequenceAnswer, StepOption
 
 
 async def add_vote_points(session: AsyncSession, open_step_id: int) -> None:
@@ -30,6 +32,31 @@ async def add_mcq_points(session: AsyncSession, mcq_step: Step) -> None:
     )
     for (user,) in res.all():
         user.total_score += mcq_step.points_correct
+    await session.commit()
+
+
+async def add_sequence_points(session: AsyncSession, seq_step: Step) -> None:
+    if seq_step.points_correct is None:
+        return
+    options = (
+        await session.execute(
+            select(StepOption.idx)
+            .where(StepOption.step_id == seq_step.id)
+            .order_by(StepOption.idx)
+        )
+    ).scalars().all()
+    correct_order = list(options)
+    rows = (
+        await session.execute(
+            select(User, SequenceAnswer).join(
+                SequenceAnswer, SequenceAnswer.user_id == User.id
+            ).where(SequenceAnswer.step_id == seq_step.id)
+        )
+    ).all()
+    for user, ans in rows:
+        order = json.loads(ans.order_json or "[]")
+        if len(order) == len(correct_order) and order == correct_order:
+            user.total_score += seq_step.points_correct
     await session.commit()
 
 

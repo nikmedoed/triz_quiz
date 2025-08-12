@@ -14,7 +14,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import texts
 from app.db import get_session
 from app.hub import hub
-from app.models import User, Step, StepOption, GlobalState, Idea, IdeaVote, McqAnswer
+from app.models import (
+    User,
+    Step,
+    StepOption,
+    GlobalState,
+    Idea,
+    IdeaVote,
+    McqAnswer,
+    SequenceAnswer,
+)
 from app.public_context import build_public_context
 from app.scenario_loader import load_if_empty
 from app.state import advance
@@ -48,7 +57,7 @@ async def reset_confirm(request: Request, session: AsyncSession = Depends(get_se
 
 @router.post("/api/reset")
 async def api_reset(session: AsyncSession = Depends(get_session), broadcast: bool = True):
-    for model in [IdeaVote, Idea, McqAnswer, User, StepOption, Step, GlobalState]:
+    for model in [IdeaVote, Idea, McqAnswer, SequenceAnswer, User, StepOption, Step, GlobalState]:
         await session.execute(delete(model))
     await session.commit()
 
