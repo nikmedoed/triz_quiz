@@ -1,4 +1,4 @@
-/* Two-column leaderboard layout */
+/* Layout min-height clamps for scrollable flex children */
 .leaderboard-columns,
 .col,
 .col .col-inner,
@@ -8,6 +8,7 @@
     min-height: 0;
 }
 
+/* Full-height areas */
 .leaderboard-columns,
 .col .col-inner,
 .table-wrap {
@@ -32,9 +33,7 @@
     padding: 0 var(--space-6);
 }
 
-.col-secondary .col-inner {
-    justify-content: center;
-}
+/* (removed duplicate) .col-secondary .col-inner { justify-content: center; } */
 
 .table-wrap {
     display: flex;
@@ -64,7 +63,6 @@
     border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
-
 .leaderboard-columns > * {
     min-width: 0;
 }
@@ -78,22 +76,6 @@
 .leaderboard-columns.single .col-primary {
     flex: 0 0 calc(50% - var(--space-3));
 }
-
-h1 {
-    font-size: 32px;
-    margin-bottom: var(--space-4);
-    font-weight: var(--font-weight-black);
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    text-align: center;
-}
-
-h2 {
-    font-size: 24px;
-    font-weight: var(--font-weight-medium);
-    margin: var(--space-4) 0;
-}
-
 
 .grid {
     --card-w: 128px;
@@ -115,8 +97,6 @@ h2 {
 .avatar {
     width: 100%;
     aspect-ratio: 1 / 1;
-    border-radius: 50%;
-    object-fit: cover;
 }
 
 .avatar.small {
@@ -217,14 +197,13 @@ h2 {
     white-space: nowrap;
 }
 
-
+/* Table */
 .leaderboard-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     table-layout: fixed;
 }
-
 
 .leaderboard-table th,
 .leaderboard-table td {
@@ -253,6 +232,7 @@ h2 {
     background: var(--color-slate-50);
 }
 
+/* Narrow columns */
 .leaderboard-table :is(td, th):first-child {
     width: 40px;
 }
@@ -268,22 +248,7 @@ h2 {
     width: 80px;
 }
 
-
-.leaderboard-table .name-cell {
-    font-size: 24px;
-    font-weight: var(--font-weight-medium);
-    text-align: left;
-}
-
-.leaderboard-table .table-avatar {
-    width: 60px;
-    height: 60px;
-    object-fit: cover;
-    display: block;
-    margin: 0 auto;
-}
-
-
+/* Top 3 cards */
 .leader-top {
     display: flex;
     flex-direction: column;
@@ -350,7 +315,10 @@ h2 {
     margin-top: var(--space-1);
 }
 
-ol {
-    margin-left: var(--space-4);
+/* Table avatars (shares avatar base via grouping in ideas.css) */
+.leaderboard-table .table-avatar {
+    width: 60px;
+    height: 60px;
+    display: block;
+    margin: 0 auto;
 }
-

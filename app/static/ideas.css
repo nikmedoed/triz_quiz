@@ -12,8 +12,7 @@
     scrollbar-width: none;
 }
 
-
-
+/* Grid of ideas */
 .ideas-grid {
     --gap: 16px;
     display: flex;
@@ -31,9 +30,9 @@
     min-width: 320px;
     display: flex;
     flex-direction: column;
-    border-radius: 12px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
-    background: #fff;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    background: var(--color-white);
     padding: 12px 16px;
 }
 
@@ -66,7 +65,7 @@
     white-space: pre-wrap;
 }
 
-
+/* Toggleable text behavior */
 .idea-card__toggle-input,
 .idea-card__text--full,
 .idea-card__toggle-less {
@@ -76,15 +75,15 @@
 .idea-card__text--clamped {
     max-height: 5em;
     overflow: hidden;
+    /* Keep fade mask for clamped text */
     mask-image: linear-gradient(180deg, #000 80%, transparent);
 }
-
 
 .idea-card__toggle {
     cursor: pointer;
     color: var(--color-slate-500);
     text-decoration: underline;
-    display: inline-block;
+    display: block; /* block simplifies full-width + center */
     margin-top: var(--space-2);
     text-align: center;
     width: 100%;
@@ -93,7 +92,6 @@
 .idea-card__toggle-more::after {
     content: ' \2193';
 }
-
 
 .idea-card__toggle-less::after {
     content: ' \2191';
@@ -132,8 +130,12 @@
     display: block;
 }
 
+/* Unify avatar shapes across views */
 .idea-card__avatar,
-.idea-card__voter {
+.idea-card__voter,
+.leaderboard-table .table-avatar,
+.leader-card .avatar,
+.avatar {
     border-radius: 50%;
     object-fit: cover;
 }
@@ -147,7 +149,7 @@
     width: 40px;
     height: 40px;
     margin-left: -14px;
-    border: 2px solid #fff;
+    border: 2px solid var(--color-white);
 }
 
 .idea-card__foot {
@@ -163,7 +165,7 @@
     flex-direction: row-reverse;
 }
 
-
+/* Phase-dependent visibility */
 .phase--voting .idea-card__star,
 .phase--voting .idea-card__avatar,
 .phase--voting .idea-card__author,
@@ -188,6 +190,7 @@
     display: block;
 }
 
+/* Quiz layout shared flex rules grouped */
 .quiz-center,
 .quiz-layout,
 .quiz-col {
@@ -276,4 +279,3 @@
     font-size: 32px;
     font-weight: var(--font-weight-medium);
 }
-

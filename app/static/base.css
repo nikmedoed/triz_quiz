@@ -1,15 +1,15 @@
+/* Global reset */
 * {
     box-sizing: border-box;
 }
 
-html,
-body {
+html, body {
     height: 100%;
 }
 
 body {
     margin: 0;
-    background: #ffffff;
+    background: var(--color-white);
     color: var(--color-dark);
     font-family: var(--font-sans);
     font-weight: var(--font-weight-regular);
@@ -18,28 +18,29 @@ body {
     flex-direction: column;
 }
 
-.topbar,
-.bottombar {
+/* Bars take natural height, content flexes */
+.topbar, .bottombar {
     flex: 0 0 auto;
 }
 
+/* Links */
 a {
     color: var(--color-slate-500);
     text-decoration: none;
 }
 
-a:hover,
-a:focus {
+a:hover, a:focus {
     color: var(--color-primary-500);
     text-decoration: underline;
 }
 
+/* Main layout areas */
 .main {
     flex: 1;
     display: flex;
     flex-direction: column;
     padding: 0 var(--space-4);
-    min-height: 0;
+    min-height: 0; /* allow children with overflow */
 }
 
 .content {
@@ -52,6 +53,7 @@ a:focus {
     min-height: 0;
 }
 
+/* Page-specific content tweaks */
 .content.leaderboard-page {
     display: block;
     flex: 1 1 auto;
@@ -68,4 +70,24 @@ a:focus {
     justify-content: center;
     text-align: center;
     overflow: auto;
+}
+
+/* Global typography (moved from leaderboard.css) */
+h1 {
+    font-size: 32px;
+    margin-bottom: var(--space-4);
+    font-weight: var(--font-weight-black);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    text-align: center;
+}
+
+h2 {
+    font-size: 24px;
+    font-weight: var(--font-weight-medium);
+    margin: var(--space-4) 0;
+}
+
+ol {
+    margin-left: var(--space-4);
 }
