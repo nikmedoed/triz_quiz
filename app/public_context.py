@@ -127,7 +127,7 @@ async def open_context(
                 )
             ).scalars().all()
             voters_map[idea.id] = rows
-        ideas.sort(key=lambda i: len(voters_map.get(i.id, [])), reverse=True)
+        # Keep original submission order so numbering matches bot options
         ctx.update(voters_map=voters_map, ideas=ideas)
 
 
