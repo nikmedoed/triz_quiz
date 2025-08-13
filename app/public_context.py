@@ -203,12 +203,18 @@ async def quiz_context(
                 names_map[str(u.id)] = u.name
         total = sum(counts)
         percents = [round((c / total) * 100) if total else 0 for c in counts]
+        correct_votes = (
+            counts[step.correct_index] if 0 <= step.correct_index < len(counts) else 0
+        )
         ctx.update(
             counts=counts,
             percents=percents,
             correct=step.correct_index,
             avatars_map=avatars_map,
             names_map=names_map,
+            instruction=texts.MCQ_RESULTS_INSTRUCTION.format(
+                correct=correct_votes, total=total
+            ),
             content_class="mcq-results",
         )
 
@@ -259,6 +265,7 @@ async def multi_context(
         counts: list[int] = []
         avatars_map: list[list[str]] = []
         names_map: dict[str, str] = {}
+        participant_ids = {ans.user_id for ans in answers}
         for opt in options:
             users = [
                 ans.user_id
@@ -267,27 +274,41 @@ async def multi_context(
             ]
             counts.append(len(users))
             avatars_map.append(users)
-        total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
         ids = [uid for sub in avatars_map for uid in sub]
         if ids:
             for u in (
                     await session.execute(select(User).where(User.id.in_(ids)))
             ).scalars().all():
                 names_map[str(u.id)] = u.name
-        percents = [
-            round((c / total_users) * 100) if total_users else 0 for c in counts
-        ]
+        total = len(participant_ids)
+        percents = [round((c / total) * 100) if total else 0 for c in counts]
         correct = [
             int(x)
             for x in (step.correct_multi or "").split(",")
             if x.strip().isdigit()
         ]
+        correct_set = set(correct)
+        full_correct = 0
+        partial_correct = 0
+        for ans in answers:
+            if not ans.choice_idxs:
+                continue
+            chosen = {int(x) for x in ans.choice_idxs.split(",") if x.strip().isdigit()}
+            if not chosen:
+                continue
+            if chosen == correct_set:
+                full_correct += 1
+            elif chosen & correct_set:
+                partial_correct += 1
         ctx.update(
             counts=counts,
             percents=percents,
             correct=correct,
             avatars_map=avatars_map,
             names_map=names_map,
+            instruction=texts.MULTI_RESULTS_INSTRUCTION.format(
+                partial=partial_correct, full=full_correct, total=total
+            ),
             content_class="mcq-results",
         )
 

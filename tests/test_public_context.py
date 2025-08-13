@@ -7,7 +7,17 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from app.models import Base, Step, GlobalState, User, Idea, IdeaVote
+from app.models import (
+    Base,
+    Step,
+    GlobalState,
+    User,
+    Idea,
+    IdeaVote,
+    StepOption,
+    MultiAnswer,
+)
+from app import texts
 from app.web import build_public_context
 
 
@@ -50,6 +60,47 @@ def test_idea_delay_uses_step_start():
             ctx = await build_public_context(session, step, gs)
             delays = [idea.delay_text for idea in ctx["ideas"]]
             assert delays == ["5 с", "12 с"]
+
+    asyncio.run(run())
+
+
+def test_multi_results_instruction_and_percent():
+    async def run():
+        engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        async with AsyncSessionLocal() as session:
+            step = Step(order_index=1, type="multi", title="Q", correct_multi="0,2")
+            session.add(step)
+            await session.flush()
+            options = [
+                StepOption(step_id=step.id, idx=0, text="A"),
+                StepOption(step_id=step.id, idx=1, text="B"),
+                StepOption(step_id=step.id, idx=2, text="C"),
+            ]
+            session.add_all(options)
+            u1 = User(id="u1", name="U1")
+            u2 = User(id="u2", name="U2")
+            session.add_all([u1, u2])
+            await session.flush()
+            session.add(MultiAnswer(step_id=step.id, user_id="u1", choice_idxs="0,2"))
+            session.add(MultiAnswer(step_id=step.id, user_id="u2", choice_idxs="0"))
+            await session.flush()
+            gs = GlobalState(
+                id=1,
+                current_step_id=step.id,
+                step_started_at=datetime.utcnow(),
+                phase_started_at=datetime.utcnow(),
+                phase=1,
+            )
+            session.add(gs)
+            await session.commit()
+            ctx = await build_public_context(session, step, gs)
+            assert ctx["percents"] == [100, 0, 50]
+            assert ctx["instruction"] == texts.MULTI_RESULTS_INSTRUCTION.format(
+                partial=1, full=1, total=2
+            )
 
     asyncio.run(run())
 

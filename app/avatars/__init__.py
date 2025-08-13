@@ -13,6 +13,8 @@ from app.settings import settings
 
 AVATAR_SIZE = 640
 
+from rlottie_python import LottieAnimation  # type: ignore
+
 from .utils import _resize_fit_rgba  # noqa: E402
 from .emoji import _emoji_avatar, _render_emoji_from_font  # noqa: E402
 from .sticker import _sticker_avatar, _render_tgs_high_quality  # noqa: E402

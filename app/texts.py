@@ -65,6 +65,12 @@ NO_ANSWER = "Вы не ответили.\n\n"
 CORRECT_PREFIX = "Верно! Вы получили {points} балл(ов).\n\n"
 WRONG_ANSWER = "Вы ответили неверно.\n\n"
 
+MCQ_RESULTS_INSTRUCTION = "Правильно проголосовали {correct} / {total}"
+
+MULTI_RESULTS_INSTRUCTION = (
+    "Ответили {total}, верно {full}, частично верно {partial}"
+)
+
 # Sequence prompts
 SEQUENCE_HEADER = "Выберите варианты в правильном порядке"
 SEQUENCE_INSTR = (
