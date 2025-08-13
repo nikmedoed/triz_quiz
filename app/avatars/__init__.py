@@ -11,6 +11,11 @@ from aiogram import Bot
 from app.models import User
 from app.settings import settings
 
+try:  # optional dependency for .tgs rendering
+    from rlottie_python import LottieAnimation  # type: ignore
+except Exception:  # pragma: no cover
+    LottieAnimation = None  # type: ignore
+
 AVATAR_SIZE = 640
 
 from .utils import _resize_fit_rgba  # noqa: E402

@@ -29,7 +29,7 @@ window.renderMcq = function () {
         const lines = [];
         let current = words.shift();
         words.forEach(w => {
-            if ((current + ' ' + w).length > 20) {
+            if ((current + ' ' + w).length > 15) {
                 lines.push(current);
                 current = w;
             } else {
@@ -64,6 +64,8 @@ window.renderMcq = function () {
                 x: {
                     ticks: {
                         color: ctx => ctx.index === data.correct ? primary : neutral,
+                        font: {size: 16, lineHeight: 1.2},
+                        maxRotation: 0,
                     }
                 },
                 y: {
@@ -123,7 +125,7 @@ window.renderMulti = function () {
         const lines = [];
         let current = words.shift();
         words.forEach(w => {
-            if ((current + ' ' + w).length > 20) {
+            if ((current + ' ' + w).length > 15) {
                 lines.push(current);
                 current = w;
             } else {
@@ -159,6 +161,8 @@ window.renderMulti = function () {
                 x: {
                     ticks: {
                         color: ctx => correctSet.has(ctx.index) ? primary : neutral,
+                        font: {size: 16, lineHeight: 1.2},
+                        maxRotation: 0,
                     }
                 },
                 y: {
