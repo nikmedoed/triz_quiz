@@ -63,21 +63,16 @@ def _render_tgs_high_quality(tgs_bytes: bytes, target_max: int, oversample: int 
         return _resize_fit_rgba(img, target_max, allow_upscale=False)
     except Exception:
         pass
-    try:
-        from . import LottieAnimation
-        if LottieAnimation is None:
-            raise ImportError("LottieAnimation unavailable")
-        data = tgs_bytes.decode("utf-8")
-        with LottieAnimation.from_data(data) as anim:
-            w, h = anim.lottie_animation_get_size()
-            total_frames = getattr(anim, "lottie_animation_get_totalframe", lambda: 1)() or 1
-            f = _pick_nice_frame_index(total_frames)
-            scale = (target_max * oversample) / max(w, h)
-            W, H = max(1, int(w * scale)), max(1, int(h * scale))
-            img = _render_pillow_frame_scaled(anim, f, W, H)
-            return _resize_fit_rgba(img, target_max, allow_upscale=False)
-    except Exception:
-        return None
+    from . import LottieAnimation
+    data = tgs_bytes.decode("utf-8")
+    with LottieAnimation.from_data(data) as anim:
+        w, h = anim.lottie_animation_get_size()
+        total_frames = getattr(anim, "lottie_animation_get_totalframe", lambda: 1)() or 1
+        f = _pick_nice_frame_index(total_frames)
+        scale = (target_max * oversample) / max(w, h)
+        W, H = max(1, int(w * scale)), max(1, int(h * scale))
+        img = _render_pillow_frame_scaled(anim, f, W, H)
+        return _resize_fit_rgba(img, target_max, allow_upscale=False)
 
 
 def _extract_webm_frame_rgba(webm_bytes: bytes, sec: float = 0.5) -> Image.Image | None:

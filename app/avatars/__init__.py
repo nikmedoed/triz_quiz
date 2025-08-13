@@ -14,7 +14,14 @@ from app.settings import settings
 try:  # optional dependency for .tgs rendering
     from rlottie_python import LottieAnimation  # type: ignore
 except Exception:  # pragma: no cover
-    LottieAnimation = None  # type: ignore
+    class LottieAnimation:  # type: ignore
+        """Placeholder raising an explicit error when rlottie is missing."""
+
+        @classmethod
+        def from_data(cls, _data: str):  # pragma: no cover
+            raise ImportError(
+                "rlottie_python is required for .tgs sticker support"
+            )
 
 AVATAR_SIZE = 640
 
