@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="TaskPaneApp">
+  <Id>8f1f3e9b-0000-0000-0000-000000000001</Id>
+  <Version>0.1.0.0</Version>
+  <ProviderName>TRIZ Quiz</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="TRIZ Quiz"/>
+  <Description DefaultValue="Display live quiz questions inside PowerPoint."/>
+  <IconUrl DefaultValue="https://localhost:3000/icon.png"/>
+  <SupportUrl DefaultValue="https://example.com/support"/>
+  <Hosts>
+    <Host Name="Presentation"/>
+  </Hosts>
+  <Requirements>
+    <Sets DefaultMinVersion="1.1">
+      <Set Name="File"/>
+    </Sets>
+  </Requirements>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://localhost:3000/taskpane.html"/>
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+</OfficeApp>
