@@ -288,21 +288,26 @@ async def multi_context(
             if x.strip().isdigit()
         ]
         correct_set = set(correct)
-        correct_votes = 0
+        full_correct = 0
+        partial_correct = 0
         for ans in answers:
             if not ans.choice_idxs:
                 continue
             chosen = {int(x) for x in ans.choice_idxs.split(",") if x.strip().isdigit()}
+            if not chosen:
+                continue
             if chosen == correct_set:
-                correct_votes += 1
+                full_correct += 1
+            elif chosen & correct_set:
+                partial_correct += 1
         ctx.update(
             counts=counts,
             percents=percents,
             correct=correct,
             avatars_map=avatars_map,
             names_map=names_map,
-            instruction=texts.MCQ_RESULTS_INSTRUCTION.format(
-                correct=correct_votes, total=total
+            instruction=texts.MULTI_RESULTS_INSTRUCTION.format(
+                partial=partial_correct, full=full_correct, total=total
             ),
             content_class="mcq-results",
         )

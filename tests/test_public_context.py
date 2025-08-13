@@ -98,8 +98,8 @@ def test_multi_results_instruction_and_percent():
             await session.commit()
             ctx = await build_public_context(session, step, gs)
             assert ctx["percents"] == [100, 0, 50]
-            assert ctx["instruction"] == texts.MCQ_RESULTS_INSTRUCTION.format(
-                correct=1, total=2
+            assert ctx["instruction"] == texts.MULTI_RESULTS_INSTRUCTION.format(
+                partial=1, full=1, total=2
             )
 
     asyncio.run(run())
