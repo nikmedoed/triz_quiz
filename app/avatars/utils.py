@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageMath, ImageStat
 
 if TYPE_CHECKING:  # pragma: no cover
-    from pathlib import Path
+    pass
 
 
 def _gradient(size: int) -> Image.Image:

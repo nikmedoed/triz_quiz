@@ -9,13 +9,12 @@ from aiogram.types import CallbackQuery
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.hub import hub
 import app.texts as texts
 from app.db import AsyncSessionLocal
+from app.hub import hub
 from app.models import Step, GlobalState, McqAnswer, StepOption, User
 from app.public_context import quiz_context
 from app.scoring import add_mcq_points
-
 from . import StepType, register
 
 
@@ -29,7 +28,7 @@ async def quiz_on_enter(session: AsyncSession, step: Step, phase: int) -> None:
 
 
 async def quiz_load_item(
-    session: AsyncSession, add_step, item: Dict[str, Any]
+        session: AsyncSession, add_step, item: Dict[str, Any]
 ) -> None:
     time_val = item.get("time")
     timer_ms = None
@@ -56,7 +55,7 @@ async def quiz_load_item(
 
 
 async def quiz_bot_prompts(
-    user: User, step: Step, phase: int
+        user: User, step: Step, phase: int
 ) -> list[tuple[str, dict]]:
     from app.bot.keyboards import mcq_kb
 
@@ -109,13 +108,13 @@ async def quiz_bot_prompts(
 
 
 async def quiz_on_callback(
-    cb: CallbackQuery,
-    bot: Bot,
-    session: AsyncSession,
-    user: User,
-    state: GlobalState,
-    step: Step,
-    payload: str,
+        cb: CallbackQuery,
+        bot: Bot,
+        session: AsyncSession,
+        user: User,
+        state: GlobalState,
+        step: Step,
+        payload: str,
 ) -> None:
     from app.bot.keyboards import mcq_kb
     if state.phase != 0:

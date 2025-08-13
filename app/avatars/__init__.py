@@ -7,7 +7,6 @@ from pathlib import Path
 
 from PIL import Image
 from aiogram import Bot
-from rlottie_python import LottieAnimation
 
 from app.models import User
 from app.settings import settings
@@ -38,4 +37,3 @@ async def save_avatar(bot: Bot, user: User) -> bool:
         background.save(path / f"{user.id}.png")
         return True
     return False
-

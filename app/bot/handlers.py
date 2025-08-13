@@ -11,10 +11,8 @@ from app.avatars import _emoji_avatar, _sticker_avatar, save_avatar
 from app.hub import hub
 from app.settings import settings
 from app.step_types import STEP_TYPES
-
 from .context import get_ctx
 from .prompts import send_prompt
-
 
 router = Router()
 

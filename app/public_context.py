@@ -1,10 +1,10 @@
 """Build context for public screens depending on current step."""
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any, Dict
 import json
 import random
+from datetime import datetime
+from typing import Any, Dict
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,7 +30,6 @@ def humanize_seconds(sec: int) -> str:
     return f"{m} мин {s} с" if m else f"{s} с"
 
 
-
 def format_mmss(ms: int) -> str:
     """Format milliseconds as MM:SS string."""
     m, s = divmod(ms // 1000, 60)
@@ -38,7 +37,7 @@ def format_mmss(ms: int) -> str:
 
 
 async def registration_context(
-    session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
+        session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
 ) -> None:
     users = (
         await session.execute(
@@ -49,7 +48,7 @@ async def registration_context(
 
 
 async def open_context(
-    session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
+        session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
 ) -> None:
     rows = (
         await session.execute(
@@ -145,7 +144,7 @@ async def open_context(
 
 
 async def quiz_context(
-    session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
+        session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
 ) -> None:
     options = (
         await session.execute(
@@ -176,7 +175,7 @@ async def quiz_context(
             status_current=int(answers_count or 0),
             status_total=int(total_users or 0),
             status_last=last_answer_ago_s if last_answer_ago_s is not None else "-",
-            instruction="Участники выбирают вариант в боте.",
+            instruction="Выберите один верный в боте",
             timer_id="quizTimer",
             timer_text=format_mmss(duration_ms),
             timer_ms=duration_ms,
@@ -215,7 +214,7 @@ async def quiz_context(
 
 
 async def multi_context(
-    session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
+        session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
 ) -> None:
     options = (
         await session.execute(
@@ -246,7 +245,7 @@ async def multi_context(
             status_current=int(answers_count or 0),
             status_total=int(total_users or 0),
             status_last=last_answer_ago_s if last_answer_ago_s is not None else "-",
-            instruction="Участники выбирают варианты в боте",
+            instruction="Выберите все верные варианты в боте",
             timer_id="quizTimer",
             timer_text=format_mmss(duration_ms),
             timer_ms=duration_ms,
@@ -272,7 +271,7 @@ async def multi_context(
         ids = [uid for sub in avatars_map for uid in sub]
         if ids:
             for u in (
-                await session.execute(select(User).where(User.id.in_(ids)))
+                    await session.execute(select(User).where(User.id.in_(ids)))
             ).scalars().all():
                 names_map[str(u.id)] = u.name
         percents = [
@@ -294,7 +293,7 @@ async def multi_context(
 
 
 async def sequence_context(
-    session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
+        session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
 ) -> None:
     options = (
         await session.execute(
@@ -310,9 +309,9 @@ async def sequence_context(
         ctx.update(options=options)
     ctx.update(
         stage_title=
-            texts.TITLE_SEQUENCE
-            if gs.phase == 0
-            else f"{texts.TITLE_SEQUENCE} — результаты",
+        texts.TITLE_SEQUENCE
+        if gs.phase == 0
+        else f"{texts.TITLE_SEQUENCE} — результаты",
     )
     if gs.phase == 0:
         total_users = await session.scalar(
@@ -380,7 +379,7 @@ async def sequence_context(
 
 
 async def leaderboard_context(
-    session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
+        session: AsyncSession, step: Step, gs: GlobalState, ctx: Dict[str, Any]
 ) -> None:
     users = await get_leaderboard_users(session)
     ctx.update(
@@ -393,7 +392,7 @@ async def leaderboard_context(
 
 
 async def build_public_context(
-    session: AsyncSession, step: Step, gs: GlobalState
+        session: AsyncSession, step: Step, gs: GlobalState
 ) -> Dict[str, Any]:
     """Build context for the public screen based on step type and phase."""
     ctx: Dict[str, Any] = {

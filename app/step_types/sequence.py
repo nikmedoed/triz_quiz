@@ -11,13 +11,12 @@ from aiogram.types import CallbackQuery
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.hub import hub
 import app.texts as texts
 from app.db import AsyncSessionLocal
+from app.hub import hub
 from app.models import Step, GlobalState, SequenceAnswer, StepOption, User
 from app.public_context import sequence_context
 from app.scoring import add_sequence_points
-
 from . import StepType, register
 
 
@@ -31,7 +30,7 @@ async def sequence_on_enter(session: AsyncSession, step: Step, phase: int) -> No
 
 
 async def sequence_load_item(
-    session: AsyncSession, add_step, item: Dict[str, Any]
+        session: AsyncSession, add_step, item: Dict[str, Any]
 ) -> None:
     time_val = item.get("time")
     timer_ms = None
@@ -59,7 +58,7 @@ async def sequence_load_item(
 
 
 async def sequence_bot_prompts(
-    user: User, step: Step, phase: int
+        user: User, step: Step, phase: int
 ) -> list[tuple[str, dict]]:
     from app.bot.keyboards import sequence_kb
 
@@ -125,8 +124,8 @@ async def sequence_bot_prompts(
             elif order == correct_order:
                 points = step.points_correct or 0
                 text = (
-                    texts.CORRECT_PREFIX.format(points=points)
-                    + texts.RESPONSES_CLOSED
+                        texts.CORRECT_PREFIX.format(points=points)
+                        + texts.RESPONSES_CLOSED
                 )
             else:
                 text = texts.WRONG_SEQUENCE + texts.RESPONSES_CLOSED
@@ -135,13 +134,13 @@ async def sequence_bot_prompts(
 
 
 async def sequence_on_callback(
-    cb: CallbackQuery,
-    bot: Bot,
-    session: AsyncSession,
-    user: User,
-    state: GlobalState,
-    step: Step,
-    payload: str,
+        cb: CallbackQuery,
+        bot: Bot,
+        session: AsyncSession,
+        user: User,
+        state: GlobalState,
+        step: Step,
+        payload: str,
 ) -> None:
     from app.bot.keyboards import sequence_kb
 

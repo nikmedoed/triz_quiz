@@ -1,13 +1,13 @@
 import asyncio
 from datetime import datetime
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select
 
 from app.models import Base, Step, GlobalState
-from app.web import build_public_context
 from app.scenario_loader import load_if_empty
+from app.web import build_public_context
 
 
 def test_sequence_default_timer():
@@ -27,6 +27,7 @@ def test_sequence_default_timer():
             ctx = await build_public_context(session, step, gs)
             assert ctx["timer_ms"] == 120 * 1000
             assert ctx["timer_text"] == "02:00"
+
     asyncio.run(run())
 
 
@@ -47,6 +48,7 @@ def test_sequence_custom_timer():
             ctx = await build_public_context(session, step, gs)
             assert ctx["timer_ms"] == 30 * 1000
             assert ctx["timer_text"] == "00:30"
+
     asyncio.run(run())
 
 
@@ -62,6 +64,7 @@ def test_sequence_loader_time_param(tmp_path):
             await load_if_empty(session, str(scenario_path))
             seq_step = await session.scalar(select(Step).where(Step.type == "sequence"))
             assert seq_step.timer_ms == 45 * 1000
+
     asyncio.run(run())
 
 
@@ -77,4 +80,5 @@ def test_sequence_loader_default_points(tmp_path):
             await load_if_empty(session, str(scenario_path))
             seq_step = await session.scalar(select(Step).where(Step.type == "sequence"))
             assert seq_step.points_correct == 3
+
     asyncio.run(run())

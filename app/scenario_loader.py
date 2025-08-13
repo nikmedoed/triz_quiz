@@ -1,8 +1,8 @@
 # Load scenario (JSON or YAML list). Auto-prepend registration and append leaderboard.
 import json
 import os
-import yaml
 
+import yaml
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,14 +39,14 @@ async def load_if_empty(session: AsyncSession, path: str) -> None:
     order = 0
 
     def add_step(
-        _type: str,
-        title: str = "",
-        text: str | None = None,
-        options: list[str] | None = None,
-        correct_index: int | None = None,
-        correct_multi: str | None = None,
-        points: int | None = None,
-        timer_ms: int | None = None,
+            _type: str,
+            title: str = "",
+            text: str | None = None,
+            options: list[str] | None = None,
+            correct_index: int | None = None,
+            correct_multi: str | None = None,
+            points: int | None = None,
+            timer_ms: int | None = None,
     ):
         nonlocal order
         s = Step(

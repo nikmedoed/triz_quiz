@@ -8,7 +8,6 @@ from app.db import AsyncSessionLocal
 from app.models import Step, User
 from app.public_context import leaderboard_context
 from app.scoring import get_leaderboard_users
-
 from . import StepType, register
 
 
@@ -17,7 +16,7 @@ async def leaderboard_phases(session: AsyncSession, step: Step) -> int:
 
 
 async def leaderboard_bot_prompts(
-    user: User, step: Step, phase: int
+        user: User, step: Step, phase: int
 ) -> list[tuple[str, dict]]:
     async with AsyncSessionLocal() as s:
         users = await get_leaderboard_users(s)

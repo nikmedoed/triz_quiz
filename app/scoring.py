@@ -1,10 +1,10 @@
 # Scoring helpers
+import json
+
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import json
-
-from app.models import User, Step, Idea, IdeaVote, McqAnswer, SequenceAnswer, StepOption
+from app.models import SequenceAnswer, StepOption
 from app.models import User, Step, Idea, IdeaVote, McqAnswer, MultiAnswer
 
 

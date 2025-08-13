@@ -83,8 +83,10 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
 
 * `open`: free-form idea collection with built-in vote & reveal.
 * `quiz`: MCQ with built-in reveal. Optional `time` (seconds) overrides the default 60-second timer.
-* `sequence`: order options in a correct sequence. Optional `time` overrides the default 120-second timer. Optional `points` override the default value of 3.
-* `multi`: multiple choice with several correct options. Scores are split evenly between correct answers; selecting any wrong option yields zero points.
+* `sequence`: order options in a correct sequence. Optional `time` overrides the default 120-second timer. Optional
+  `points` override the default value of 3.
+* `multi`: multiple choice with several correct options. Scores are split evenly between correct answers; selecting any
+  wrong option yields zero points.
 
 **Example (your sample, with vote steps tolerated but folded into the `open` block):**
 
@@ -148,7 +150,8 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
 
 ## Styling tokens
 
-Design tokens and component styles live in `app/static` as `tokens.css`, `base.css`, `leaderboard.css`, `ideas.css` and `components.css`.
+Design tokens and component styles live in `app/static` as `tokens.css`, `base.css`, `leaderboard.css`, `ideas.css` and
+`components.css`.
 
 ### Tokens
 

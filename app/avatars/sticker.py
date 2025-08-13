@@ -12,7 +12,6 @@ from aiogram.types import Sticker
 
 from app.models import User
 from app.settings import settings
-
 from . import AVATAR_SIZE
 from .utils import _gradient, _resize_fit_rgba, _auto_crop, _post_sharpen
 
@@ -160,4 +159,3 @@ async def _sticker_avatar(bot: Bot, user: User, sticker: Sticker, target_size: i
     y = (size - img.height) // 2
     background.alpha_composite(img, dest=(x, y))
     background.save(path / f"{user.id}.png")
-

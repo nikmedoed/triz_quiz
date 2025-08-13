@@ -7,8 +7,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Idea, IdeaVote, Step, User
 import app.texts as texts
+from app.models import Idea, IdeaVote, Step, User
 
 
 def mcq_kb(options: List[str], selected: Optional[int]) -> InlineKeyboardMarkup:
@@ -49,7 +49,7 @@ def multi_kb(options: List[str], selected: Set[int]) -> InlineKeyboardMarkup:
 
 
 async def idea_vote_kb(
-    session: AsyncSession, open_step: Step, voter: User
+        session: AsyncSession, open_step: Step, voter: User
 ) -> InlineKeyboardMarkup | None:
     ideas = (
         await session.execute(

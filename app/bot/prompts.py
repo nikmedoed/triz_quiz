@@ -14,7 +14,7 @@ async def build_prompt_messages(user: User, step: Step, phase: int):
 
 
 async def send_prompt(
-    bot: Bot, user: User, step: Step, phase: int, prefix: str | None = None
+        bot: Bot, user: User, step: Step, phase: int, prefix: str | None = None
 ):
     handler = STEP_TYPES.get(step.type)
     if handler and handler.on_prompt_pre:

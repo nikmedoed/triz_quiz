@@ -13,8 +13,8 @@ from app.models import (
     Step,
     User,
 )
-from app.step_types import STEP_TYPES
 from app.settings import settings
+from app.step_types import STEP_TYPES
 
 
 async def notify_all(session: AsyncSession) -> None:
@@ -69,7 +69,7 @@ async def advance(session: AsyncSession, forward: bool) -> None:
 
 
 async def move_to_block(
-    session: AsyncSession, target_order_index: int, to_last_phase: bool = False
+        session: AsyncSession, target_order_index: int, to_last_phase: bool = False
 ) -> None:
     """Switch global state to another block and optionally jump to its last phase."""
     target = await session.scalar(select(Step).where(Step.order_index == target_order_index))

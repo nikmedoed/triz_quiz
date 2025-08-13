@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import app.texts as texts
 from app.models import Step, User
 from app.public_context import registration_context
-
 from . import StepType, register
 
 

@@ -16,7 +16,6 @@ from app.hub import hub
 from app.models import Step, GlobalState, Idea, IdeaVote, User
 from app.public_context import open_context
 from app.scoring import add_vote_points
-
 from . import StepType, register
 
 
@@ -33,7 +32,7 @@ async def open_on_enter(session: AsyncSession, step: Step, phase: int) -> None:
 
 
 async def open_load_item(
-    session: AsyncSession, add_step, item: Dict[str, Any]
+        session: AsyncSession, add_step, item: Dict[str, Any]
 ) -> None:
     add_step(
         "open",
@@ -43,7 +42,7 @@ async def open_load_item(
 
 
 async def open_bot_prompts(
-    user: User, step: Step, phase: int
+        user: User, step: Step, phase: int
 ) -> list[tuple[str, dict]]:
     from app.bot.keyboards import idea_vote_kb
 
@@ -79,12 +78,12 @@ async def open_bot_prompts(
 
 
 async def open_on_text(
-    message: Message,
-    bot: Bot,
-    session: AsyncSession,
-    user: User,
-    state: GlobalState,
-    step: Step,
+        message: Message,
+        bot: Bot,
+        session: AsyncSession,
+        user: User,
+        state: GlobalState,
+        step: Step,
 ) -> bool:
     if state.phase != 0:
         return False
@@ -138,13 +137,13 @@ async def open_on_text(
 
 
 async def open_on_callback(
-    cb: CallbackQuery,
-    bot: Bot,
-    session: AsyncSession,
-    user: User,
-    state: GlobalState,
-    step: Step,
-    payload: str,
+        cb: CallbackQuery,
+        bot: Bot,
+        session: AsyncSession,
+        user: User,
+        state: GlobalState,
+        step: Step,
+        payload: str,
 ) -> None:
     from app.bot.keyboards import idea_vote_kb
     if state.phase != 1:
@@ -202,7 +201,7 @@ async def open_prompt_pre(bot: Bot, user: User, step: Step, phase: int) -> None:
 
 
 async def open_prompt_post(
-    bot: Bot, user: User, step: Step, phase: int, msg: Message
+        bot: Bot, user: User, step: Step, phase: int, msg: Message
 ) -> None:
     if phase == 1 and msg.reply_markup:
         async with AsyncSessionLocal() as s:

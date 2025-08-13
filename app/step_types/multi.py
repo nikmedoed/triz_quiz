@@ -9,13 +9,12 @@ from aiogram.types import CallbackQuery
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.hub import hub
 import app.texts as texts
 from app.db import AsyncSessionLocal
+from app.hub import hub
 from app.models import Step, GlobalState, MultiAnswer, StepOption, User
 from app.public_context import multi_context
 from app.scoring import add_multi_points
-
 from . import StepType, register
 
 
@@ -29,7 +28,7 @@ async def multi_on_enter(session: AsyncSession, step: Step, phase: int) -> None:
 
 
 async def multi_load_item(
-    session: AsyncSession, add_step, item: Dict[str, Any]
+        session: AsyncSession, add_step, item: Dict[str, Any]
 ) -> None:
     time_val = item.get("time")
     timer_ms = None
@@ -62,7 +61,7 @@ async def multi_load_item(
 
 
 async def multi_bot_prompts(
-    user: User, step: Step, phase: int
+        user: User, step: Step, phase: int
 ) -> list[tuple[str, dict]]:
     from app.bot.keyboards import multi_kb
 
@@ -127,13 +126,13 @@ async def multi_bot_prompts(
 
 
 async def multi_on_callback(
-    cb: CallbackQuery,
-    bot: Bot,
-    session: AsyncSession,
-    user: User,
-    state: GlobalState,
-    step: Step,
-    payload: str,
+        cb: CallbackQuery,
+        bot: Bot,
+        session: AsyncSession,
+        user: User,
+        state: GlobalState,
+        step: Step,
+        payload: str,
 ) -> None:
     from app.bot.keyboards import multi_kb
 

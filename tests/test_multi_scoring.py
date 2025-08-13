@@ -1,4 +1,5 @@
 import asyncio
+
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
@@ -31,4 +32,5 @@ def test_multi_scoring():
             assert u1.total_score == 6
             assert u2.total_score == 3
             assert u3.total_score == 0
+
     asyncio.run(run())

@@ -3,6 +3,7 @@ import json
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+
 from app.models import Base, Step, StepOption, SequenceAnswer, User
 from app.scoring import add_sequence_points
 
@@ -39,4 +40,5 @@ def test_sequence_scoring_requires_full_order():
             await session.refresh(u2)
             assert u1.total_score == 5
             assert u2.total_score == 0
+
     asyncio.run(run())

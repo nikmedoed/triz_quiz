@@ -1,14 +1,13 @@
 import asyncio
 from datetime import datetime
-import pathlib
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select
 
 from app.models import Base, Step, GlobalState
-from app.web import build_public_context
 from app.scenario_loader import load_if_empty
+from app.web import build_public_context
 
 
 def test_quiz_default_timer():
@@ -28,6 +27,7 @@ def test_quiz_default_timer():
             ctx = await build_public_context(session, step, gs)
             assert ctx["timer_ms"] == 60 * 1000
             assert ctx["timer_text"] == "01:00"
+
     asyncio.run(run())
 
 
@@ -48,6 +48,7 @@ def test_quiz_custom_timer():
             ctx = await build_public_context(session, step, gs)
             assert ctx["timer_ms"] == 30 * 1000
             assert ctx["timer_text"] == "00:30"
+
     asyncio.run(run())
 
 
@@ -63,4 +64,5 @@ def test_scenario_loader_time_param(tmp_path):
             await load_if_empty(session, str(scenario_path))
             quiz_step = await session.scalar(select(Step).where(Step.type == "quiz"))
             assert quiz_step.timer_ms == 45 * 1000
+
     asyncio.run(run())
