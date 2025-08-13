@@ -1,3 +1,23 @@
+const MAX_LABEL_LENGTH = 15;
+const LABEL_FONT_SIZE = 16;
+const AVATAR_BOTTOM_GAP = 10;
+
+function wrapLabel(text, maxLen = MAX_LABEL_LENGTH) {
+    const words = text.split(' ');
+    const lines = [];
+    let current = words.shift() || '';
+    words.forEach(w => {
+        if ((current + ' ' + w).length > maxLen) {
+            lines.push(current);
+            current = w;
+        } else {
+            current += ' ' + w;
+        }
+    });
+    lines.push(current);
+    return lines;
+}
+
 window.initTimer = function (id, sinceIso, durationMs) {
     const el = id ? document.getElementById(id) : null;
     if (!el || !sinceIso || !durationMs) return;
@@ -24,21 +44,7 @@ window.renderMcq = function () {
     // Ensure the canvas matches the container dimensions
     ctx.width = container.clientWidth;
     ctx.height = container.clientHeight;
-    const labels = data.labels.map(l => {
-        const words = l.split(' ');
-        const lines = [];
-        let current = words.shift();
-        words.forEach(w => {
-            if ((current + ' ' + w).length > 20) {
-                lines.push(current);
-                current = w;
-            } else {
-                current += ' ' + w;
-            }
-        });
-        lines.push(current);
-        return lines;
-    });
+    const labels = data.labels.map(l => wrapLabel(l));
     const styles = getComputedStyle(document.documentElement);
     const primary = styles.getPropertyValue('--color-primary-500').trim() || '#e5231b';
     const neutral = styles.getPropertyValue('--color-slate-400').trim() || '#8c929c';
@@ -64,6 +70,7 @@ window.renderMcq = function () {
                 x: {
                     ticks: {
                         color: ctx => ctx.index === data.correct ? primary : neutral,
+                        font: {size: LABEL_FONT_SIZE},
                     }
                 },
                 y: {
@@ -97,7 +104,7 @@ window.renderMcq = function () {
             const div = document.createElement('div');
             div.className = 'mcq-avatar-col';
             div.style.left = bar.x + 'px';
-            div.style.bottom = (container.clientHeight - xScale.bottom + avatarOffset) + 'px';
+            div.style.bottom = (container.clientHeight - xScale.bottom + avatarOffset + AVATAR_BOTTOM_GAP) + 'px';
             div.style.width = bar.width + 'px';
             (data.avatars[i] || []).forEach(id => {
                 const img = document.createElement('img');
@@ -118,21 +125,7 @@ window.renderMulti = function () {
     const container = ctx.parentNode;
     ctx.width = container.clientWidth;
     ctx.height = container.clientHeight;
-    const labels = data.labels.map(l => {
-        const words = l.split(' ');
-        const lines = [];
-        let current = words.shift();
-        words.forEach(w => {
-            if ((current + ' ' + w).length > 20) {
-                lines.push(current);
-                current = w;
-            } else {
-                current += ' ' + w;
-            }
-        });
-        lines.push(current);
-        return lines;
-    });
+    const labels = data.labels.map(l => wrapLabel(l));
     const styles = getComputedStyle(document.documentElement);
     const primary = styles.getPropertyValue('--color-primary-500').trim() || '#e5231b';
     const neutral = styles.getPropertyValue('--color-slate-400').trim() || '#8c929c';
@@ -159,6 +152,7 @@ window.renderMulti = function () {
                 x: {
                     ticks: {
                         color: ctx => correctSet.has(ctx.index) ? primary : neutral,
+                        font: {size: LABEL_FONT_SIZE},
                     }
                 },
                 y: {
@@ -192,7 +186,7 @@ window.renderMulti = function () {
             const div = document.createElement('div');
             div.className = 'mcq-avatar-col';
             div.style.left = bar.x + 'px';
-            div.style.bottom = (container.clientHeight - xScale.bottom + avatarOffset) + 'px';
+            div.style.bottom = (container.clientHeight - xScale.bottom + avatarOffset + AVATAR_BOTTOM_GAP) + 'px';
             div.style.width = bar.width + 'px';
             div.style.maxHeight = Math.max(bar.height - avatarOffset, 0) + 'px';
             (data.avatars[i] || []).forEach(id => {
