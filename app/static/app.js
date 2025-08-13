@@ -1,5 +1,6 @@
 const MAX_LABEL_LENGTH = 15;
 const LABEL_FONT_SIZE = 16;
+const AVATAR_BOTTOM_GAP = 5;
 
 function wrapLabel(text, maxLen = MAX_LABEL_LENGTH) {
     const words = text.split(' ');
@@ -103,7 +104,7 @@ window.renderMcq = function () {
             const div = document.createElement('div');
             div.className = 'mcq-avatar-col';
             div.style.left = bar.x + 'px';
-            div.style.bottom = (container.clientHeight - xScale.bottom + avatarOffset) + 'px';
+            div.style.bottom = (container.clientHeight - xScale.bottom + avatarOffset + AVATAR_BOTTOM_GAP) + 'px';
             div.style.width = bar.width + 'px';
             (data.avatars[i] || []).forEach(id => {
                 const img = document.createElement('img');
@@ -185,7 +186,7 @@ window.renderMulti = function () {
             const div = document.createElement('div');
             div.className = 'mcq-avatar-col';
             div.style.left = bar.x + 'px';
-            div.style.bottom = (container.clientHeight - xScale.bottom + avatarOffset) + 'px';
+            div.style.bottom = (container.clientHeight - xScale.bottom + avatarOffset + AVATAR_BOTTOM_GAP) + 'px';
             div.style.width = bar.width + 'px';
             div.style.maxHeight = Math.max(bar.height - avatarOffset, 0) + 'px';
             (data.avatars[i] || []).forEach(id => {
