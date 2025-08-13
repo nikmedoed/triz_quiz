@@ -68,7 +68,7 @@ WRONG_ANSWER = "Вы ответили неверно.\n\n"
 MCQ_RESULTS_INSTRUCTION = "Правильно проголосовали {correct} / {total}"
 
 MULTI_RESULTS_INSTRUCTION = (
-    "Правильно ответили частично {partial}, полностью {full}, всего {total}"
+    "Ответили {total}, верно {full}, частично верно {partial}"
 )
 
 # Sequence prompts
