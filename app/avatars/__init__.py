@@ -13,10 +13,7 @@ from app.settings import settings
 
 AVATAR_SIZE = 640
 
-try:  # pragma: no cover
-    from rlottie_python import LottieAnimation  # type: ignore
-except Exception:  # pragma: no cover
-    LottieAnimation = None  # type: ignore
+from rlottie_python import LottieAnimation  # type: ignore
 
 from .utils import _resize_fit_rgba  # noqa: E402
 from .emoji import _emoji_avatar, _render_emoji_from_font  # noqa: E402
