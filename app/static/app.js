@@ -1,6 +1,6 @@
 const MAX_LABEL_LENGTH = 15;
 const LABEL_FONT_SIZE = 16;
-const AVATAR_BOTTOM_GAP = 5;
+const AVATAR_BOTTOM_GAP = 10;
 
 function wrapLabel(text, maxLen = MAX_LABEL_LENGTH) {
     const words = text.split(' ');
