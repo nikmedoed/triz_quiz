@@ -82,10 +82,12 @@ def test_multi_results_instruction_and_percent():
             session.add_all(options)
             u1 = User(id="u1", name="U1")
             u2 = User(id="u2", name="U2")
-            session.add_all([u1, u2])
+            u3 = User(id="u3", name="U3")
+            session.add_all([u1, u2, u3])
             await session.flush()
             session.add(MultiAnswer(step_id=step.id, user_id="u1", choice_idxs="0,2"))
             session.add(MultiAnswer(step_id=step.id, user_id="u2", choice_idxs="0"))
+            session.add(MultiAnswer(step_id=step.id, user_id="u3", choice_idxs="0,1,2"))
             await session.flush()
             gs = GlobalState(
                 id=1,
@@ -97,9 +99,51 @@ def test_multi_results_instruction_and_percent():
             session.add(gs)
             await session.commit()
             ctx = await build_public_context(session, step, gs)
-            assert ctx["percents"] == [100, 0, 50]
+            assert ctx["percents"] == [100, 33, 67]
             assert ctx["instruction"] == texts.MULTI_RESULTS_INSTRUCTION.format(
-                partial=1, full=1, total=2
+                partial=1, full=1, total=3
+            )
+
+    asyncio.run(run())
+
+
+def test_multi_results_all_wrong_yields_zero_partial():
+    async def run():
+        engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        async with AsyncSessionLocal() as session:
+            step = Step(order_index=1, type="multi", title="Q", correct_multi="0,2")
+            session.add(step)
+            await session.flush()
+            options = [
+                StepOption(step_id=step.id, idx=0, text="A"),
+                StepOption(step_id=step.id, idx=1, text="B"),
+                StepOption(step_id=step.id, idx=2, text="C"),
+            ]
+            session.add_all(options)
+            u1 = User(id="u1", name="U1")
+            u2 = User(id="u2", name="U2")
+            u3 = User(id="u3", name="U3")
+            session.add_all([u1, u2, u3])
+            await session.flush()
+            session.add(MultiAnswer(step_id=step.id, user_id="u1", choice_idxs="1"))
+            session.add(MultiAnswer(step_id=step.id, user_id="u2", choice_idxs="0,1"))
+            session.add(MultiAnswer(step_id=step.id, user_id="u3", choice_idxs="1,2"))
+            await session.flush()
+            gs = GlobalState(
+                id=1,
+                current_step_id=step.id,
+                step_started_at=datetime.utcnow(),
+                phase_started_at=datetime.utcnow(),
+                phase=1,
+            )
+            session.add(gs)
+            await session.commit()
+            ctx = await build_public_context(session, step, gs)
+            assert ctx["instruction"] == texts.MULTI_RESULTS_INSTRUCTION.format(
+                partial=0, full=0, total=3
             )
 
     asyncio.run(run())

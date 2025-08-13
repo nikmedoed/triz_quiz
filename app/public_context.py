@@ -298,7 +298,7 @@ async def multi_context(
                 continue
             if chosen == correct_set:
                 full_correct += 1
-            elif chosen & correct_set:
+            elif chosen.issubset(correct_set):
                 partial_correct += 1
         ctx.update(
             counts=counts,
