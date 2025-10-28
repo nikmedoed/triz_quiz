@@ -22,6 +22,7 @@ from app.models import (
     Idea,
     IdeaVote,
     McqAnswer,
+    MultiAnswer,
     SequenceAnswer,
 )
 from app.public_context import build_public_context
@@ -57,7 +58,17 @@ async def reset_confirm(request: Request, session: AsyncSession = Depends(get_se
 
 @router.post("/api/reset")
 async def api_reset(session: AsyncSession = Depends(get_session), broadcast: bool = True):
-    for model in [IdeaVote, Idea, McqAnswer, SequenceAnswer, User, StepOption, Step, GlobalState]:
+    for model in [
+        IdeaVote,
+        Idea,
+        McqAnswer,
+        MultiAnswer,
+        SequenceAnswer,
+        User,
+        StepOption,
+        Step,
+        GlobalState,
+    ]:
         await session.execute(delete(model))
     await session.commit()
 
