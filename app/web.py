@@ -12,6 +12,7 @@ from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import texts
+from app.rich_text import format_rich_text
 from app.db import get_session
 from app.hub import hub
 from app.models import (
@@ -31,6 +32,7 @@ from app.state import advance
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+templates.env.filters["rich_text"] = format_rich_text
 
 
 @router.get("/", response_class=HTMLResponse)

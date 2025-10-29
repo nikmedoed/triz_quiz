@@ -247,6 +247,14 @@
     text-align: left;
 }
 
+.quiz-description p {
+    margin: 0;
+}
+
+.quiz-description p + p {
+    margin-top: var(--space-3);
+}
+
 .sequence-details > .quiz-options {
     flex: 0 0 auto;
     max-height: none;

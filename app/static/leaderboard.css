@@ -185,6 +185,18 @@
     margin: var(--space-6) auto 0;
 }
 
+.description p {
+    margin: 0;
+}
+
+.description p + p {
+    margin-top: var(--space-3);
+}
+
+.description--multi {
+    text-align: left;
+}
+
 .hint {
     position: absolute;
     bottom: var(--space-8);

@@ -5,9 +5,14 @@
         <div class="quiz-center">
             <h1>{{ step.title }}</h1>
             {% if step.text %}
+                {% set desc = step.text | rich_text %}
                 <div class="quiz-layout">
                     <div class="quiz-col">
-                        <div class="quiz-description">{{ step.text }}</div>
+                        {% if desc.has_text %}
+                            <div class="quiz-description{% if desc.is_multi %} quiz-description--multi{% endif %}">
+                                {{ desc.html }}
+                            </div>
+                        {% endif %}
                     </div>
                     <div class="quiz-col">
                         <ol class="quiz-options">

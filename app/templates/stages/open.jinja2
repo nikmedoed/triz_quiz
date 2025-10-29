@@ -3,7 +3,12 @@
 {% block content %}
     <h1 class="page__problem-title">{{ step.title }}</h1>
     {% if phase == 0 %}
-        <p class="description">{{ step.text }}</p>
+        {% set desc = step.text | rich_text %}
+        {% if desc.has_text %}
+            <div class="description{% if desc.is_multi %} description--multi{% endif %}">
+                {{ desc.html }}
+            </div>
+        {% endif %}
     {% elif phase in [1, 2] and ideas %}
         <div class="ideas-wrap phase--{{ 'voting' if phase == 1 else 'results' }}" id="ideasWrap">
             <div class="ideas-grid">
