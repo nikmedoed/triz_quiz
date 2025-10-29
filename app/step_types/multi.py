@@ -1,6 +1,7 @@
 # Multiple choice step type.
 from __future__ import annotations
 
+import random
 from datetime import datetime
 from typing import Any, Dict
 
@@ -36,26 +37,89 @@ async def multi_load_item(
         timer_ms = int(time_val) * 1000
     elif isinstance(time_val, (int, float)):
         timer_ms = int(time_val) * 1000
-    correct_multi = None
-    correct = item.get("correct")
-    if isinstance(correct, list):
-        indices = []
-        for c in correct:
-            if isinstance(c, str) and c.isdigit():
-                indices.append(str(int(c) - 1))
-            elif isinstance(c, int):
-                indices.append(str(c))
-        correct_multi = ",".join(indices)
+    def _as_str_list(value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(x) for x in value if str(x)]
+        return [str(value)]
+
+    def _is_digit_like(value: Any) -> bool:
+        if isinstance(value, int):
+            return True
+        if isinstance(value, str):
+            return value.isdigit()
+        return False
+
+    correct_multi_indices: list[int] = []
+    options_payload: list[str]
+
+    explicit_correct = _as_str_list(item.get("correct_options"))
+    if not explicit_correct:
+        raw_correct = item.get("correct")
+        if isinstance(raw_correct, list) and any(
+            not _is_digit_like(c) for c in raw_correct
+        ):
+            explicit_correct = [str(c) for c in raw_correct if str(c)]
+
+    if explicit_correct:
+        wrong_sources = (
+            _as_str_list(item.get("incorrect_options"))
+            or _as_str_list(item.get("wrong_options"))
+            or _as_str_list(item.get("other_options"))
+        )
+        fallback_options = _as_str_list(item.get("options"))
+        if not wrong_sources and fallback_options:
+            wrong_sources = [
+                opt for opt in fallback_options if opt not in explicit_correct
+            ]
+        combined: list[tuple[str, bool]] = []
+        seen: set[str] = set()
+        for text in explicit_correct:
+            if text in seen:
+                continue
+            combined.append((text, True))
+            seen.add(text)
+        for text in wrong_sources:
+            if text in seen:
+                continue
+            combined.append((text, False))
+            seen.add(text)
+        for text in fallback_options:
+            if text in seen:
+                continue
+            combined.append((text, False))
+            seen.add(text)
+        if not combined:
+            combined = [(text, True) for text in explicit_correct]
+        rng = random.Random()
+        rng.shuffle(combined)
+        options_payload = [text for text, _ in combined]
+        correct_multi_indices = [
+            idx for idx, (_, is_correct) in enumerate(combined) if is_correct
+        ]
+    else:
+        options_payload = _as_str_list(item.get("options"))
+        raw_correct = item.get("correct")
+        if isinstance(raw_correct, list):
+            for c in raw_correct:
+                if isinstance(c, str) and c.isdigit():
+                    correct_multi_indices.append(int(c) - 1)
+                elif isinstance(c, int):
+                    correct_multi_indices.append(int(c))
+        options_payload = [text for text in options_payload]
+
     s = add_step(
         "multi",
         title=item.get("title", texts.TITLE_MULTI),
         text=item.get("description") or item.get("text"),
         timer_ms=timer_ms,
-        correct_multi=correct_multi,
+        correct_multi=",".join(str(idx) for idx in sorted(set(correct_multi_indices)))
+        if correct_multi_indices
+        else None,
     )
     await session.flush()
-    opts = item.get("options", [])
-    for idx, text in enumerate(opts):
+    for idx, text in enumerate(options_payload):
         session.add(StepOption(step_id=s.id, idx=idx, text=text))
     s.points_correct = item.get("points")
 

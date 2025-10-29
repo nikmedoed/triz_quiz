@@ -30,10 +30,10 @@
 - type: multi
   title: "Какие приёмы применимы?"
   description: "Выберите все верные варианты."
-  options:
+  correct_options:
     - "Растяжение"
-    - "Сжатие"
     - "Локальный нагрев"
+  other_options:
+    - "Сжатие"
     - "Контрбаланс"
-  correct: [ "1", "3" ]
   points: 4

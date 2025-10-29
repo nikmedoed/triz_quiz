@@ -85,8 +85,9 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
 * `quiz`: MCQ with built-in reveal. Optional `time` (seconds) overrides the default 60-second timer.
 * `sequence`: order options in a correct sequence. Optional `time` overrides the default 120-second timer. Optional
   `points` override the default value of 3.
-* `multi`: multiple choice with several correct options. Scores are split evenly between correct answers; selecting any
-  wrong option yields zero points.
+* `multi`: multiple choice with several correct options. Provide `correct_options` and list remaining distractors via
+  `other_options` (or `options`). Choices are shuffled automatically; scores are split evenly between correct answers, and
+  selecting any wrong option yields zero points.
 
 **Example (your sample, with vote steps tolerated but folded into the `open` block):**
 
@@ -120,6 +121,8 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
 > * `vote` and `vote_results` lines are **optional** and ignored by the loader (the `open` block already includes voting
     and reveal). You can keep them for readability.
 > * `quiz.correct` accepts either a **1-based string/number** (e.g., `"3"`) or a **0-based index**.
+> * `multi` blocks accept `correct_options` (list of texts). Provide distractors via `other_options`, `wrong_options`, or
+>   `options`; the loader shuffles everything automatically.
 >
 > See `scenario.example.yaml` for a complete example scenario.
 
