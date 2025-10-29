@@ -89,9 +89,16 @@ window.renderMcq = function () {
     function drawOverlays() {
         container.querySelectorAll('.mcq-avatar-col, .mcq-count').forEach(e => e.remove());
         const meta = chart.getDatasetMeta(0);
-        const xScale = chart.scales.x;
+        if (!chart.chartArea) {
+            return;
+        }
         const minTop = chart.chartArea.top + 15;
-        const avatarOffset = 55;
+        const basePositions = meta.data
+            .map(bar => typeof bar.base === 'number' ? bar.base : chart.chartArea.bottom);
+        const baseline = basePositions.length ? Math.max(...basePositions) : chart.chartArea.bottom;
+        const safeBottom = chart.chartArea.bottom - AVATAR_BOTTOM_GAP;
+        const desiredTop = baseline + AVATAR_BOTTOM_GAP;
+        const avatarMaxHeight = Math.max(safeBottom - chart.chartArea.top, 0);
         meta.data.forEach((bar, i) => {
             const label = document.createElement('div');
             label.className = 'mcq-count';
@@ -104,8 +111,8 @@ window.renderMcq = function () {
             const div = document.createElement('div');
             div.className = 'mcq-avatar-col';
             div.style.left = bar.x + 'px';
-            div.style.bottom = (container.clientHeight - xScale.bottom + avatarOffset + AVATAR_BOTTOM_GAP) + 'px';
             div.style.width = bar.width + 'px';
+            div.style.maxHeight = avatarMaxHeight + 'px';
             (data.avatars[i] || []).forEach(id => {
                 const img = document.createElement('img');
                 img.className = 'avatar small';
@@ -114,6 +121,10 @@ window.renderMcq = function () {
                 div.appendChild(img);
             });
             container.appendChild(div);
+            const actualHeight = div.offsetHeight || 0;
+            const fallbackTop = safeBottom - actualHeight;
+            const finalTop = Math.max(chart.chartArea.top, Math.min(desiredTop, fallbackTop));
+            div.style.top = finalTop + 'px';
         });
     }
 };
@@ -171,9 +182,16 @@ window.renderMulti = function () {
     function drawOverlays() {
         container.querySelectorAll('.mcq-avatar-col, .mcq-count').forEach(e => e.remove());
         const meta = chart.getDatasetMeta(0);
-        const xScale = chart.scales.x;
+        if (!chart.chartArea) {
+            return;
+        }
         const minTop = chart.chartArea.top + 15;
-        const avatarOffset = 55;
+        const basePositions = meta.data
+            .map(bar => typeof bar.base === 'number' ? bar.base : chart.chartArea.bottom);
+        const baseline = basePositions.length ? Math.max(...basePositions) : chart.chartArea.bottom;
+        const safeBottom = chart.chartArea.bottom - AVATAR_BOTTOM_GAP;
+        const desiredTop = baseline + AVATAR_BOTTOM_GAP;
+        const avatarMaxHeight = Math.max(safeBottom - chart.chartArea.top, 0);
         meta.data.forEach((bar, i) => {
             const label = document.createElement('div');
             label.className = 'mcq-count';
@@ -186,9 +204,8 @@ window.renderMulti = function () {
             const div = document.createElement('div');
             div.className = 'mcq-avatar-col';
             div.style.left = bar.x + 'px';
-            div.style.bottom = (container.clientHeight - xScale.bottom + avatarOffset + AVATAR_BOTTOM_GAP) + 'px';
             div.style.width = bar.width + 'px';
-            div.style.maxHeight = Math.max(bar.height - avatarOffset, 0) + 'px';
+            div.style.maxHeight = avatarMaxHeight + 'px';
             (data.avatars[i] || []).forEach(id => {
                 const img = document.createElement('img');
                 img.className = 'avatar small';
@@ -197,6 +214,10 @@ window.renderMulti = function () {
                 div.appendChild(img);
             });
             container.appendChild(div);
+            const actualHeight = div.offsetHeight || 0;
+            const fallbackTop = safeBottom - actualHeight;
+            const finalTop = Math.max(chart.chartArea.top, Math.min(desiredTop, fallbackTop));
+            div.style.top = finalTop + 'px';
         });
     }
 };
