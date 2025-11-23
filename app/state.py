@@ -15,23 +15,32 @@ from app.models import (
 )
 from app.settings import settings
 from app.step_types import STEP_TYPES
+from app.db import AsyncSessionLocal
 
 
-async def notify_all(session: AsyncSession) -> None:
+async def notify_all(session: AsyncSession | None = None) -> None:
     """Send current prompt to all users via Telegram bot."""
     from app.bot import send_prompt
 
-    gs = await session.get(GlobalState, 1)
-    step = await session.get(Step, gs.current_step_id)
-    bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
-    users = (await session.execute(select(User))).scalars().all()
-    for u in users:
-        try:
-            await send_prompt(bot, u, step, gs.phase)
-            await asyncio.sleep(settings.TELEGRAM_SEND_DELAY)
-        except Exception:
-            pass
-    await bot.session.close()
+    async def _send_with(session_obj: AsyncSession) -> None:
+        gs = await session_obj.get(GlobalState, 1)
+        step = await session_obj.get(Step, gs.current_step_id)
+        bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
+        users = (await session_obj.execute(select(User))).scalars().all()
+        for u in users:
+            try:
+                await send_prompt(bot, u, step, gs.phase)
+                await asyncio.sleep(settings.TELEGRAM_SEND_DELAY)
+            except Exception:
+                pass
+        await bot.session.close()
+
+    if session is None:
+        async with AsyncSessionLocal() as new_session:
+            await _send_with(new_session)
+        return
+
+    await _send_with(session)
 
 
 async def advance(session: AsyncSession, forward: bool) -> None:
@@ -41,7 +50,7 @@ async def advance(session: AsyncSession, forward: bool) -> None:
 
     async def commit_and_notify() -> None:
         await session.commit()
-        await notify_all(session)
+        asyncio.create_task(notify_all())
 
     handler = STEP_TYPES.get(step.type)
     total_phases = 1
