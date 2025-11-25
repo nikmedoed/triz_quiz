@@ -63,7 +63,7 @@
             </div>
         </div>
         <script>
-            window.__mcq = {
+            window.__sequence = {
                 labels: ['{{ texts.SEQUENCE_STATS_CORRECT }}', '{{ texts.SEQUENCE_STATS_WRONG }}'],
                 counts: [{% for c in counts %}{{ c }}{% if not loop.last %}, {% endif %}{% endfor %}],
                 percents: [{% for p in percents %}{{ p }}{% if not loop.last %}, {% endif %}{% endfor %}],
@@ -76,7 +76,8 @@
                     {% for id, name in names_map.items() %}'{{ id }}': '{{ name|replace("'", "\\'") }}'{% if not loop.last %}, {% endif %}{% endfor %}
                 }
             };
-            document.addEventListener('DOMContentLoaded', () => window.renderMcq());
+            window.__mcq = window.__sequence;
+            document.addEventListener('DOMContentLoaded', () => window.renderSequence && window.renderSequence());
         </script>
     {% endif %}
 {% endblock %}

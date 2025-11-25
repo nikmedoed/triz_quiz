@@ -35,182 +35,116 @@ window.initTimer = function (id, sinceIso, durationMs) {
     setInterval(tick, 1000);
 };
 
-// Minimal Chart.js render for MCQ reveal (no custom colors per requirements)
-window.renderMcq = function () {
+function renderBarWithAvatars(data, correctSet) {
     const ctx = document.getElementById('mcqChart');
-    if (!ctx || !window.__mcq) return;
-    const data = window.__mcq;
-    const container = ctx.parentNode;
-    // Ensure the canvas matches the container dimensions
-    ctx.width = container.clientWidth;
-    ctx.height = container.clientHeight;
-    const labels = data.labels.map(l => wrapLabel(l));
-    const styles = getComputedStyle(document.documentElement);
-    const primary = styles.getPropertyValue('--color-primary-500').trim() || '#e5231b';
-    const neutral = styles.getPropertyValue('--color-slate-400').trim() || '#8c929c';
-    const colors = labels.map((_, i) => i === data.correct ? primary : neutral);
-    const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{label: 'Votes (%)', data: data.percents, backgroundColor: colors, borderColor: colors}]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {display: false},
-                tooltip: {
-                    callbacks: {
-                        label: ctx => `${data.counts[ctx.dataIndex]} (${data.percents[ctx.dataIndex]}%)`
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    ticks: {
-                        color: ctx => ctx.index === data.correct ? primary : neutral,
-                        font: {size: LABEL_FONT_SIZE},
-                    }
-                },
-                y: {
-                    ticks: {callback: value => value + '%'},
-                    suggestedMax: 100
-                }
-            },
-            animation: {
-                onComplete: () => {
-                    drawOverlays();
-                }
-            }
-        },
-    });
-
-    function drawOverlays() {
-        container.querySelectorAll('.mcq-avatar-col, .mcq-count').forEach(e => e.remove());
-        const meta = chart.getDatasetMeta(0);
-        if (!chart.chartArea) {
-            return;
-        }
-        const minTop = chart.chartArea.top + 15;
-        const basePositions = meta.data
-            .map(bar => typeof bar.base === 'number' ? bar.base : chart.chartArea.bottom);
-        const baseline = basePositions.length ? Math.max(...basePositions) : chart.chartArea.bottom;
-        const safeBottom = chart.chartArea.bottom - AVATAR_BOTTOM_GAP;
-        const desiredTop = baseline + AVATAR_BOTTOM_GAP;
-        const avatarMaxHeight = Math.max(safeBottom - chart.chartArea.top, 0);
-        meta.data.forEach((bar, i) => {
-            const label = document.createElement('div');
-            label.className = 'mcq-count';
-            label.textContent = `${data.counts[i]} (${data.percents[i]}%)`;
-            label.style.left = bar.x + 'px';
-            label.style.top = Math.max(bar.y - 24, minTop) + 'px';
-            label.style.color = i === data.correct ? primary : neutral;
-            container.appendChild(label);
-
-            const div = document.createElement('div');
-            div.className = 'mcq-avatar-col';
-            div.style.left = bar.x + 'px';
-            div.style.width = bar.width + 'px';
-            div.style.maxHeight = avatarMaxHeight + 'px';
-            (data.avatars[i] || []).forEach(id => {
-                const img = document.createElement('img');
-                img.className = 'avatar small';
-                img.src = `/avatars/${id}.png`;
-                if (data.names) img.title = data.names[id] || '';
-                div.appendChild(img);
-            });
-            container.appendChild(div);
-            const actualHeight = div.offsetHeight || 0;
-            const fallbackTop = safeBottom - actualHeight;
-            const finalTop = Math.max(chart.chartArea.top, Math.min(desiredTop, fallbackTop));
-            div.style.top = finalTop + 'px';
-        });
+    if (!ctx || !data || !window.Chart) {
+        setTimeout(() => renderBarWithAvatars(data, correctSet), 50);
+        return;
     }
-};
-
-window.renderMulti = function () {
-    const ctx = document.getElementById('mcqChart');
-    if (!ctx || !window.__mcq) return;
-    const data = window.__mcq;
+    const existing = window.Chart.getChart ? window.Chart.getChart(ctx) : null;
+    if (existing) {
+        existing.destroy();
+    }
     const container = ctx.parentNode;
     ctx.width = container.clientWidth;
     ctx.height = container.clientHeight;
-    const labels = data.labels.map(l => wrapLabel(l));
+    const labels = (data.labels || []).map(l => wrapLabel(l));
     const styles = getComputedStyle(document.documentElement);
     const primary = styles.getPropertyValue('--color-primary-500').trim() || '#e5231b';
     const neutral = styles.getPropertyValue('--color-slate-400').trim() || '#8c929c';
-    const correctSet = new Set(data.correct || []);
     const colors = labels.map((_, i) => correctSet.has(i) ? primary : neutral);
-    const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{label: 'Votes (%)', data: data.percents, backgroundColor: colors, borderColor: colors}]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {display: false},
-                tooltip: {
-                    callbacks: {
-                        label: ctx => `${data.counts[ctx.dataIndex]} (${data.percents[ctx.dataIndex]}%)`
-                    }
-                }
+    let chart;
+    try {
+        chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{label: 'Votes (%)', data: data.percents, backgroundColor: colors, borderColor: colors}]
             },
-            scales: {
-                x: {
-                    ticks: {
-                        color: ctx => correctSet.has(ctx.index) ? primary : neutral,
-                        font: {size: LABEL_FONT_SIZE},
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {display: false},
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${data.counts[ctx.dataIndex]} (${data.percents[ctx.dataIndex]}%)`
+                        }
                     }
                 },
-                y: {
-                    ticks: {callback: value => value + '%'},
-                    suggestedMax: 100
+                scales: {
+                    x: {
+                        ticks: {
+                            color: ctx => correctSet.has(ctx.index) ? primary : neutral,
+                            font: {size: LABEL_FONT_SIZE},
+                        }
+                    },
+                    y: {
+                        ticks: {callback: value => value + '%'},
+                        suggestedMax: 100
+                    }
                 }
             },
-            animation: {
-                onComplete: () => {
-                    drawOverlays();
-                }
-            }
-        },
-    });
+        });
+    } catch (e) {
+        console.error('Chart init failed', e);
+        return;
+    }
 
-    function drawOverlays() {
+    // Run overlays after initial paint
+    setTimeout(drawOverlays, 0);
+
+    let drawLock = false;
+
+    function drawOverlays(skipRetry) {
+        if (!chart) return;
+        if (drawLock) return;
+        drawLock = true;
         container.querySelectorAll('.mcq-avatar-col, .mcq-count').forEach(e => e.remove());
         const meta = chart.getDatasetMeta(0);
-        if (!chart.chartArea) {
+        const area = chart.chartArea || {
+            top: 0,
+            bottom: container.clientHeight || 0,
+            left: 0,
+        };
+        if (!meta || !meta.data || !meta.data.length) {
+            if (!skipRetry) setTimeout(() => drawOverlays(true), 30);
+            drawLock = false;
             return;
         }
-        const minTop = chart.chartArea.top + 15;
+        const minTop = area.top + 15;
+        const fallbackWidth = container.clientWidth / Math.max(labels.length, 1);
         const basePositions = meta.data
-            .map(bar => typeof bar.base === 'number' ? bar.base : chart.chartArea.bottom);
-        const baseline = basePositions.length ? Math.max(...basePositions) : chart.chartArea.bottom;
-        const safeBottom = chart.chartArea.bottom - AVATAR_BOTTOM_GAP;
+            .map(bar => typeof bar.base === 'number' ? bar.base : area.bottom);
+        const baseline = basePositions.length ? Math.max(...basePositions) : area.bottom;
+        const safeBottom = area.bottom - AVATAR_BOTTOM_GAP;
         const desiredTop = baseline + AVATAR_BOTTOM_GAP;
-        const avatarMaxHeight = Math.max(safeBottom - chart.chartArea.top, 0);
+        const avatarMaxHeight = Math.max(safeBottom - area.top, 0);
         meta.data.forEach((bar, i) => {
+            const barWidth = bar && typeof bar.width === 'number' ? bar.width : fallbackWidth * 0.7;
+            const barX = bar && typeof bar.x === 'number'
+                ? bar.x
+                : ((i + 0.5) * fallbackWidth);
+            const barY = bar && typeof bar.y === 'number' ? bar.y : area.bottom;
             const label = document.createElement('div');
             label.className = 'mcq-count';
             label.textContent = `${data.counts[i]} (${data.percents[i]}%)`;
-            label.style.left = bar.x + 'px';
-            label.style.top = Math.max(bar.y - 24, minTop) + 'px';
+            label.style.left = barX + 'px';
+            label.style.top = Math.max(barY - 24, minTop) + 'px';
             label.style.color = correctSet.has(i) ? primary : neutral;
             container.appendChild(label);
 
             const div = document.createElement('div');
             div.className = 'mcq-avatar-col';
-            div.style.left = bar.x + 'px';
-            div.style.width = bar.width + 'px';
+            div.style.left = barX + 'px';
+            div.style.width = barWidth + 'px';
             div.style.maxHeight = avatarMaxHeight + 'px';
-            (data.avatars[i] || []).forEach(id => {
+            (data.avatars?.[i] || []).filter(Boolean).forEach(id => {
                 const img = document.createElement('img');
                 img.className = 'avatar small';
                 img.src = `/avatars/${id}.png`;
-                if (data.names) img.title = data.names[id] || '';
+                const key = String(id);
+                if (data.names) img.title = data.names[key] || '';
                 div.appendChild(img);
             });
             container.appendChild(div);
@@ -219,6 +153,26 @@ window.renderMulti = function () {
             const finalTop = Math.max(chart.chartArea.top, Math.min(desiredTop, fallbackTop));
             div.style.top = finalTop + 'px';
         });
+        drawLock = false;
     }
+}
+
+// Minimal Chart.js renders for reveal phases with avatar stacks
+window.renderMcq = function () {
+    const data = window.__mcq;
+    if (!data) return;
+    renderBarWithAvatars(data, new Set([data.correct]));
+};
+
+window.renderMulti = function () {
+    const data = window.__mcq;
+    if (!data) return;
+    renderBarWithAvatars(data, new Set(data.correct || []));
+};
+
+window.renderSequence = function () {
+    const data = window.__sequence || window.__mcq;
+    if (!data) return;
+    renderBarWithAvatars(data, new Set([0]));
 };
 
