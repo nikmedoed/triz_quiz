@@ -11,6 +11,7 @@ class User(Base):
     __tablename__ = "users"
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     name: Mapped[str] = mapped_column(String(128))
+    avatar_emoji: Mapped[str | None] = mapped_column(String(16), nullable=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     total_score: Mapped[int] = mapped_column(Integer, default=0)
     total_answer_ms: Mapped[int] = mapped_column(Integer, default=0)

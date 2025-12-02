@@ -1,4 +1,5 @@
 """Application configuration settings."""
+from __future__ import annotations
 
 import os
 
@@ -20,3 +21,5 @@ class Settings(BaseModel):
 
 
 settings = Settings()
+
+

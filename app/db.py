@@ -13,6 +13,10 @@ async def apply_migrations(conn) -> None:
         await conn.exec_driver_sql(
             "ALTER TABLE users ADD COLUMN waiting_for_name BOOLEAN NOT NULL DEFAULT 0"
         )
+    if "avatar_emoji" not in cols:
+        await conn.exec_driver_sql(
+            "ALTER TABLE users ADD COLUMN avatar_emoji VARCHAR(16)"
+        )
 
     result = await conn.exec_driver_sql("PRAGMA table_info(steps)")
     cols = [row[1] for row in result.fetchall()]
