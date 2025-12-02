@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandStart
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 import app.texts as texts
 from app.avatars import _emoji_avatar, _sticker_avatar, save_avatar
@@ -15,6 +16,66 @@ from .context import get_ctx
 from .prompts import send_prompt
 
 router = Router()
+PROFILE_NAME_CALLBACK = "name:profile"
+
+
+def _profile_name_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=texts.PROFILE_NAME_BUTTON,
+                    callback_data=PROFILE_NAME_CALLBACK,
+                )
+            ]
+        ]
+    )
+
+
+async def _finish_name_update(
+    bot: Bot,
+    session,
+    user,
+    state,
+    step,
+    new_name: str,
+    reply: Callable[[str], Awaitable[object]],
+) -> None:
+    was_new = user.name == ""
+    user.name = new_name
+    user.waiting_for_name = False
+    await session.commit()
+    saved = await save_avatar(bot, user)
+    if was_new and not saved:
+        user.waiting_for_avatar = True
+        await session.commit()
+        await reply(texts.ASK_AVATAR)
+        return
+    await hub.broadcast({"type": "reload"})
+    await send_prompt(bot, user, step, state.phase, prefix=texts.NAME_SAVED)
+
+
+def _profile_name_from_telegram(source_user) -> str | None:
+    parts = []
+    if source_user.last_name:
+        parts.append(source_user.last_name.strip())
+    if source_user.first_name:
+        parts.append(source_user.first_name.strip())
+    middle = getattr(source_user, "middle_name", None)
+    if middle:
+        parts.append(middle.strip())
+    name = " ".join(part for part in parts if part)
+    if name:
+        return name.strip()
+    full_name = getattr(source_user, "full_name", None)
+    if full_name:
+        full_name = full_name.strip()
+        if full_name:
+            return full_name
+    username = source_user.username
+    if username:
+        return f"@{username}"
+    return None
 
 
 @router.message(CommandStart())
@@ -27,7 +88,10 @@ async def cmd_start(message: Message, bot: Bot):
         if user.name:
             await message.answer(texts.CURRENT_NAME.format(name=user.name))
         else:
-            await message.answer(texts.ENTER_NAME)
+            await message.answer(
+                texts.ENTER_NAME,
+                reply_markup=_profile_name_keyboard(),
+            )
     finally:
         await session.close()
 
@@ -66,18 +130,15 @@ async def on_text(message: Message, bot: Bot):
             if not new_name:
                 await message.answer(texts.NAME_EMPTY)
                 return
-            was_new = user.name == ""
-            user.name = new_name
-            user.waiting_for_name = False
-            await session.commit()
-            saved = await save_avatar(bot, user)
-            if was_new and not saved:
-                user.waiting_for_avatar = True
-                await session.commit()
-                await message.answer(texts.ASK_AVATAR)
-            else:
-                await hub.broadcast({"type": "reload"})
-                await send_prompt(bot, user, step, state.phase, prefix=texts.NAME_SAVED)
+            await _finish_name_update(
+                bot,
+                session,
+                user,
+                state,
+                step,
+                new_name,
+                message.answer,
+            )
             return
 
         handler = STEP_TYPES.get(step.type)
@@ -109,6 +170,30 @@ async def on_callback(cb: CallbackQuery, bot: Bot):
     prefix, payload = cb.data.split(":", 1)
     session, user, state, step = await get_ctx(str(cb.from_user.id))
     try:
+        if cb.data == PROFILE_NAME_CALLBACK:
+            if not user.waiting_for_name:
+                await cb.answer(texts.PROFILE_NAME_NOT_WAITING, show_alert=True)
+                return
+            profile_name = _profile_name_from_telegram(cb.from_user)
+            if not profile_name:
+                await cb.answer(texts.PROFILE_NAME_NOT_AVAILABLE, show_alert=True)
+                return
+            if cb.message:
+                reply = cb.message.answer
+            else:
+                async def reply(text: str) -> None:
+                    await bot.send_message(cb.from_user.id, text)
+            await _finish_name_update(
+                bot,
+                session,
+                user,
+                state,
+                step,
+                profile_name[:120],
+                reply,
+            )
+            await cb.answer()
+            return
         handler = STEP_TYPES.get(step.type)
         if handler and handler.callback_prefix == prefix and handler.on_callback:
             await handler.on_callback(cb, bot, session, user, state, step, payload)
