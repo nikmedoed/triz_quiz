@@ -24,6 +24,7 @@ from .prompts import send_prompt
 router = Router()
 PROFILE_NAME_CALLBACK = "name:profile"
 AVATAR_EMOJI_CALLBACK = "avatar-emoji"
+AVATAR_PROFILE_CALLBACK = "avatar-profile"
 EMOJI_SUGGESTION_COUNT = 8
 
 
@@ -89,18 +90,32 @@ async def _emoji_suggestions(session) -> list[str]:
     return selected[:EMOJI_SUGGESTION_COUNT]
 
 
-async def _avatar_keyboard(session) -> InlineKeyboardMarkup:
+async def _avatar_keyboard(session, include_profile_button: bool) -> InlineKeyboardMarkup:
     emojis = await _emoji_suggestions(session)
     builder = InlineKeyboardBuilder()
+    if include_profile_button:
+        builder.button(
+            text=texts.AVATAR_PROFILE_BUTTON,
+            callback_data=f"{AVATAR_PROFILE_CALLBACK}:",
+        )
     for emoji in emojis:
         encoded = _encode_emoji(emoji)
         builder.button(text=emoji, callback_data=f"{AVATAR_EMOJI_CALLBACK}:{encoded}")
-    builder.adjust(4, 4)
+    if include_profile_button:
+        builder.adjust(1, 4, 4)
+    else:
+        builder.adjust(4, 4)
     return builder.as_markup()
 
 
-async def _send_avatar_prompt(session, reply: Callable[..., Awaitable[object]]) -> None:
-    keyboard = await _avatar_keyboard(session)
+async def _has_profile_photo(bot: Bot, user_id: str) -> bool:
+    chat = await bot.get_chat(user_id)
+    return bool(chat.photo)
+
+
+async def _send_avatar_prompt(bot: Bot, session, user, reply: Callable[..., Awaitable[object]]) -> None:
+    has_profile_photo = await _has_profile_photo(bot, user.id)
+    keyboard = await _avatar_keyboard(session, include_profile_button=has_profile_photo)
     await reply(texts.ASK_AVATAR, reply_markup=keyboard)
 
 
@@ -115,20 +130,28 @@ async def _complete_emoji_avatar(bot: Bot, session, user, state, step, emoji: st
     await send_prompt(bot, user, step, state.phase, prefix=texts.NAME_SAVED)
 
 
+async def _complete_profile_avatar(bot: Bot, session, user, state, step) -> bool:
+    saved = await save_avatar(bot, user)
+    if not saved:
+        return False
+    user.avatar_emoji = None
+    user.waiting_for_avatar = False
+    await session.commit()
+    await hub.broadcast({"type": "reload"})
+    await send_prompt(bot, user, step, state.phase, prefix=texts.NAME_SAVED)
+    return True
+
+
 async def _finish_name_update(bot: Bot, session, user, state, step, new_name: str,
                               reply: Callable[..., Awaitable[object]]) -> None:
     was_new = user.name == ""
     user.name = new_name
     user.waiting_for_name = False
     await session.commit()
-    saved = await save_avatar(bot, user)
-    if saved:
-        user.avatar_emoji = None
-        await session.commit()
-    if was_new and not saved:
+    if was_new:
         user.waiting_for_avatar = True
         await session.commit()
-        await _send_avatar_prompt(session, reply)
+        await _send_avatar_prompt(bot, session, user, reply)
         return
     await hub.broadcast({"type": "reload"})
     await send_prompt(bot, user, step, state.phase, prefix=texts.NAME_SAVED)
@@ -161,9 +184,6 @@ def _profile_name_from_telegram(source_user) -> str | None:
 async def cmd_start(message: Message, bot: Bot):
     session, user, state, step = await get_ctx(str(message.from_user.id))
     try:
-        has_profile_photo = await save_avatar(bot, user)
-        if has_profile_photo:
-            user.avatar_emoji = None
         user.waiting_for_name = True
         await session.commit()
         if user.name:
@@ -192,7 +212,7 @@ async def on_text(message: Message, bot: Bot):
         if user.waiting_for_avatar:
             emoji = message.text.strip()
             if not emoji:
-                await _send_avatar_prompt(session, message.answer)
+                await _send_avatar_prompt(bot, session, user, message.answer)
                 return
             choice = emoji.split()[0]
             await _complete_emoji_avatar(bot, session, user, state, step, choice)
@@ -255,6 +275,26 @@ async def on_callback(cb: CallbackQuery, bot: Bot):
             else:
                 await bot.send_message(cb.from_user.id, texts.AVATAR_SELECTED.format(emoji=emoji_choice))
             await _complete_emoji_avatar(bot, session, user, state, step, emoji_choice)
+            await cb.answer()
+            return
+        if prefix == AVATAR_PROFILE_CALLBACK:
+            if not user.waiting_for_avatar:
+                await cb.answer(texts.AVATAR_NOT_WAITING, show_alert=True)
+                return
+            saved = await _complete_profile_avatar(bot, session, user, state, step)
+            if not saved:
+                await cb.answer(texts.AVATAR_PROFILE_NOT_AVAILABLE, show_alert=True)
+                return
+            if cb.message:
+                base = cb.message.text or texts.ASK_AVATAR
+                note = texts.AVATAR_PROFILE_SELECTED
+                try:
+                    await cb.message.edit_text(f"{base}\n\n{note}")
+                except TelegramBadRequest:
+                    await cb.message.edit_reply_markup(reply_markup=None)
+                    await cb.message.answer(note)
+            else:
+                await bot.send_message(cb.from_user.id, texts.AVATAR_PROFILE_SELECTED)
             await cb.answer()
             return
         if cb.data == PROFILE_NAME_CALLBACK:

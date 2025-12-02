@@ -11,6 +11,9 @@ from app.models import User
 from . import AVATAR_SIZE
 from .utils import _gradient
 
+_VARIATION_SELECTOR_CODES = set(range(0xFE00, 0xFE0F + 1))
+_VARIATION_SELECTOR_CODES.update(range(0xE0100, 0xE01EF + 1))
+
 
 def _possible_emoji_fonts() -> list[Path]:
     paths = [
@@ -65,24 +68,92 @@ def _render_emoji_from_font(emoji: str, target_size: int) -> Image.Image | None:
     return glyph.resize(new_size, Image.LANCZOS)
 
 
+def _emoji_codepoints(emoji: str, *, separator: str = "-", drop_variations: bool = False) -> str:
+    items: list[str] = []
+    for ch in emoji:
+        code = ord(ch)
+        if drop_variations and code in _VARIATION_SELECTOR_CODES:
+            continue
+        items.append(f"{code:x}")
+    return separator.join(items)
+
+
+def _resize_to_target(image: Image.Image, target_size: int) -> Image.Image:
+    max_dim = max(image.width, image.height)
+    if max_dim <= 0:
+        return image
+    scale = target_size / max_dim
+    if scale <= 0:
+        return image
+    new_size = (max(1, int(image.width * scale)), max(1, int(image.height * scale)))
+    if new_size == image.size:
+        return image
+    return image.resize(new_size, Image.LANCZOS)
+
+
+def _fetch_emoji_image_from_api(emoji: str, target_size: int) -> Image.Image | None:
+    try:
+        codepoints = _emoji_codepoints(emoji, separator="-", drop_variations=False)
+        url = f"https://emojiapi.dev/api/v1/{codepoints}/512.png"
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
+        return _resize_to_target(emoji_img, target_size)
+    except Exception:
+        return None
+
+
+def _fetch_noto_emoji_image(emoji: str, target_size: int) -> Image.Image | None:
+    sequence = _emoji_codepoints(emoji, separator="_", drop_variations=True)
+    if not sequence:
+        return None
+    url = f"https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u{sequence}.png"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+    except Exception:
+        return None
+    emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
+    return _resize_to_target(emoji_img, target_size)
+
+
+def _needs_combined_rendering(emoji: str) -> bool:
+    zwj = "\u200d"
+    tag_characters = set(range(0xE0020, 0xE007F + 1))
+    skin_tone_modifiers = set(range(0x1F3FB, 0x1F3FF + 1))
+    if zwj in emoji:
+        return True
+    for ch in emoji:
+        code = ord(ch)
+        if code in tag_characters or code in skin_tone_modifiers:
+            return True
+    return False
+
+
+def _render_emoji_image(emoji: str, target_size: int) -> Image.Image | None:
+    prefer_combined = _needs_combined_rendering(emoji)
+    if prefer_combined:
+        combined = _fetch_noto_emoji_image(emoji, target_size)
+        if combined is not None:
+            return combined
+    font_based = _render_emoji_from_font(emoji, target_size)
+    if font_based is not None:
+        return font_based
+    remote = _fetch_noto_emoji_image(emoji, target_size)
+    if remote is not None:
+        return remote
+    return _fetch_emoji_image_from_api(emoji, target_size)
+
+
 def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
     """Generate avatar from emoji image with a colorful gradient background."""
     size = AVATAR_SIZE
     img = _gradient(size)
     emoji_size = int(size * 0.8)
 
-    from . import _render_emoji_from_font as _ref
-    emoji_img = _ref(emoji, emoji_size)
+    emoji_img = _render_emoji_image(emoji, emoji_size)
     if emoji_img is None:
-        try:
-            codepoints = "-".join(f"{ord(c):x}" for c in emoji)
-            url = f"https://emojiapi.dev/api/v1/{codepoints}/512.png"
-            resp = requests.get(url, timeout=10)
-            resp.raise_for_status()
-            emoji_img = Image.open(BytesIO(resp.content)).convert("RGBA")
-            emoji_img = emoji_img.resize((emoji_size, emoji_size), Image.LANCZOS)
-        except Exception:
-            emoji_img = Image.new("RGBA", (emoji_size, emoji_size), (0, 0, 0, 0))
+        emoji_img = Image.new("RGBA", (emoji_size, emoji_size), (0, 0, 0, 0))
     shadow = Image.new("RGBA", emoji_img.size, (0, 0, 0, 0))
     shadow.paste((0, 0, 0, 80), mask=emoji_img.split()[3])
     shadow = shadow.filter(ImageFilter.GaussianBlur(4))
@@ -95,8 +166,7 @@ def _emoji_avatar(path: Path, user: User, emoji: str) -> None:
 
 def _split_emoji_string(value: str) -> tuple[str, ...]:
     """Split a dense emoji string into grapheme clusters."""
-    variation_selectors = set(range(0xFE00, 0xFE0F + 1))
-    variation_selectors.update(range(0xE0100, 0xE01EF + 1))
+    variation_selectors = _VARIATION_SELECTOR_CODES.copy()
     skin_tone_modifiers = set(range(0x1F3FB, 0x1F3FF + 1))
     tag_characters = set(range(0xE0020, 0xE007F + 1))
     combining_categories = {"Mn", "Me"}
