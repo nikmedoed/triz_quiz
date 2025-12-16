@@ -1,6 +1,8 @@
 # Load scenario (JSON or YAML list). Auto-prepend registration and append leaderboard.
 import json
 import os
+from dataclasses import dataclass
+from typing import Any
 
 import yaml
 from sqlalchemy import select
@@ -9,33 +11,84 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import app.texts as texts
 from app.models import Step, GlobalState
 from app.step_types import STEP_TYPES
+from app.step_types.multi import build_multi_payload
 
 IGNORED = {"vote", "vote_results"}
+
+
+@dataclass
+class PreviewOption:
+    idx: int
+    text: str
+
+
+@dataclass
+class PreviewStep:
+    step: Step
+    options: list[PreviewOption]
+
+
+def _normalize_text(val: str | list[str] | None) -> str | None:
+    if isinstance(val, list):
+        return "\n".join(str(x) for x in val)
+    return val
+
+
+def _parse_timer_ms(time_val: Any) -> int | None:
+    if isinstance(time_val, str) and time_val.isdigit():
+        return int(time_val) * 1000
+    if isinstance(time_val, (int, float)):
+        return int(time_val) * 1000
+    return None
+
+
+def _resolve_path(path: str | None) -> str | None:
+    if path and os.path.exists(path):
+        return path
+    for candidate in ("scenario.yaml", "scenario.json"):
+        if os.path.exists(candidate):
+            return candidate
+    return None
+
+
+def _read_scenario_items(path: str) -> list[dict]:
+    with open(path, "r", encoding="utf-8") as f:
+        text = f.read()
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        data = yaml.safe_load(text)
+    if isinstance(data, dict) and "quiz" in data:
+        items = data["quiz"].get("steps", [])
+    elif isinstance(data, list):
+        items = data
+    else:
+        raise ValueError("Scenario must be a list of blocks or legacy dict format")
+    normalized: list[dict] = []
+    for item in items:
+        copy = dict(item)
+        copy["description"] = _normalize_text(copy.get("description"))
+        copy["text"] = _normalize_text(copy.get("text"))
+        normalized.append(copy)
+    return normalized
+
+
+def _parse_correct_index(val: Any) -> int | None:
+    if isinstance(val, str) and val.isdigit():
+        return int(val) - 1
+    if isinstance(val, int):
+        return val
+    return None
 
 
 async def load_if_empty(session: AsyncSession, path: str) -> None:
     existing = await session.execute(select(Step.id))
     if existing.first():
         return
-    # Prefer explicit path; else try both yaml/json
-    data = None
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            text = f.read()
-        try:
-            data = json.loads(text)
-        except json.JSONDecodeError:
-            data = yaml.safe_load(text)
-    else:
+    resolved = _resolve_path(path)
+    if not resolved:
         return
-    if isinstance(data, dict) and "quiz" in data:
-        # Legacy format: {quiz: {steps: [...]}}
-        items = data["quiz"].get("steps", [])
-    elif isinstance(data, list):
-        items = data
-    else:
-        raise ValueError("Scenario must be a list of blocks or legacy dict format")
-
+    items = _read_scenario_items(resolved)
     order = 0
 
     def add_step(
@@ -66,16 +119,8 @@ async def load_if_empty(session: AsyncSession, path: str) -> None:
     # Registration (implicit)
     add_step("registration", title=texts.TITLE_REGISTRATION)
 
-    def normalize_text(val: str | list[str] | None) -> str | None:
-        if isinstance(val, list):
-            return "\n".join(str(x) for x in val)
-        return val
-
     # Normalize items
     for item in items:
-        item["description"] = normalize_text(item.get("description"))
-        item["text"] = normalize_text(item.get("text"))
-
         t = (item.get("type") or "").strip().lower()
         if t in IGNORED:
             continue
@@ -98,3 +143,89 @@ async def load_if_empty(session: AsyncSession, path: str) -> None:
     first_step_id = await session.scalar(select(Step.id).order_by(Step.order_index.asc()))
     session.add(GlobalState(current_step_id=first_step_id))
     await session.commit()
+
+
+def load_preview_steps(path: str | None = None) -> list[PreviewStep]:
+    """Read scenario file without touching DB and return steps for preview."""
+    resolved = _resolve_path(path)
+    if not resolved:
+        return []
+    items = _read_scenario_items(resolved)
+    steps: list[PreviewStep] = []
+    order = 0
+    for item in items:
+        t = (item.get("type") or "").strip().lower()
+        if not t or t in IGNORED:
+            continue
+        if t == "open":
+            step = Step(
+                id=order + 1,
+                order_index=order,
+                type="open",
+                title=item.get("title", texts.TITLE_OPEN),
+                text=item.get("description") or item.get("text"),
+                timer_ms=_parse_timer_ms(item.get("time")),
+            )
+            steps.append(PreviewStep(step=step, options=[]))
+            order += 1
+            continue
+        if t == "quiz":
+            opts = [str(opt) for opt in item.get("options", [])]
+            step = Step(
+                id=order + 1,
+                order_index=order,
+                type="quiz",
+                title=item.get("title", texts.TITLE_QUIZ),
+                text=item.get("description") or item.get("text"),
+                correct_index=_parse_correct_index(item.get("correct")),
+                points_correct=item.get("points"),
+                timer_ms=_parse_timer_ms(item.get("time")),
+            )
+            options = [PreviewOption(idx=i, text=text) for i, text in enumerate(opts)]
+            steps.append(PreviewStep(step=step, options=options))
+            order += 1
+            continue
+        if t == "multi":
+            options_payload, correct_multi_indices = build_multi_payload(item)
+            step = Step(
+                id=order + 1,
+                order_index=order,
+                type="multi",
+                title=item.get("title", texts.TITLE_MULTI),
+                text=item.get("description") or item.get("text"),
+                correct_multi=",".join(str(idx) for idx in sorted(set(correct_multi_indices)))
+                if correct_multi_indices
+                else None,
+                points_correct=item.get("points"),
+                timer_ms=_parse_timer_ms(item.get("time")),
+            )
+            options = [
+                PreviewOption(idx=i, text=text) for i, text in enumerate(options_payload)
+            ]
+            steps.append(PreviewStep(step=step, options=options))
+            order += 1
+            continue
+        if t == "sequence":
+            opts = [str(opt) for opt in item.get("options", [])]
+            pts_val = item.get("points")
+            default_points = None
+            if isinstance(pts_val, str) and pts_val.isdigit():
+                default_points = int(pts_val)
+            elif isinstance(pts_val, (int, float)):
+                default_points = int(pts_val)
+            else:
+                default_points = 3
+            step = Step(
+                id=order + 1,
+                order_index=order,
+                type="sequence",
+                title=item.get("title", texts.TITLE_SEQUENCE),
+                text=item.get("description") or item.get("text"),
+                points_correct=default_points,
+                timer_ms=_parse_timer_ms(item.get("time")),
+            )
+            options = [PreviewOption(idx=i, text=text) for i, text in enumerate(opts)]
+            steps.append(PreviewStep(step=step, options=options))
+            order += 1
+            continue
+    return steps

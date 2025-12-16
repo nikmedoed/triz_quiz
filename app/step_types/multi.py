@@ -30,15 +30,8 @@ async def multi_on_enter(session: AsyncSession, step: Step, phase: int) -> None:
         await add_multi_points(session, step)
 
 
-async def multi_load_item(
-        session: AsyncSession, add_step, item: Dict[str, Any]
-) -> None:
-    time_val = item.get("time")
-    timer_ms = None
-    if isinstance(time_val, str) and time_val.isdigit():
-        timer_ms = int(time_val) * 1000
-    elif isinstance(time_val, (int, float)):
-        timer_ms = int(time_val) * 1000
+def build_multi_payload(item: Dict[str, Any]) -> tuple[list[str], list[int]]:
+    """Return shuffled options and correct indexes for multi steps."""
     def _as_str_list(value: Any) -> list[str]:
         if value is None:
             return []
@@ -110,6 +103,21 @@ async def multi_load_item(
                 elif isinstance(c, int):
                     correct_multi_indices.append(int(c))
         options_payload = [text for text in options_payload]
+
+    return options_payload, correct_multi_indices
+
+
+async def multi_load_item(
+        session: AsyncSession, add_step, item: Dict[str, Any]
+) -> None:
+    time_val = item.get("time")
+    timer_ms = None
+    if isinstance(time_val, str) and time_val.isdigit():
+        timer_ms = int(time_val) * 1000
+    elif isinstance(time_val, (int, float)):
+        timer_ms = int(time_val) * 1000
+
+    options_payload, correct_multi_indices = build_multi_payload(item)
 
     s = add_step(
         "multi",

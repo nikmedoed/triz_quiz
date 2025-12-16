@@ -127,6 +127,15 @@ MULTI_INSTR = (
 )
 TITLE_MULTI = "Множественный выбор"
 TITLE_LEADERBOARD = "Финальная таблица"
+PREVIEW_TITLE = "Предпросмотр сценария"
+PREVIEW_INSTRUCTION = "Режим просмотра: ответы и результаты не сохраняются."
+PREVIEW_EMPTY = "В файле сценария нет шагов для предпросмотра."
+PREVIEW_BUTTON = "Посмотреть сценарий"
+PREVIEW_HOME_BUTTON = "Викторина"
+PREVIEW_RESET_BUTTON = "Сброс"
+OPEN_PUBLIC_INSTR = "Отправляйте идеи боту. Здесь они пока не видны."
+QUIZ_PUBLIC_INSTR = "Выберите один верный в боте"
+MULTI_PUBLIC_INSTR = "Выберите все верные варианты в боте"
 
 STAGE_VOTING_SUFFIX = "Голосование за идеи"
 STAGE_RESULTS_SUFFIX = "Результаты голосования"

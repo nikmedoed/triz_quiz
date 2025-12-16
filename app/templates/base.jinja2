@@ -27,7 +27,16 @@
         {% endif %}
     </div>
     <div class="top-right">
-        {% if show_next is not defined or show_next %}
+        {% if preview_mode %}
+            <button class="btn btn-secondary" type="button" onclick="location.href='/reset'">{{ texts.PREVIEW_RESET_BUTTON }}</button>
+            <button class="btn btn-secondary" type="button" onclick="location.href='/'">{{ texts.PREVIEW_HOME_BUTTON }}</button>
+            {% if preview_prev_url %}
+                <button class="btn btn-secondary" type="button" onclick="location.href='{{ preview_prev_url }}'">Назад</button>
+            {% endif %}
+            {% if preview_next_url %}
+                <button class="btn btn-primary" type="button" onclick="location.href='{{ preview_next_url }}'">Далее</button>
+            {% endif %}
+        {% elif show_next is not defined or show_next %}
             <button class="btn btn-primary" onclick="post('/api/next')">Далее</button>
         {% endif %}
     </div>
@@ -131,6 +140,7 @@
             lastVoteEl.textContent = formatAgo(lastVoteSec);
         }
     }, 1000);
+    {% if not disable_ws %}
     const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
     ws.onmessage = (ev) => {
         const msg = JSON.parse(ev.data);
@@ -168,6 +178,7 @@
             }
         }
     };
+    {% endif %}
 </script>
 </body>
 </html>

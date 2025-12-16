@@ -1,0 +1,10 @@
+{% extends 'base.jinja2' %}
+
+{% block content %}
+    <h1>{{ texts.PREVIEW_TITLE }}</h1>
+    <p>{{ texts.PREVIEW_EMPTY }}</p>
+    <div class="reset-actions">
+        <a class="btn btn-secondary" href="/reset">Назад</a>
+        <a class="btn btn-primary" href="/preview">{{ texts.PREVIEW_BUTTON }}</a>
+    </div>
+{% endblock %}

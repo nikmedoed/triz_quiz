@@ -101,7 +101,7 @@ async def open_context(
             status_current=len(ideas),
             status_total=int(total_users or 0),
             status_last=last_ago_s if last_ago_s is not None else "-",
-            instruction="Отправляйте идеи боту. Здесь они пока не видны.",
+            instruction=texts.OPEN_PUBLIC_INSTR,
             content_class=content_class,
         )
     if gs.phase == 1 and ideas:
@@ -180,7 +180,7 @@ async def quiz_context(
             status_current=int(answers_count or 0),
             status_total=int(total_users or 0),
             status_last=last_answer_ago_s if last_answer_ago_s is not None else "-",
-            instruction="Выберите один верный в боте",
+            instruction=texts.QUIZ_PUBLIC_INSTR,
             timer_id="quizTimer",
             timer_text=format_mmss(duration_ms),
             timer_ms=duration_ms,
@@ -256,7 +256,7 @@ async def multi_context(
             status_current=int(answers_count or 0),
             status_total=int(total_users or 0),
             status_last=last_answer_ago_s if last_answer_ago_s is not None else "-",
-            instruction="Выберите все верные варианты в боте",
+            instruction=texts.MULTI_PUBLIC_INSTR,
             timer_id="quizTimer",
             timer_text=format_mmss(duration_ms),
             timer_ms=duration_ms,
