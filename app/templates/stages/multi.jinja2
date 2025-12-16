@@ -6,10 +6,11 @@
             <h1>{{ step.title }}</h1>
             {% if step.text %}
                 {% set desc = step.text | rich_text %}
+                {% set desc_long = desc.is_multi or desc.is_html %}
                 <div class="quiz-layout">
                     <div class="quiz-col">
                         {% if desc.has_text %}
-                            <div class="quiz-description{% if desc.is_multi %} quiz-description--multi{% endif %}">
+                            <div class="quiz-description{% if desc.is_multi %} quiz-description--multi{% endif %}{% if desc.is_html %} quiz-description--html{% endif %}{% if desc_long %} quiz-description--long{% endif %}">
                                 {{ desc.html }}
                             </div>
                         {% endif %}

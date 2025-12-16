@@ -181,9 +181,23 @@
 .description {
     font-size: 30px;
     line-height: 1.35;
-    max-width: 1320px;
+    width: min(1000px, 100%);
+    max-height: 100%;
     text-align: center;
-    margin: var(--space-4) auto 0;
+    margin: 0 auto;
+    padding: var(--space-3) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-2);
+    overflow: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.description::-webkit-scrollbar {
+    display: none;
 }
 
 .description p {
@@ -191,28 +205,174 @@
 }
 
 .description p + p {
-    margin-top: var(--space-3);
+    margin-top: var(--space-2);
 }
 
 .description ul {
-    margin-block-start: 0.3em;
-    margin-block-end: 0.7em;
+    margin: 0;
+    padding-left: 1.2em;
+}
+
+.description--long {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.description--html {
+    align-items: stretch;
+}
+
+.description--html > * {
+    max-width: 100%;
+}
+
+.description--html img {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 100%;
+    align-self: center;
 }
 
 .description img {
     max-width: 100%;
-    max-height: 70vh;
+    width: auto;
     height: auto;
-    display: block;
-    margin: var(--space-4) auto 0;
+    max-height: 100%;
+    object-fit: contain;
 }
 
 .description figure {
-    margin: var(--space-4) 0 0;
+    margin: 0;
+}
+
+.description table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.description--long.description--html table.rich-layout-table {
+    display: block;
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+}
+
+.description--long.description--html table.rich-layout-table > tbody {
+    display: block;
+    height: 100%;
+    width: 100%;
+}
+
+.description--long.description--html table.rich-layout-table > tbody > tr {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    height: 100%;
+    width: 100%;
+}
+
+.description--long.description--html table.rich-layout-table > tbody > tr > :is(td, th) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    min-height: 0;
+}
+
+.description--long.description--html {
+    padding: 0;
+    gap: 0;
+}
+
+.description--long.description--html > :only-child:not(table) {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+}
+
+.description--long.description--html .rich-media-slot {
+    flex: 0 1 auto;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.description--long.description--html .rich-media-slot:only-child {
+    flex: 1 1 auto;
+}
+
+.description picture {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.description--long.description--html table.rich-layout-table :is(td, th) > * {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.description--long.description--html table.rich-layout-table :is(td, th) > :is(div, picture, figure) {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* Optional per-step overrides for scenario HTML tables. */
+.description--long.description--html table.rich-layout-table.layout-split-50 > tbody > tr {
+    grid-auto-columns: 1fr 1fr;
+}
+
+.description--long.description--html table.rich-layout-table[class*="layout-split-"] > tbody > tr > :is(td, th):first-child {
+    align-self: center;
+}
+
+/* Optional per-step overrides:
+   Add class="layout-split-33-67" to make media column 2/3 width. */
+.description--long.description--html table.rich-layout-table.layout-split-33-67 > tbody > tr {
+    grid-auto-columns: 1fr 2fr;
+}
+
+/* Optional per-step overrides:
+   Add class="layout-split-40-60" to make media column 60% width. */
+.description--long.description--html table.rich-layout-table.layout-split-40-60 > tbody > tr {
+    grid-auto-columns: 2fr 3fr;
+}
+
+.description--long.description--html table.rich-layout-table :is(picture, figure) {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+}
+
+.description--html table img,
+.description--html table picture img {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
 }
 
 .description--multi {
     text-align: left;
+    align-items: stretch;
+}
+
+.description--html {
+    width: 100%;
+    max-width: none;
 }
 
 

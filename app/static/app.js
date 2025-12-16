@@ -193,3 +193,37 @@ window.renderSequence = function () {
     if (!data) return;
     renderBarWithAvatars(data, new Set([0]));
 };
+
+function prepareRichLayouts() {
+    const containers = document.querySelectorAll(
+        '.description--long.description--html, .quiz-description--long.quiz-description--html'
+    );
+
+    containers.forEach(container => {
+        const first = container.firstElementChild;
+        if (first && first.tagName === 'TABLE' && first.rows && first.rows.length === 1) {
+            first.classList.add('rich-layout-table');
+            return;
+        }
+
+        const children = Array.from(container.children);
+        const root = children.length === 1 && children[0].tagName !== 'TABLE' ? children[0] : container;
+
+        if (root !== container) {
+            root.classList.add('rich-layout-root');
+        }
+
+        const rootChildren = Array.from(root.children);
+        for (let i = rootChildren.length - 1; i >= 0; i--) {
+            const el = rootChildren[i];
+            if (!el.querySelector) continue;
+            if (el.querySelector('img, picture, table')) {
+                el.classList.add('rich-media-slot');
+                break;
+            }
+        }
+    });
+}
+
+window.prepareRichLayouts = prepareRichLayouts;
+document.addEventListener('DOMContentLoaded', prepareRichLayouts);

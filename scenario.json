@@ -27,7 +27,7 @@
       "Легче ограничить доступ"
     ],
     "points": 3,
-    "time": 150
+    "time": 120
   },
   {
     "type": "open",
@@ -38,10 +38,7 @@
   {
     "type": "multi",
     "title": "Согласно популярной шутке «Как всё починить», какие вещи могут всё исправить?",
-    "correct_options": [
-      "WD-40",
-      "Изолента / скотч"
-    ],
+    "correct_options": ["WD-40", "Изолента / скотч"],
     "other_options": [
       "Молоток",
       "Пластиковые стяжки (хомуты)",
@@ -55,12 +52,13 @@
   {
     "type": "open",
     "title": "Перечислите ресурсы в оперативной зоне рулонной шторы.",
-    "description": "<table style=\"width:100%; border-collapse:collapse;\"><tr><td style=\"width:50%; vertical-align:middle; padding-right:24px;\"><p>Рулонная штора не закрывает полностью световой поток из-за отступа от стены. Отступ нужен для подвижности шторы. Нужно научиться блокировать свет максимально, иначе мешает спать.</p><ul><li>Штору нельзя портить</li><li>Штора должна оставаться оперативно подвижной</li><li>Глобальное переустройство квартиры не рассматривается</li></ul><p>Значит решения нужно искать в оперативной зоне.</p></td><td style=\"width:50%; vertical-align:middle; text-align:center;\"><img src=\"/media/curtain.jpg\" alt=\"Curtain\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></td></tr></table>",
+      "description": "<table class=\"layout-split-50\" style=\"width:100%; border-collapse:collapse;\"><tr><td style=\"vertical-align:middle; padding:0 120px;\"><p>Рулонная штора не закрывает полностью световой поток из-за отступа от стены. Отступ нужен для подвижности шторы. Нужно научиться блокировать свет максимально, иначе мешает спать.</p><ul><li>Штору нельзя портить</li><li>Штора должна оставаться оперативно подвижной</li><li>Глобальное переустройство квартиры не рассматривается</li></ul></td><td style=\"vertical-align:middle; text-align:center;\"><img src=\"/media/curtain.jpg\" alt=\"Curtain\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></td></tr></table>",
     "time": 200
   },
   {
     "type": "quiz",
     "title": "Исходя из поиска ресурсов и обсуждения, что может помочь изящно решить проблему со светом?",
+    "description": "<div style=\"padding:0 40px;\"><p>Рулонная штора не закрывает полностью световой поток из-за отступа от стены. Отступ нужен для подвижности шторы. Нужно научиться блокировать свет максимально, иначе мешает спать.</p><ul><li>Штору нельзя портить</li><li>Штора должна оставаться оперативно подвижной</li><li>Глобальное переустройство квартиры не рассматривается</li></ul><div style=\"margin-top:16px; text-align:center;\"><img src=\"/media/curtain_parts.jpg\" alt=\"Curtain hardware\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></div></div>",
     "options": [
       "Магнитики",
       "Малярный скотч",
@@ -76,7 +74,7 @@
   {
     "type": "open",
     "title": "Какую задачу решал?",
-    "description": "<table style=\"width:100%; border-collapse:collapse;\"><tr><td style=\"width:45%; vertical-align:middle; padding-right:20px;\"><p>Часто нужно подключать кабель телефона в темноте, но:</p><ul><li>Теряется конец</li><li>Шуршит, пока ищешь</li><li>Переплетается</li><li>Сваливается с тумбочки</li><li>Шумишь – получаешь по голове от жены за шум ночью</li><li>Кабелей много</li></ul><p>Сформулируйте точнее всего, что мне нужно достичь.</p></td><td style=\"width:55%; vertical-align:middle; text-align:center;\"><picture><source srcset=\"/media/cable.jpg\" type=\"image/jpeg\"><img src=\"/media/cable.jpg\" alt=\"Phone cable\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></picture></td></tr></table>",
+    "description": "<table class=\"layout-split-33-67\" style=\"width:100%; border-collapse:collapse;\"><tr><td style=\"vertical-align:middle; padding-left:60px; padding-right:20px; align-self:center;\"><p>Часто нужно подключать кабель телефона в темноте, но:</p><ul><li>Теряется конец</li><li>Шуршит, пока ищешь</li><li>Переплетается</li><li>Сваливается с тумбочки</li><li>Шумишь – получаешь по голове от жены за шум ночью</li><li>Кабелей много</li></ul><p>Сформулируйте точнее всего, что мне нужно достичь.</p></td><td style=\"vertical-align:middle; text-align:center;\"><div style=\"width:100%; height:100%; display:flex; align-items:center; justify-content:center;\"><picture><source srcset=\"/media/cable.jpg\" type=\"image/jpeg\"><img src=\"/media/cable.jpg\" alt=\"Phone cable\" loading=\"lazy\" style=\"width:100%; height:100%; object-fit:contain;\"></picture></div></td></tr></table>",
     "time": 120
   },
   {
@@ -89,7 +87,7 @@
       "Магнитить на стенку комода",
       "Сделать крючок для провода на спинке кровати"
     ],
-    "description": "<table style=\"width:100%; border-collapse:collapse;\"><tr><td style=\"width:40%; vertical-align:middle; padding-right:20px;\"><p>Все проблемы от свободы передвижения, поэтому зафиксировать так чтобы:</p><ul><li>Легко находить конец в темноте</li><li>Легко снимать без шума</li><li>Легко фиксировать обратно</li><li>Минимум телодвижений</li></ul></td><td style=\"width:60%; vertical-align:middle; text-align:center;\"><img src=\"/media/cabels.jpg\" alt=\"Cable fixes\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></td></tr></table>",
+    "description": "<div style=\"max-width:960px; margin:0 auto; text-align:left;\"><p>Все проблемы от свободы передвижения, поэтому зафиксировать так чтобы:</p><ul><li>Легко находить конец в темноте</li><li>Легко снимать без шума</li><li>Легко фиксировать обратно</li><li>Минимум телодвижений</li></ul><div style=\"margin-top:16px; text-align:center;\"><img src=\"/media/cabels.jpg\" alt=\"Cable fixes\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></div></div>",
     "correct": "4",
     "points": 1,
     "time": 90
@@ -108,7 +106,7 @@
       "Кнопка башни",
       "Запретная зона"
     ],
-    "description": "<table style=\"width:100%; border-collapse:collapse;\"><tr><td style=\"width:45%; vertical-align:middle; padding-right:24px;\"><p>Как сделать, чтобы пылесос не застревал на трубах 1–1.5 см?</p><ul><li>Стулья могут перемещаться</li><li>Сушилка стоит в единственно доступном месте</li><li>Модель пылесоса может меняться</li></ul></td><td style=\"width:55%; vertical-align:middle; text-align:center;\"><img src=\"/media/mopper.jpg\" alt=\"Vacuum obstacles\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></td></tr></table>",
+    "description": "<div style=\"padding:0 50px; align-self:center;\"><p>Как сделать, чтобы пылесос не застревал на трубах 1–1.5 см?</p><ul><li>Стулья могут перемещаться</li><li>Сушилка стоит в единственно доступном месте</li><li>Модель пылесоса может меняться</li></ul><div style=\"margin-top:16px; text-align:center;\"><img src=\"/media/mopper.jpg\" alt=\"Vacuum obstacles\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></div></div>",
     "points": 3,
     "time": 90
   },
@@ -121,15 +119,15 @@
       "Заклеить проём между труб",
       "Подставка под ножки"
     ],
-    "description": "Магнитики:\n- В целом работают, если поставить плотно\n- Получаются дыры в «стене»\n- Сбиваются, цепляются за другие предметы\n- Пылесос может пересечь преграду и не мочь выехать\n\nНашивка ножек:\n- Подняло стул\n- Незаметно для сидящего\n- Меньше царапает паркет\n- Тише при смещении стула\n\nСкотч и бумага:\n- Проще и легче нашивок\n- Подходит для спрятанной сушилки",
+    "description": "<div style=\"padding:0 50px; max-width:1000px; margin:0 auto; text-align:left;\"><p><strong>Магнитики:</strong></p><ul><li>В целом работают, если поставить плотно</li><li>Получаются дыры в «стене»</li><li>Сбиваются, цепляются за другие предметы</li><li>Пылесос может пересечь преграду и не мочь выехать</li></ul><p><strong>Нашивка ножек:</strong></p><ul><li>Подняло стул</li><li>Незаметно для сидящего</li><li>Меньше царапает паркет</li><li>Тише при смещении стула</li></ul><p><strong>Скотч и бумага:</strong></p><ul><li>Проще и легче нашивок</li><li>Подходит для спрятанной сушилки</li></ul></div>",
     "correct": "2",
     "points": 1,
     "time": 60
   },
   {
     "type": "open",
-    "title": "Опишите идеальную установку мобильного кондиционера.",
-    "description": "<img src=\"/media/mobile.jpg\" alt=\"Mobile AC setup\" loading=\"lazy\">",
+    "title": "Опишите идеальную установку мобильного кондиционера",
+    "description": "<img src=\"/media/mobile2.jpg\" alt=\"Mobile AC setup\" loading=\"lazy\">",
     "time": 120
   },
   {
@@ -143,7 +141,7 @@
       "ХДФ (ДВП)",
       "Фанеру"
     ],
-    "description": "<p>Идеальный мобильный кондиционер — почти оконный:</p><ul><li>Стоит максимально близко к выбросу</li><li>Охлаждённый воздух прогоняет по большой площади, а не только надувает в угол</li><li>Воздух для охлаждения забирает с улицы</li><li>Если невозможно замкнуть контур, то стараться забирать воздух из тени</li></ul>",
+    "description": "<div style=\"padding:0 50px; align-self:center;\"><p>Идеальный мобильный кондиционер — почти оконный:</p><ul><li>Стоит максимально близко к выбросу</li><li>Охлаждённый воздух прогоняет по большой площади, а не только надувает в угол</li><li>Воздух для охлаждения забирает с улицы</li><li>Если невозможно замкнуть контур, то стараться забирать воздух из тени</li></ul></div>",
     "correct": "5",
     "points": 1,
     "time": 60
@@ -173,7 +171,7 @@
       "Спать на полу на балконе",
       "Перенести рабочее место с балкона"
     ],
-    "description": "<table style=\"width:100%; border-collapse:collapse;\"><tr><td style=\"width:45%; vertical-align:middle; padding-right:24px;\"><p>Условия:</p><ul><li>Детали будут ехать 2 недели</li><li>Очень жаркое лето, +28 ночью</li><li>Открытые окна не помогают, да и лают собаки</li><li>На балконе нет места для кровати</li><li>Есть внутренняя спальня</li><li>В неё есть окно с балкона</li><li>Воздух спальни практически не охлаждается</li></ul></td><td style=\"width:55%; vertical-align:middle; text-align:center;\"><img src=\"/media/cond.svg\" alt=\"Hot summer constraints\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></td></tr></table>",
+    "description": "<div style=\"padding:0 50px; align-self:center;\"><p>Условия:</p><ul><li>Детали будут ехать 2 недели</li><li>Очень жаркое лето, +28 ночью</li><li>Открытые окна не помогают, да и лают собаки</li><li>На балконе нет места для кровати</li><li>Есть внутренняя спальня</li><li>В неё есть окно с балкона</li><li>Воздух спальни практически не охлаждается</li></ul><div style=\"margin-top:16px; text-align:center;\"><img src=\"/media/cond.svg\" alt=\"Hot summer constraints\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></div></div>",
     "correct": "4",
     "points": 1,
     "time": 90
@@ -194,7 +192,7 @@
       "Душ «топтун» (ножная помпа)",
       "Самоделка из пластиковой тары и бутылки"
     ],
-    "description": "<table style=\"width:100%; border-collapse:collapse;\"><tr><td style=\"width:40%; vertical-align:middle; padding-right:20px;\"><p>Условия:</p><ul><li>В квартире регулярно отключают воду</li><li>Минимально нужно мыть руки и фрукты</li><li>Желательно иметь возможность мыть посуду</li></ul></td><td style=\"width:60%; vertical-align:middle; text-align:center;\"><img src=\"/media/crane.jpg\" alt=\"Water options\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></td></tr></table>",
+    "description": "<div style=\"padding:0 50px; align-self:center;\"><p>Условия:</p><ul><li>В квартире регулярно отключают воду</li><li>Минимально нужно мыть руки и фрукты</li><li>Желательно иметь возможность мыть посуду</li></ul><div style=\"margin-top:16px; text-align:center;\"><img src=\"/media/crane.jpg\" alt=\"Water options\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></div></div>",
     "correct": "1",
     "points": 1,
     "time": 60
@@ -202,10 +200,7 @@
   {
     "type": "multi",
     "title": "Какие материалы изящнее и проще использовать для изготовления полочки?",
-    "correct_options": [
-      "ХДФ",
-      "Термоклей (пистолет)"
-    ],
+    "correct_options": ["ХДФ", "Термоклей (пистолет)"],
     "other_options": [
       "Брус",
       "Картон",
@@ -218,7 +213,7 @@
       "Суперклей",
       "Строительный степлер"
     ],
-    "description": "<table style=\"width:100%; border-collapse:collapse;\"><tr><td style=\"width:45%; vertical-align:middle; padding-right:24px;\"><p>Контекст:</p><ul><li>Центр квартиры, угол в коридоре</li><li>GPON терминал провайдера прикручен к стене</li><li>Рядом 2 розетки</li><li>Есть крепление платформы DECT телефона</li></ul></td><td style=\"width:55%; vertical-align:middle; text-align:center;\"><img src=\"/media/corner.svg\" alt=\"Shelf corner\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></td></tr></table>",
+    "description": "<div style=\"padding:0 50px; align-self:center;\"><p>Контекст:</p><ul><li>Центр квартиры, угол в коридоре</li><li>GPON терминал провайдера прикручен к стене</li><li>Рядом 2 розетки</li><li>Есть крепление платформы DECT телефона</li></ul><div style=\"margin-top:16px; text-align:center;\"><img src=\"/media/corner.svg\" alt=\"Shelf corner\" loading=\"lazy\" style=\"max-width:100%; height:auto;\"></div></div>",
     "points": 2,
     "time": 120
   }

@@ -4,6 +4,14 @@
     margin: var(--space-4) 0;
 }
 
+.content.description-page.description-long .page__problem-title {
+    margin: var(--space-2) 0;
+}
+
+.quiz-center > h1 {
+    margin: var(--space-2) 0;
+}
+
 .ideas-wrap {
     flex: 1 1 auto;
     min-height: 0;
@@ -201,12 +209,13 @@
 
 .quiz-center {
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     width: 100%;
-    padding: 0 60px;
+    padding: var(--space-3) 60px;
     height: 100%;
     overflow: hidden;
+    gap: var(--space-4);
 }
 
 .quiz-layout {
@@ -214,12 +223,14 @@
     width: 100%;
     justify-content: center;
     align-items: stretch;
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .quiz-col {
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
+    min-width: 0;
 }
 
 .quiz-col.chart-col {
@@ -238,13 +249,40 @@
 }
 
 .quiz-description {
-    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
     max-height: 100%;
+    width: 100%;
     font-size: 26px;
     line-height: 1.35;
     font-weight: var(--font-weight-light);
-    overflow-y: auto;
+    overflow: auto;
     text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.quiz-description::-webkit-scrollbar {
+    display: none;
+}
+
+.quiz-description--html {
+    width: 100%;
+    max-width: none;
+}
+
+.quiz-description--html img {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 100%;
+    align-self: center;
 }
 
 .quiz-description p {
@@ -252,18 +290,151 @@
 }
 
 .quiz-description p + p {
-    margin-top: var(--space-3);
+    margin-top: var(--space-2);
+}
+
+.quiz-description ul,
+.quiz-description ol {
+    margin: 0;
+    padding-left: 1.2em;
+}
+
+.quiz-description li + li {
+    margin-top: 0.15em;
 }
 
 .quiz-description img {
     max-width: 100%;
+    width: auto;
     height: auto;
-    display: block;
-    margin: var(--space-3) auto;
+    max-height: 100%;
+    object-fit: contain;
 }
 
 .quiz-description figure {
-    margin: var(--space-3) 0;
+    margin: 0;
+}
+
+.quiz-description table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.quiz-description picture {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.quiz-description--long {
+    overflow: hidden;
+}
+
+.quiz-description--long.quiz-description--html {
+    padding: 0;
+    gap: 0;
+}
+
+.quiz-description--long.quiz-description--html > :only-child:not(table) {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+}
+
+.quiz-description--long.quiz-description--html .rich-media-slot {
+    flex: 0 1 auto;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quiz-description--long.quiz-description--html .rich-media-slot:only-child {
+    flex: 1 1 auto;
+}
+
+.quiz-description--long.quiz-description--html table.rich-layout-table {
+    display: block;
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+}
+
+.quiz-description--long.quiz-description--html table.rich-layout-table > tbody {
+    display: block;
+    height: 100%;
+    width: 100%;
+}
+
+.quiz-description--long.quiz-description--html table.rich-layout-table > tbody > tr {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    height: 100%;
+    width: 100%;
+}
+
+.quiz-description--long.quiz-description--html table.rich-layout-table > tbody > tr > :is(td, th) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    min-height: 0;
+}
+
+.quiz-description--long.quiz-description--html table.rich-layout-table :is(picture, figure) {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+}
+
+.quiz-description--long.quiz-description--html table.rich-layout-table :is(td, th) > * {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.quiz-description--long.quiz-description--html table.rich-layout-table :is(td, th) > :is(div, picture, figure) {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* Optional per-step overrides for scenario HTML tables. */
+.quiz-description--long.quiz-description--html table.rich-layout-table.layout-split-50 > tbody > tr {
+    grid-auto-columns: 1fr 1fr;
+}
+
+.quiz-description--long.quiz-description--html table.rich-layout-table[class*="layout-split-"] > tbody > tr > :is(td, th):first-child {
+    align-self: center;
+}
+
+/* Optional per-step overrides:
+   Add class="layout-split-33-67" to make media column 2/3 width. */
+.quiz-description--long.quiz-description--html table.rich-layout-table.layout-split-33-67 > tbody > tr {
+    grid-auto-columns: 1fr 2fr;
+}
+
+/* Optional per-step overrides:
+   Add class="layout-split-40-60" to make media column 60% width. */
+.quiz-description--long.quiz-description--html table.rich-layout-table.layout-split-40-60 > tbody > tr {
+    grid-auto-columns: 2fr 3fr;
+}
+
+.quiz-description--html table img,
+.quiz-description--html table picture img {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
 }
 
 .quiz-description a {
@@ -278,14 +449,13 @@
 
 .sequence-description {
     flex: 0 1 auto;
-    overflow-y: auto;
     min-height: 0;
 }
 
 .sequence-description .quiz-description {
     width: 100%;
     max-height: none;
-    overflow: visible;
+    height: 100%;
 }
 
 .quiz-options {

@@ -37,13 +37,36 @@ templates = Jinja2Templates(directory="app/templates")
 templates.env.filters["rich_text"] = format_rich_text
 
 
+def _static_version() -> str:
+    paths = [
+        "app/static/tokens.css",
+        "app/static/base.css",
+        "app/static/leaderboard.css",
+        "app/static/ideas.css",
+        "app/static/components.css",
+        "app/static/app.js",
+    ]
+    mtimes: list[float] = []
+    for path in paths:
+        try:
+            mtimes.append(os.path.getmtime(path))
+        except OSError:
+            continue
+    if not mtimes:
+        return "1"
+    return str(int(max(mtimes)))
+
+
 @router.get("/", response_class=HTMLResponse)
 async def public(request: Request, session: AsyncSession = Depends(get_session)):
     gs = await session.get(GlobalState, 1)
     step = await session.get(Step, gs.current_step_id)
     ctx = await build_public_context(session, step, gs)
     template = f"stages/{step.type}.jinja2"
-    return templates.TemplateResponse(template, {"request": request, "texts": texts, **ctx})
+    return templates.TemplateResponse(
+        template,
+        {"request": request, "texts": texts, "static_version": _static_version(), **ctx},
+    )
 
 
 @router.get("/reset", response_class=HTMLResponse)
@@ -55,6 +78,7 @@ async def reset_page(request: Request):
             "request": request,
             "stage_title": "Сброс",
             "texts": texts,
+            "static_version": _static_version(),
             "show_next": False,
             "disable_ws": True,
         },
@@ -107,6 +131,7 @@ async def preview(request: Request, idx: int = 0):
                 "texts": texts,
                 "stage_title": texts.PREVIEW_TITLE,
                 "instruction": texts.PREVIEW_INSTRUCTION,
+                "static_version": _static_version(),
                 "phase": 0,
                 "step": None,
                 "since": datetime.utcnow(),
@@ -140,9 +165,9 @@ async def preview(request: Request, idx: int = 0):
         timer_text = format_mmss(timer_ms)
         instruction = texts.OPEN_PUBLIC_INSTR
         if step.text:
-            desc_len = len(step.text)
+            desc_meta = format_rich_text(step.text)
             content_class = "description-page"
-            if desc_len > 500:
+            if desc_meta["is_multi"] or desc_meta["is_html"]:
                 content_class = content_class + " description-long"
     elif step.type in {"quiz", "multi"}:
         timer_ms = step.timer_ms or 60 * 1000
@@ -154,11 +179,6 @@ async def preview(request: Request, idx: int = 0):
         timer_id = "sequenceTimer"
         timer_text = format_mmss(timer_ms)
         instruction = texts.SEQUENCE_PUBLIC_INSTR
-    if step.type == "open" and step.text:
-        desc_len = len(step.text)
-        content_class = "description-page"
-        if desc_len > 500:
-            content_class = content_class + " description-long"
     stage_title = {
         "open": texts.TITLE_OPEN,
         "quiz": "Выбери верный",
@@ -166,9 +186,12 @@ async def preview(request: Request, idx: int = 0):
         "sequence": texts.TITLE_SEQUENCE,
         "registration": texts.TITLE_REGISTRATION,
     }.get(step.type, step.title or texts.PREVIEW_TITLE)
+    if stage_title and total:
+        stage_title = f"{stage_title} — {current_idx + 1}/{total}"
     ctx = {
         "request": request,
         "texts": texts,
+        "static_version": _static_version(),
         "step": step,
         "phase": 0,
         "options": options,

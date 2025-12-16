@@ -270,12 +270,24 @@ def format_rich_text(value: str | None) -> Dict[str, Any]:
     """Return HTML markup and metadata for a description block."""
     if not value:
         empty = Markup("")
-        return {"html": empty, "has_text": False, "is_multi": False, "has_image": False}
+        return {
+            "html": empty,
+            "has_text": False,
+            "is_multi": False,
+            "has_image": False,
+            "is_html": False,
+        }
 
     stripped = value.strip()
     if not stripped:
         empty = Markup("")
-        return {"html": empty, "has_text": False, "is_multi": False, "has_image": False}
+        return {
+            "html": empty,
+            "has_text": False,
+            "is_multi": False,
+            "has_image": False,
+            "is_html": False,
+        }
 
     if _HTML_TAG_RE.search(stripped):
         sanitized = _sanitize_html(stripped)
@@ -287,15 +299,28 @@ def format_rich_text(value: str | None) -> Dict[str, Any]:
             "has_text": has_text,
             "is_multi": is_multi,
             "has_image": has_image,
+            "is_html": True,
         }
 
     paragraphs = [part.strip() for part in _PARAGRAPH_RE.split(stripped) if part.strip()]
     if not paragraphs:
         empty = Markup("")
-        return {"html": empty, "has_text": False, "is_multi": False, "has_image": False}
+        return {
+            "html": empty,
+            "has_text": False,
+            "is_multi": False,
+            "has_image": False,
+            "is_html": False,
+        }
 
     html, is_multi = _render_plain_blocks(paragraphs)
-    return {"html": html, "has_text": True, "is_multi": is_multi, "has_image": False}
+    return {
+        "html": html,
+        "has_text": True,
+        "is_multi": is_multi,
+        "has_image": False,
+        "is_html": False,
+    }
 
 
 def _render_plain_blocks(paragraphs: list[str]) -> tuple[Markup, bool]:

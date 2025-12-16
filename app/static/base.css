@@ -67,15 +67,19 @@ a:hover, a:focus {
 }
 
 .content.description-page {
-    justify-content: center;
-    align-items: center;
+    display: grid;
+    grid-template-rows: auto auto;
+    align-content: center;
+    justify-items: center;
     text-align: center;
-    overflow: auto;
+    overflow: hidden;
     padding: var(--space-3) 0;
+    row-gap: var(--space-3);
 }
 
 .content.description-page.description-long {
-    justify-content: flex-start;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: start;
     padding-top: var(--space-2);
     padding-bottom: var(--space-3);
 }

@@ -21,6 +21,7 @@ from app.models import (
     MultiAnswer,
     User,
 )
+from app.rich_text import format_rich_text
 from app.scoring import get_leaderboard_users
 
 
@@ -87,9 +88,9 @@ async def open_context(
         if last_at:
             last_ago_s = int((datetime.utcnow() - last_at).total_seconds())
         duration_ms = step.timer_ms or 5 * 60 * 1000
-        desc_len = len(step.text or "")
+        desc_meta = format_rich_text(step.text)
         content_class = "description-page"
-        if desc_len > 500:
+        if desc_meta["is_multi"] or desc_meta["is_html"]:
             content_class = "description-page description-long"
         ctx.update(
             total_users=int(total_users or 0),

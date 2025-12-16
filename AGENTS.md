@@ -50,6 +50,38 @@ Keep changes minimal, safe, and production-ready.
 
 ## Common tasks (recipes)
 
+### Author projector descriptions (plain text & HTML)
+
+The public screen renders `description`/`text` via `rich_text` (sanitized HTML + plain-text formatting).
+
+**Plain text**
+
+* Use blank lines to separate paragraphs.
+* Use `- ` at the start of a line to create bullet lists.
+* Plain-text descriptions are intentionally narrower for readability.
+
+**HTML**
+
+* Keep HTML valid (do not use stray closing tags like `</p>` without an opening `<p>`).
+* Avoid inline table column widths like `width:45%/55%/40%/60%` on `<td>` — they commonly produce broken responsive
+  layouts. Prefer the supported table layout classes instead.
+* For per-question spacing, prefer local wrappers with inline `padding` rather than global CSS changes.
+
+**Supported layout helpers (HTML)**
+
+* **Text + image below** (recommended): wrap content in a `<div style="padding:0 50px; align-self:center;">...`
+  and place media in a `margin-top:16px` block.
+* **Two-column layouts** (1-row tables): make the table the top-level element and add one of:
+
+  * `layout-split-50` (50/50)
+  * `layout-split-33-67` (text 1/3, media 2/3)
+  * `layout-split-40-60` (text 40%, media 60%)
+
+**Validation tip**
+
+* `/preview` reads the scenario file directly (no DB). If something looks unchanged in the main flow, you likely need a
+  `/reset` to reload steps from disk into the DB.
+
 ### Add a quiz step
 
 * Edit `scenario.yaml`/`.json` to add a block:

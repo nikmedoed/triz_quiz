@@ -4,8 +4,9 @@
     <h1 class="page__problem-title">{{ step.title }}</h1>
     {% if phase == 0 %}
         {% set desc = step.text | rich_text %}
+        {% set desc_long = desc.is_multi or desc.is_html %}
         {% if desc.has_text %}
-            <div class="description{% if desc.is_multi %} description--multi{% endif %}">
+            <div class="description{% if desc.is_multi %} description--multi{% endif %}{% if desc.is_html %} description--html{% endif %}{% if desc_long %} description--long{% endif %}">
                 {{ desc.html }}
             </div>
         {% endif %}

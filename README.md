@@ -128,6 +128,66 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
 
 ---
 
+## Description rendering (plain text vs HTML)
+
+`description` (or `text`) is rendered on the public screen as **rich text**:
+
+### Plain text (recommended for simple prompts)
+
+- Separate paragraphs with a blank line.
+- Use `- ` at the start of a line to create bullet lists.
+- Plain-text descriptions are centered and have a narrower max width for readability.
+
+### HTML (for media/layout)
+
+HTML is sanitized (scripts/styles are removed), but basic layout tags like `div`, `p`, `ul`, `table`, `img`, `picture`
+are supported.
+
+**Rules of thumb**
+
+- Avoid `width:45%/55%/40%/60%` on `<td>`; it often breaks responsive layout. Use layout classes instead.
+- Prefer local wrappers for per-question spacing (`padding`) instead of changing global CSS.
+- For images, keep `object-fit: contain` behavior by using `max-width:100%; height:auto` unless you explicitly want a
+  full-height media slot.
+
+**Template: text + image below (no tables)**
+
+```html
+<div style="padding:0 50px; align-self:center;">
+  <p>Context / conditions:</p>
+  <ul>
+    <li>Item one</li>
+    <li>Item two</li>
+  </ul>
+  <div style="margin-top:16px; text-align:center;">
+    <img src="/media/example.jpg" alt="Example" loading="lazy" style="max-width:100%; height:auto;">
+  </div>
+</div>
+```
+
+**Template: two columns (table, 1-row layout)**
+
+Use a 1-row table as the top-level description element and add one of these classes:
+
+- `layout-split-50` (50/50)
+- `layout-split-33-67` (text 1/3, media 2/3)
+- `layout-split-40-60` (text 40%, media 60%)
+
+```html
+<table class="layout-split-33-67" style="width:100%; border-collapse:collapse;">
+  <tr>
+    <td style="vertical-align:middle; padding-left:60px; padding-right:20px; align-self:center;">
+      <p>Text goes here...</p>
+    </td>
+    <td style="vertical-align:middle; text-align:center;">
+      <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+        <img src="/media/example.jpg" alt="Example" loading="lazy" style="width:100%; height:100%; object-fit:contain;">
+      </div>
+    </td>
+  </tr>
+</table>
+```
+
 ## Scoring rules
 
 * **MCQ**: each correct answer gives `points` (per-quiz configurable).
@@ -178,4 +238,3 @@ Roboto weights are loaded from Google Fonts in `base.jinja2`:
 ```
 
 For offline usage, download these font files and serve them locally, adjusting the `<link>` accordingly.
-

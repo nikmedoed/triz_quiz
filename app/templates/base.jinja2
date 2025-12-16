@@ -7,13 +7,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;900&display=swap" rel="stylesheet"/>
-    <link rel="stylesheet" href="/static/tokens.css"/>
-    <link rel="stylesheet" href="/static/base.css"/>
-    <link rel="stylesheet" href="/static/leaderboard.css"/>
-    <link rel="stylesheet" href="/static/ideas.css"/>
-    <link rel="stylesheet" href="/static/components.css"/>
+    <link rel="stylesheet" href="/static/tokens.css?v={{ static_version or '' }}"/>
+    <link rel="stylesheet" href="/static/base.css?v={{ static_version or '' }}"/>
+    <link rel="stylesheet" href="/static/leaderboard.css?v={{ static_version or '' }}"/>
+    <link rel="stylesheet" href="/static/ideas.css?v={{ static_version or '' }}"/>
+    <link rel="stylesheet" href="/static/components.css?v={{ static_version or '' }}"/>
     <link rel="icon" type="image/svg+xml" href="/static/icon.svg"/>
-    <script src="/static/app.js" defer></script>
+    <script src="/static/app.js?v={{ static_version or '' }}" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
