@@ -66,8 +66,16 @@ async def load_if_empty(session: AsyncSession, path: str) -> None:
     # Registration (implicit)
     add_step("registration", title=texts.TITLE_REGISTRATION)
 
+    def normalize_text(val: str | list[str] | None) -> str | None:
+        if isinstance(val, list):
+            return "\n".join(str(x) for x in val)
+        return val
+
     # Normalize items
     for item in items:
+        item["description"] = normalize_text(item.get("description"))
+        item["text"] = normalize_text(item.get("text"))
+
         t = (item.get("type") or "").strip().lower()
         if t in IGNORED:
             continue

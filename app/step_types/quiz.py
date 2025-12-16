@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from html import escape
 from typing import Any, Dict
 
 from aiogram import Bot
@@ -14,6 +15,7 @@ from app.db import AsyncSessionLocal
 from app.hub import hub
 from app.models import Step, GlobalState, McqAnswer, StepOption, User
 from app.public_context import quiz_context
+from app.rich_text import render_plain_text
 from app.scoring import add_mcq_points
 from . import StepType, register
 
@@ -73,8 +75,8 @@ async def quiz_bot_prompts(
                 ).scalars().all()
             ]
         header = texts.QUIZ_HEADER
-        title = step.title
-        body = step.text or ""
+        title = escape(step.title)
+        body = escape(render_plain_text(step.text))
         instr = texts.QUIZ_INSTR
         parts = [f"<b>{header}</b>", title]
         if body:

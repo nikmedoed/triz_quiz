@@ -1,13 +1,20 @@
-const MAX_LABEL_LENGTH = 15;
+const MAX_LABEL_LENGTH = 40;
+const MIN_LABEL_LENGTH = 12;
+const LABEL_CHAR_ESTIMATE = 7.5;
+const LABEL_SIDE_PADDING = 12;
 const LABEL_FONT_SIZE = 16;
 const AVATAR_BOTTOM_GAP = 10;
 
 function wrapLabel(text, maxLen = MAX_LABEL_LENGTH) {
+    const limit = Math.max(
+        MIN_LABEL_LENGTH,
+        Math.min(MAX_LABEL_LENGTH, Math.floor(maxLen || MAX_LABEL_LENGTH))
+    );
     const words = text.split(' ');
     const lines = [];
     let current = words.shift() || '';
     words.forEach(w => {
-        if ((current + ' ' + w).length > maxLen) {
+        if ((current + ' ' + w).length > limit) {
             lines.push(current);
             current = w;
         } else {
@@ -48,7 +55,18 @@ function renderBarWithAvatars(data, correctSet) {
     const container = ctx.parentNode;
     ctx.width = container.clientWidth;
     ctx.height = container.clientHeight;
-    const labels = (data.labels || []).map(l => wrapLabel(l));
+    const rawLabels = data.labels || [];
+    const estimatedColumnWidth = rawLabels.length
+        ? (container.clientWidth / rawLabels.length)
+        : container.clientWidth;
+    const dynamicMaxLen = Math.min(
+        MAX_LABEL_LENGTH,
+        Math.max(
+            MIN_LABEL_LENGTH,
+            Math.floor(Math.max(estimatedColumnWidth - LABEL_SIDE_PADDING * 2, 80) / LABEL_CHAR_ESTIMATE)
+        )
+    );
+    const labels = rawLabels.map(l => wrapLabel(l, dynamicMaxLen));
     const styles = getComputedStyle(document.documentElement);
     const primary = styles.getPropertyValue('--color-primary-500').trim() || '#e5231b';
     const neutral = styles.getPropertyValue('--color-slate-400').trim() || '#8c929c';
@@ -175,4 +193,3 @@ window.renderSequence = function () {
     if (!data) return;
     renderBarWithAvatars(data, new Set([0]));
 };
-

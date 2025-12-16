@@ -15,6 +15,7 @@ from app.db import AsyncSessionLocal
 from app.hub import hub
 from app.models import Step, GlobalState, Idea, IdeaVote, User
 from app.public_context import open_context
+from app.rich_text import render_plain_text
 from app.scoring import add_vote_points
 from . import StepType, register
 
@@ -57,7 +58,7 @@ async def open_bot_prompts(
     if phase == 0:
         header = texts.OPEN_HEADER
         title = escape(step.title)
-        body = escape(step.text or "")
+        body = escape(render_plain_text(step.text))
         instr = texts.OPEN_INSTR
         text = (
             f"<b>{header}</b>\n\n"

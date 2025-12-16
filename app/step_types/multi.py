@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import random
 from datetime import datetime
+from html import escape
 from typing import Any, Dict
 
 from aiogram import Bot
@@ -15,6 +16,7 @@ from app.db import AsyncSessionLocal
 from app.hub import hub
 from app.models import Step, GlobalState, MultiAnswer, StepOption, User
 from app.public_context import multi_context
+from app.rich_text import extract_media_sources, render_plain_text
 from app.scoring import add_multi_points
 from . import StepType, register
 
@@ -142,15 +144,18 @@ async def multi_bot_prompts(
                     )
                 ).scalars().all()
             ]
+        media_paths = extract_media_sources(step.text)
         header = texts.MULTI_HEADER
-        title = step.title
-        body = step.text or ""
+        title = escape(step.title)
+        body = escape(render_plain_text(step.text))
         instr = texts.MULTI_INSTR
         parts = [f"<b>{header}</b>", title]
         if body:
             parts.append(body)
         parts.append(f"<i>{instr}</i>")
         text = "\n\n".join(parts)
+        for path in media_paths:
+            msgs.append({"type": "photo", "path": path, "kwargs": {}})
         msgs.append(
             (
                 text,

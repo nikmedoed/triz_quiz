@@ -240,7 +240,8 @@
 .quiz-description {
     width: 100%;
     max-height: 100%;
-    font-size: 22px;
+    font-size: 26px;
+    line-height: 1.35;
     font-weight: var(--font-weight-light);
     overflow-y: auto;
     text-align: left;
