@@ -45,4 +45,5 @@ def create_app() -> FastAPI:
     app.include_router(web_router)
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
     app.mount("/avatars", StaticFiles(directory=settings.AVATAR_DIR, check_dir=False), name="avatars")
+    app.mount("/media", StaticFiles(directory="media", check_dir=False), name="media")
     return app

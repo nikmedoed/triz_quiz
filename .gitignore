@@ -186,3 +186,4 @@ frontend/index.jinja2
 uv.lock
 state.json
 /avatars/
+/media

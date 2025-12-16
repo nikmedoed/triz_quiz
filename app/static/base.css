@@ -68,8 +68,16 @@ a:hover, a:focus {
 
 .content.description-page {
     justify-content: center;
+    align-items: center;
     text-align: center;
     overflow: auto;
+    padding: var(--space-3) 0;
+}
+
+.content.description-page.description-long {
+    justify-content: flex-start;
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-3);
 }
 
 /* Global typography (moved from leaderboard.css) */

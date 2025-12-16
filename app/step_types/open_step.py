@@ -34,10 +34,17 @@ async def open_on_enter(session: AsyncSession, step: Step, phase: int) -> None:
 async def open_load_item(
         session: AsyncSession, add_step, item: Dict[str, Any]
 ) -> None:
+    time_val = item.get("time")
+    timer_ms = None
+    if isinstance(time_val, str) and time_val.isdigit():
+        timer_ms = int(time_val) * 1000
+    elif isinstance(time_val, (int, float)):
+        timer_ms = int(time_val) * 1000
     add_step(
         "open",
         title=item.get("title", texts.TITLE_OPEN),
         text=item.get("description") or item.get("text"),
+        timer_ms=timer_ms,
     )
 
 

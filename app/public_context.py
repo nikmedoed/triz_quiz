@@ -86,18 +86,23 @@ async def open_context(
         last_ago_s = None
         if last_at:
             last_ago_s = int((datetime.utcnow() - last_at).total_seconds())
+        duration_ms = step.timer_ms or 5 * 60 * 1000
+        desc_len = len(step.text or "")
+        content_class = "description-page"
+        if desc_len > 500:
+            content_class = "description-page description-long"
         ctx.update(
             total_users=int(total_users or 0),
             last_answer_ago_s=last_ago_s,
             timer_id="ideaTimer",
-            timer_text="05:00",
-            timer_ms=5 * 60 * 1000,
+            timer_text=format_mmss(duration_ms),
+            timer_ms=duration_ms,
             status_mode="answers",
             status_current=len(ideas),
             status_total=int(total_users or 0),
             status_last=last_ago_s if last_ago_s is not None else "-",
             instruction="Отправляйте идеи боту. Здесь они пока не видны.",
-            content_class="description-page",
+            content_class=content_class,
         )
     if gs.phase == 1 and ideas:
         voters = (

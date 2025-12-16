@@ -243,7 +243,6 @@
     font-size: 22px;
     font-weight: var(--font-weight-light);
     overflow-y: auto;
-    white-space: pre-line;
     text-align: left;
 }
 
@@ -253,6 +252,21 @@
 
 .quiz-description p + p {
     margin-top: var(--space-3);
+}
+
+.quiz-description img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: var(--space-3) auto;
+}
+
+.quiz-description figure {
+    margin: var(--space-3) 0;
+}
+
+.quiz-description a {
+    color: var(--color-primary-500);
 }
 
 .sequence-details > .quiz-options {
@@ -286,8 +300,10 @@
 }
 
 .quiz-options li {
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    column-gap: var(--space-2);
     font-size: 24px;
     font-weight: var(--font-weight-regular);
     border: 1px solid var(--color-light);
@@ -295,12 +311,16 @@
     background: var(--color-slate-50);
     border-radius: var(--radius-md);
     word-break: break-word;
+    text-align: left;
 }
 
 .quiz-options li::before {
     counter-increment: option;
     content: counter(option) '.';
-    margin-right: var(--space-2);
+    margin-right: 0;
+    width: 2.5ch;
+    text-align: right;
+    white-space: nowrap;
 }
 
 .quiz-options.no-counter {
@@ -321,7 +341,7 @@
 }
 
 .quiz-options-alone li {
-    text-align: center;
+    text-align: left;
 }
 
 .timer {
