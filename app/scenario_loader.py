@@ -1,6 +1,7 @@
 # Load scenario (JSON or YAML list). Auto-prepend registration and append leaderboard.
 import json
 import os
+import random
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import app.texts as texts
 from app.models import Step, GlobalState
 from app.step_types import STEP_TYPES
-from app.step_types.multi import build_multi_payload
+from app.step_types.multi import build_multi_payload_seeded
 
 IGNORED = {"vote", "vote_results"}
 
@@ -171,22 +172,38 @@ def load_preview_steps(path: str | None = None) -> list[PreviewStep]:
             continue
         if t == "quiz":
             opts = [str(opt) for opt in item.get("options", [])]
+            correct_index = _parse_correct_index(item.get("correct"))
+            combined: list[tuple[str, bool]] = [
+                (text, idx == correct_index) for idx, text in enumerate(opts)
+            ]
+            rng = random.Random(order + 1)  # order+1 matches DB order_index (registration is implicit at 0)
+            rng.shuffle(combined)
+            shuffled_correct: int | None = None
+            shuffled_opts: list[str] = []
+            for idx, (text, is_correct) in enumerate(combined):
+                shuffled_opts.append(text)
+                if is_correct:
+                    shuffled_correct = idx
             step = Step(
                 id=order + 1,
                 order_index=order,
                 type="quiz",
                 title=item.get("title", texts.TITLE_QUIZ),
                 text=item.get("description") or item.get("text"),
-                correct_index=_parse_correct_index(item.get("correct")),
+                correct_index=shuffled_correct,
                 points_correct=item.get("points"),
                 timer_ms=_parse_timer_ms(item.get("time")),
             )
-            options = [PreviewOption(idx=i, text=text) for i, text in enumerate(opts)]
+            options = [
+                PreviewOption(idx=i, text=text) for i, text in enumerate(shuffled_opts)
+            ]
             steps.append(PreviewStep(step=step, options=options))
             order += 1
             continue
         if t == "multi":
-            options_payload, correct_multi_indices = build_multi_payload(item)
+            options_payload, correct_multi_indices = build_multi_payload_seeded(
+                item, seed=order + 1  # order+1 matches DB order_index (registration is implicit at 0)
+            )
             step = Step(
                 id=order + 1,
                 order_index=order,

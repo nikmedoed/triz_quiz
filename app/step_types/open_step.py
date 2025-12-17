@@ -60,12 +60,11 @@ async def open_bot_prompts(
         title = escape(step.title)
         body = escape(render_plain_text(step.text))
         instr = texts.OPEN_INSTR
-        text = (
-            f"<b>{header}</b>\n\n"
-            f"{title}\n\n"
-            f"{body}\n\n\n"
-            f"<i>{instr}</i>"
-        ).strip()
+        parts = [f"<b>{header}</b>", title]
+        if body:
+            parts.append(body)
+        parts.append(f"<i>{instr}</i>")
+        text = "\n\n".join(parts)
         msgs.append((text, {"parse_mode": "HTML"}))
     elif phase == 1:
         async with AsyncSessionLocal() as s:

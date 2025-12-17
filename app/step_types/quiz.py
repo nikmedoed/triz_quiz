@@ -1,6 +1,7 @@
 # Quiz step type.
 from __future__ import annotations
 
+import random
 from datetime import datetime
 from html import escape
 from typing import Any, Dict
@@ -45,14 +46,26 @@ async def quiz_load_item(
         timer_ms=timer_ms,
     )
     await session.flush()
-    opts = item.get("options", [])
-    for idx, text in enumerate(opts):
-        session.add(StepOption(step_id=s.id, idx=idx, text=text))
+    opts = [str(x) for x in (item.get("options") or []) if str(x)]
     correct = item.get("correct")
+    correct_index: int | None = None
     if isinstance(correct, str) and correct.isdigit():
-        s.correct_index = int(correct) - 1
+        correct_index = int(correct) - 1
     elif isinstance(correct, int):
-        s.correct_index = correct
+        correct_index = correct
+
+    combined: list[tuple[str, bool]] = [
+        (text, idx == correct_index) for idx, text in enumerate(opts)
+    ]
+    rng = random.Random(s.order_index)
+    rng.shuffle(combined)
+
+    shuffled_correct: int | None = None
+    for idx, (text, is_correct) in enumerate(combined):
+        session.add(StepOption(step_id=s.id, idx=idx, text=text))
+        if is_correct:
+            shuffled_correct = idx
+    s.correct_index = shuffled_correct
     s.points_correct = item.get("points")
 
 

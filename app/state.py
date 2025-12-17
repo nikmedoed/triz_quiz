@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from datetime import datetime
 
 from aiogram import Bot
@@ -22,25 +23,41 @@ async def notify_all(session: AsyncSession | None = None) -> None:
     """Send current prompt to all users via Telegram bot."""
     from app.bot import send_prompt
 
+    logger = logging.getLogger(__name__)
+
     async def _send_with(session_obj: AsyncSession) -> None:
         gs = await session_obj.get(GlobalState, 1)
         step = await session_obj.get(Step, gs.current_step_id)
         bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
-        users = (await session_obj.execute(select(User))).scalars().all()
-        for u in users:
-            try:
-                await send_prompt(bot, u, step, gs.phase)
-                await asyncio.sleep(settings.TELEGRAM_SEND_DELAY)
-            except Exception:
-                pass
-        await bot.session.close()
+        try:
+            users = (await session_obj.execute(select(User))).scalars().all()
+            for u in users:
+                try:
+                    await send_prompt(bot, u, step, gs.phase)
+                    await asyncio.sleep(settings.TELEGRAM_SEND_DELAY)
+                except Exception:
+                    logger.exception(
+                        "Telegram prompt send failed: user_id=%s step_id=%s step_type=%s phase=%s",
+                        getattr(u, "id", None),
+                        getattr(step, "id", None),
+                        getattr(step, "type", None),
+                        getattr(gs, "phase", None),
+                    )
+        finally:
+            await bot.session.close()
 
     if session is None:
-        async with AsyncSessionLocal() as new_session:
-            await _send_with(new_session)
+        try:
+            async with AsyncSessionLocal() as new_session:
+                await _send_with(new_session)
+        except Exception:
+            logger.exception("notify_all failed")
         return
 
-    await _send_with(session)
+    try:
+        await _send_with(session)
+    except Exception:
+        logger.exception("notify_all failed")
 
 
 async def advance(session: AsyncSession, forward: bool) -> None:

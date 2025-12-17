@@ -16,7 +16,7 @@ from app.db import AsyncSessionLocal
 from app.hub import hub
 from app.models import Step, GlobalState, MultiAnswer, StepOption, User
 from app.public_context import multi_context
-from app.rich_text import extract_media_sources, render_plain_text
+from app.rich_text import render_plain_text
 from app.scoring import add_multi_points
 from . import StepType, register
 
@@ -31,6 +31,17 @@ async def multi_on_enter(session: AsyncSession, step: Step, phase: int) -> None:
 
 
 def build_multi_payload(item: Dict[str, Any]) -> tuple[list[str], list[int]]:
+    """Return shuffled options and correct indexes for multi steps.
+
+    Shuffling is deterministic when `seed` is provided to keep web preview
+    and persisted DB order consistent across reloads.
+    """
+    return build_multi_payload_seeded(item)
+
+
+def build_multi_payload_seeded(
+        item: Dict[str, Any], *, seed: int | None = None
+) -> tuple[list[str], list[int]]:
     """Return shuffled options and correct indexes for multi steps."""
     def _as_str_list(value: Any) -> list[str]:
         if value is None:
@@ -87,7 +98,7 @@ def build_multi_payload(item: Dict[str, Any]) -> tuple[list[str], list[int]]:
             seen.add(text)
         if not combined:
             combined = [(text, True) for text in explicit_correct]
-        rng = random.Random()
+        rng = random.Random(seed) if seed is not None else random.Random()
         rng.shuffle(combined)
         options_payload = [text for text, _ in combined]
         correct_multi_indices = [
@@ -96,13 +107,18 @@ def build_multi_payload(item: Dict[str, Any]) -> tuple[list[str], list[int]]:
     else:
         options_payload = _as_str_list(item.get("options"))
         raw_correct = item.get("correct")
+        correct_set: set[int] = set()
         if isinstance(raw_correct, list):
             for c in raw_correct:
                 if isinstance(c, str) and c.isdigit():
-                    correct_multi_indices.append(int(c) - 1)
+                    correct_set.add(int(c) - 1)
                 elif isinstance(c, int):
-                    correct_multi_indices.append(int(c))
-        options_payload = [text for text in options_payload]
+                    correct_set.add(int(c))
+        combined = [(text, idx in correct_set) for idx, text in enumerate(options_payload)]
+        rng = random.Random(seed) if seed is not None else random.Random()
+        rng.shuffle(combined)
+        options_payload = [text for text, _ in combined]
+        correct_multi_indices = [idx for idx, (_, is_correct) in enumerate(combined) if is_correct]
 
     return options_payload, correct_multi_indices
 
@@ -117,20 +133,22 @@ async def multi_load_item(
     elif isinstance(time_val, (int, float)):
         timer_ms = int(time_val) * 1000
 
-    options_payload, correct_multi_indices = build_multi_payload(item)
-
     s = add_step(
         "multi",
         title=item.get("title", texts.TITLE_MULTI),
         text=item.get("description") or item.get("text"),
         timer_ms=timer_ms,
-        correct_multi=",".join(str(idx) for idx in sorted(set(correct_multi_indices)))
-        if correct_multi_indices
-        else None,
+        correct_multi=None,
     )
     await session.flush()
+    options_payload, correct_multi_indices = build_multi_payload_seeded(item, seed=s.order_index)
     for idx, text in enumerate(options_payload):
         session.add(StepOption(step_id=s.id, idx=idx, text=text))
+    s.correct_multi = (
+        ",".join(str(idx) for idx in sorted(set(correct_multi_indices)))
+        if correct_multi_indices
+        else None
+    )
     s.points_correct = item.get("points")
 
 
@@ -152,7 +170,6 @@ async def multi_bot_prompts(
                     )
                 ).scalars().all()
             ]
-        media_paths = extract_media_sources(step.text)
         header = texts.MULTI_HEADER
         title = escape(step.title)
         body = escape(render_plain_text(step.text))
@@ -162,8 +179,6 @@ async def multi_bot_prompts(
             parts.append(body)
         parts.append(f"<i>{instr}</i>")
         text = "\n\n".join(parts)
-        for path in media_paths:
-            msgs.append({"type": "photo", "path": path, "kwargs": {}})
         msgs.append(
             (
                 text,

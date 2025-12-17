@@ -17,7 +17,7 @@ from app.db import AsyncSessionLocal
 from app.hub import hub
 from app.models import Step, GlobalState, SequenceAnswer, StepOption, User
 from app.public_context import sequence_context
-from app.rich_text import extract_media_sources, render_plain_text
+from app.rich_text import render_plain_text
 from app.scoring import add_sequence_points
 from . import StepType, register
 
@@ -88,7 +88,6 @@ async def sequence_bot_prompts(
         ).scalar_one_or_none()
         selected = json.loads(ans.order_json) if ans else []
     if phase == 0:
-        media_paths = extract_media_sources(step.text)
         header = texts.SEQUENCE_HEADER
         title = escape(step.title)
         body = escape(render_plain_text(step.text))
@@ -98,8 +97,6 @@ async def sequence_bot_prompts(
             parts.append(body)
         parts.append(f"<i>{instr}</i>")
         text = "\n\n".join(parts)
-        for path in media_paths:
-            msgs.append({"type": "photo", "path": path, "kwargs": {}})
         msgs.append(
             (
                 text,
