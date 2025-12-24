@@ -1,39 +1,39 @@
 # You can also name this scenario.json; loader accepts JSON or YAML.
 - type: open
-  title: "Ситуация 1: как открыть банку с тугой крышкой?"
-  description: "Домашний пример, крышка не поддаётся…"
+  title: "Scenario 1: opening a stuck jar lid"
+  description: "Everyday case: the lid is stuck; you need a quick idea to open it."
 
 - type: sequence
-  title: "Ситуация 1: как открыть банку с тугой крышкой?"
-  description: "Домашний пример, крышка не поддаётся…"
+  title: "Sequence: reducing the stuck-lid problem"
+  description: "Arrange the steps in a cause-effect chain that leads to the stuck lid."
   options:
-    - "Раз"
-    - "Два"
-    - "ТРИ"
-    - "Четыре"
-    - "Пять"
-    - "Шесть"
-  time: 122
+    - "Seal is too tight after cooling"
+    - "Vacuum holds the lid firmly"
+    - "Grip strength is not enough"
+    - "Lid slips in hand"
+    - "Hot water expands the lid"
+    - "Jar opens without force"
+  time: 120
 
 - type: quiz
-  title: "Какой приём ТРИЗ был использован?"
-  description: "Вспомните, что использовалось для открытия банки."
+  title: "Which TRIZ principle helps most here?"
+  description: "Pick the principle that best matches opening a stuck lid with minimal tools."
   options:
-    - "Матрёшка"
-    - "Динамичность"
-    - "Применение локальных нагревов"
-    - "Ещё какой-то вариант"
+    - "Nested doll"
+    - "Dynamics"
+    - "Local heating"
+    - "Cushion in advance"
   correct: "3"   # 1-based or 0-based index accepted
   time: 45
   points: 2
 
 - type: multi
-  title: "Какие приёмы применимы?"
-  description: "Выберите все верные варианты."
+  title: "Select applicable techniques"
+  description: "Choose all approaches that are suitable for freeing the lid."
   correct_options:
-    - "Растяжение"
-    - "Локальный нагрев"
+    - "Apply local heat"
+    - "Increase leverage with a spoon"
   other_options:
-    - "Сжатие"
-    - "Контрбаланс"
+    - "Hit the jar neck with force"
+    - "Submerge the jar in oil"
   points: 4

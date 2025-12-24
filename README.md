@@ -42,11 +42,17 @@ TELEGRAM_SEND_DELAY=0.05
 cp scenario.example.yaml scenario.yaml  # edit as needed
 ```
 
-3. **Install**:
+3. **Install** (pick one):
 
 ```
+# pip
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+
+# or uv (faster resolver, uses uv.lock)
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
 ```
 
 4. **Run**:
@@ -57,12 +63,20 @@ pip install -r requirements.txt
 
 Open:
 
-* `http://localhost:8000/`
+* `http://localhost:8000/` (projector/public screen)
 
 Invite participants to start the Telegram bot with `/start`. After they set a name, advancing phases with the Next
 button will push messages to all registered participants.
 
 Messages are throttled with a small delay (configurable via `TELEGRAM_SEND_DELAY`) to avoid Telegram rate limits.
+
+### Operating the session
+
+1. Start the bot and web server (`./run_local.sh`).
+2. Share the bot link; users complete registration and set a name.
+3. Open the projector at `BASE_URL/` on a big screen.
+4. Moderator clicks **Next** to move through phases inside each block (collect → vote → reveal or ask → reveal).
+5. To reload a scenario after edits, call `POST /api/reset` or restart the app (registration/leaderboard are auto-added).
 
 ---
 
@@ -76,8 +90,8 @@ docker compose up --build
 
 ## Scenario format (simple blocks)
 
-Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registration and final leaderboard are **implicit
-** and auto-added.
+Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registration and final leaderboard are **implicit**
+and auto-added.
 
 **Supported blocks:**
 
@@ -89,25 +103,25 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
   `other_options` (or `options`). Choices are shuffled automatically; scores are split evenly between correct answers, and
   selecting any wrong option yields zero points.
 
-**Example (your sample, with vote steps tolerated but folded into the `open` block):**
+**Example (minimal flow; vote steps are implicit inside `open`):**
 
 ```json
 [
   {
     "type": "open",
-    "title": "Ситуация 1: как открыть банку с тугой крышкой?",
-    "description": "Домашний пример, крышка не поддаётся…"
+    "title": "Scenario 1: opening a stuck jar lid",
+    "description": "Everyday case: the lid is stuck; you need a quick idea to open it."
   },
-  { "type": "vote", "title": "Голосование идей" },
-  { "type": "vote_results", "title": "Результаты голосования" },
+  { "type": "vote", "title": "Voting ideas" },
+  { "type": "vote_results", "title": "Voting results" },
   {
     "type": "quiz",
-    "title": "Какой приём ТРИЗ был использован?",
+    "title": "Which TRIZ principle helps most here?",
     "options": [
-      "Матрёшка",
-      "Динамичность",
-      "Применение локальных нагревов",
-      "Ещё какой-то вариант"
+      "Nested doll",
+      "Dynamics",
+      "Local heating",
+      "Cushion in advance"
     ],
     "correct": "3",
     "time": 45,
@@ -125,6 +139,13 @@ Write `scenario.yaml` **or** `scenario.json` as a **list of blocks**. Registrati
 >   `options`; the loader shuffles everything automatically.
 >
 > See `scenario.example.yaml` for a complete example scenario.
+
+### Developing / adjusting
+
+- Edit `scenario.yaml`/`scenario.json` and restart or `POST /api/reset` to reload.
+- Telegram/web copy lives in `texts.py`; projector templates live in `app/templates`.
+- Scoring is applied only on phase transitions inside `web.advance`; avoid recomputing elsewhere.
+- Keep user-provided text HTML-safe; the templates and bot handlers already escape content.
 
 ---
 
