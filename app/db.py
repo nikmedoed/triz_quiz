@@ -17,6 +17,10 @@ async def apply_migrations(conn) -> None:
         await conn.exec_driver_sql(
             "ALTER TABLE users ADD COLUMN avatar_emoji VARCHAR(16)"
         )
+    if "is_blocked" not in cols:
+        await conn.exec_driver_sql(
+            "ALTER TABLE users ADD COLUMN is_blocked BOOLEAN NOT NULL DEFAULT 0"
+        )
 
     result = await conn.exec_driver_sql("PRAGMA table_info(steps)")
     cols = [row[1] for row in result.fetchall()]

@@ -42,7 +42,9 @@ async def registration_context(
 ) -> None:
     users = (
         await session.execute(
-            select(User).where(User.name != "").order_by(User.joined_at.asc())
+            select(User)
+            .where(User.name != "", User.is_blocked.is_(False))
+            .order_by(User.joined_at.asc())
         )
     ).scalars().all()
     ctx.update(users=users, stage_title="Регистрация", show_reset=True)
@@ -80,9 +82,15 @@ async def open_context(
             ctx.update(content_class="ideas-page")
     ctx.update(stage_title=texts.TITLE_OPEN + suffix)
     if gs.phase == 0:
-        total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
+        total_users = await session.scalar(
+            select(func.count(User.id)).where(
+                User.name != "", User.is_blocked.is_(False)
+            )
+        )
         last_at = await session.scalar(
-            select(func.max(Idea.submitted_at)).where(Idea.step_id == step.id)
+            select(func.max(Idea.submitted_at))
+            .join(User, User.id == Idea.user_id)
+            .where(Idea.step_id == step.id, User.is_blocked.is_(False))
         )
         last_ago_s = None
         if last_at:
@@ -117,7 +125,9 @@ async def open_context(
             select(func.max(IdeaVote.created_at)).where(IdeaVote.step_id == step.id)
         )
         total_users = await session.scalar(
-            select(func.count(User.id)).where(User.name != "")
+            select(func.count(User.id)).where(
+                User.name != "", User.is_blocked.is_(False)
+            )
         )
         last_vote_ago_s = None
         if last_vote_at:
@@ -162,12 +172,20 @@ async def quiz_context(
         stage_title="Выбери верный" if gs.phase == 0 else "Выбери верный — результаты",
     )
     if gs.phase == 0:
-        total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
+        total_users = await session.scalar(
+            select(func.count(User.id)).where(
+                User.name != "", User.is_blocked.is_(False)
+            )
+        )
         answers_count = await session.scalar(
-            select(func.count(McqAnswer.id)).where(McqAnswer.step_id == step.id)
+            select(func.count(McqAnswer.id))
+            .join(User, User.id == McqAnswer.user_id)
+            .where(McqAnswer.step_id == step.id, User.is_blocked.is_(False))
         )
         last_at = await session.scalar(
-            select(func.max(McqAnswer.answered_at)).where(McqAnswer.step_id == step.id)
+            select(func.max(McqAnswer.answered_at))
+            .join(User, User.id == McqAnswer.user_id)
+            .where(McqAnswer.step_id == step.id, User.is_blocked.is_(False))
         )
         last_answer_ago_s = None
         if last_at:
@@ -238,12 +256,20 @@ async def multi_context(
         stage_title="Выбери верные" if gs.phase == 0 else "Выбери верные — результаты",
     )
     if gs.phase == 0:
-        total_users = await session.scalar(select(func.count(User.id)).where(User.name != ""))
+        total_users = await session.scalar(
+            select(func.count(User.id)).where(
+                User.name != "", User.is_blocked.is_(False)
+            )
+        )
         answers_count = await session.scalar(
-            select(func.count(MultiAnswer.id)).where(MultiAnswer.step_id == step.id)
+            select(func.count(MultiAnswer.id))
+            .join(User, User.id == MultiAnswer.user_id)
+            .where(MultiAnswer.step_id == step.id, User.is_blocked.is_(False))
         )
         last_at = await session.scalar(
-            select(func.max(MultiAnswer.answered_at)).where(MultiAnswer.step_id == step.id)
+            select(func.max(MultiAnswer.answered_at))
+            .join(User, User.id == MultiAnswer.user_id)
+            .where(MultiAnswer.step_id == step.id, User.is_blocked.is_(False))
         )
         last_answer_ago_s = None
         if last_at:
@@ -342,17 +368,25 @@ async def sequence_context(
     )
     if gs.phase == 0:
         total_users = await session.scalar(
-            select(func.count(User.id)).where(User.name != "")
+            select(func.count(User.id)).where(
+                User.name != "", User.is_blocked.is_(False)
+            )
         )
         answers_count = await session.scalar(
-            select(func.count(SequenceAnswer.id)).where(
+            select(func.count(SequenceAnswer.id))
+            .join(User, User.id == SequenceAnswer.user_id)
+            .where(
                 SequenceAnswer.step_id == step.id,
                 func.json_array_length(SequenceAnswer.order_json) == len(options),
+                User.is_blocked.is_(False),
             )
         )
         last_at = await session.scalar(
-            select(func.max(SequenceAnswer.answered_at)).where(
-                SequenceAnswer.step_id == step.id
+            select(func.max(SequenceAnswer.answered_at))
+            .join(User, User.id == SequenceAnswer.user_id)
+            .where(
+                SequenceAnswer.step_id == step.id,
+                User.is_blocked.is_(False),
             )
         )
         last_answer_ago_s = None

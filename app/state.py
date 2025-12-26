@@ -6,6 +6,7 @@ import logging
 from datetime import datetime
 
 from aiogram import Bot
+from aiogram.exceptions import TelegramForbiddenError, TelegramNotFound
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,6 +23,7 @@ from app.db import AsyncSessionLocal
 async def notify_all(session: AsyncSession | None = None) -> None:
     """Send current prompt to all users via Telegram bot."""
     from app.bot import send_prompt
+    from app.hub import hub
 
     logger = logging.getLogger(__name__)
 
@@ -29,12 +31,25 @@ async def notify_all(session: AsyncSession | None = None) -> None:
         gs = await session_obj.get(GlobalState, 1)
         step = await session_obj.get(Step, gs.current_step_id)
         bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
+        blocked_changed = False
         try:
-            users = (await session_obj.execute(select(User))).scalars().all()
+            users = (
+                await session_obj.execute(
+                    select(User).where(User.is_blocked.is_(False))
+                )
+            ).scalars().all()
             for u in users:
                 try:
                     await send_prompt(bot, u, step, gs.phase)
                     await asyncio.sleep(settings.TELEGRAM_SEND_DELAY)
+                except (TelegramForbiddenError, TelegramNotFound):
+                    if not u.is_blocked:
+                        u.is_blocked = True
+                        blocked_changed = True
+                    logger.info(
+                        "User blocked bot; skipping further sends: user_id=%s",
+                        getattr(u, "id", None),
+                    )
                 except Exception:
                     logger.exception(
                         "Telegram prompt send failed: user_id=%s step_id=%s step_type=%s phase=%s",
@@ -43,6 +58,9 @@ async def notify_all(session: AsyncSession | None = None) -> None:
                         getattr(step, "type", None),
                         getattr(gs, "phase", None),
                     )
+            if blocked_changed:
+                await session_obj.commit()
+                await hub.broadcast({"type": "reload"})
         finally:
             await bot.session.close()
 
